@@ -43,20 +43,23 @@ BLASLIB and LAPACKLIB in Makefile and just type `make`.
 
 To use the solver, issue the command:
 
-qualex-ms [<flag>] <dimacs_binary_file> [-w<weights_file>]
+qualex-ms [flags] <dimacs_binary_file> [-w<weights_file>]
 
 Flags:
 
 +c: looking for maximum clique (default)
+
 -c: looking for maximum independent set
+
 +1: vertex numbers in solution file go from 1
+
 -1: vertex numbers in solution file go from 0 (default)
+
 weights_file: a text file for list of vertex weights (reals >= 1.0)
 
-An obtained solution will be stored in a corresponding .sol file
-(the vertex numbering is from 0 there). For example, you can find
-the maximum clique of an instance coded in probe.clq.b file by
-the command
+An obtained solution will be stored in a corresponding .sol file.
+For example, you can find the maximum clique of an instance coded in
+probe.clq.b file by the command
 
 qualex-ms probe.clq.b
 
