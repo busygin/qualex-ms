@@ -27,6 +27,8 @@ extern "C" {
   void matrix_dot_vector(int,int,double*,char,double*,double*);
   void store_eigenvectors_gpu(int,int,double*);
   void matrix_dot_vector_q(int,int,char,double*,double*);
+  void compute_c_gpu(int,int,double*,double*);
+  double norm2_c_gpu(int);
 }
 
 // EigenCluster hold information about one full cluster of equal eigenvalues
@@ -130,7 +132,7 @@ void QualexInfo::install_eigenvectors (
 
 void QualexInfo::init_c(int n, double* hatb) {
   c = new double[k];
-  matrix_dot_vector_q(n,k,'T',hatb,c);
+  compute_c_gpu(n,k,hatb,c);  // Computes c and keeps it GPU-resident
 }
 
 void QualexInfo::init_eigenclusters() {
@@ -209,7 +211,7 @@ bool try_nondeg_points (
 ) {
   double mu_max = solver_info.active_clusters.back().lambda;
   double mu_min = mu_max*(1.0+3.0*DBL_EPSILON);
-  mu_max += norm2(solver_info.k,solver_info.c)/sqrt(equ.rhs);
+  mu_max += norm2_c_gpu(solver_info.k)/sqrt(equ.rhs);  // Use GPU-resident c
   double mu = root(mu_min,mu_max,equ);
   bool result = try_stat_point(graph_info,solver_info,mu,x,y);
   vector<EigenCluster>::reverse_iterator ri;

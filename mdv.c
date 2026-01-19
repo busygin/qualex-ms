@@ -3,53 +3,56 @@
 
 static cublasHandle_t cublas_handle = NULL;
 
+// Persistent work buffers to avoid repeated malloc/free
+static double* d_work1 = NULL;
+static double* d_work2 = NULL;
+static int mdv_work_size = 0;
+
 static void ensure_cublas_init() {
   if (cublas_handle == NULL) {
     cublasCreate(&cublas_handle);
   }
 }
 
+static void ensure_mdv_buffers(int n) {
+  if (n > mdv_work_size) {
+    if (d_work1) cudaFree(d_work1);
+    if (d_work2) cudaFree(d_work2);
+    cudaMalloc((void**)&d_work1, n * sizeof(double));
+    cudaMalloc((void**)&d_work2, n * sizeof(double));
+    mdv_work_size = n;
+  }
+}
+
 double norm2(int n, double* x) {
   ensure_cublas_init();
+  ensure_mdv_buffers(n);
   double result;
-  double* d_x;
 
-  cudaMalloc((void**)&d_x, n * sizeof(double));
-  cudaMemcpy(d_x, x, n * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_work1, x, n * sizeof(double), cudaMemcpyHostToDevice);
+  cublasDnrm2(cublas_handle, n, d_work1, 1, &result);
 
-  cublasDnrm2(cublas_handle, n, d_x, 1, &result);
-
-  cudaFree(d_x);
   return result;
 }
 
 void scaling(int n, double* x, double c) {
   ensure_cublas_init();
-  double* d_x;
+  ensure_mdv_buffers(n);
 
-  cudaMalloc((void**)&d_x, n * sizeof(double));
-  cudaMemcpy(d_x, x, n * sizeof(double), cudaMemcpyHostToDevice);
-
-  cublasDscal(cublas_handle, n, &c, d_x, 1);
-
-  cudaMemcpy(x, d_x, n * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaFree(d_x);
+  cudaMemcpy(d_work1, x, n * sizeof(double), cudaMemcpyHostToDevice);
+  cublasDscal(cublas_handle, n, &c, d_work1, 1);
+  cudaMemcpy(x, d_work1, n * sizeof(double), cudaMemcpyDeviceToHost);
 }
 
 double dot_product(int n, double* x, double* y) {
   ensure_cublas_init();
+  ensure_mdv_buffers(n);
   double result;
-  double *d_x, *d_y;
 
-  cudaMalloc((void**)&d_x, n * sizeof(double));
-  cudaMalloc((void**)&d_y, n * sizeof(double));
-  cudaMemcpy(d_x, x, n * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_y, y, n * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_work1, x, n * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_work2, y, n * sizeof(double), cudaMemcpyHostToDevice);
+  cublasDdot(cublas_handle, n, d_work1, 1, d_work2, 1, &result);
 
-  cublasDdot(cublas_handle, n, d_x, 1, d_y, 1, &result);
-
-  cudaFree(d_y);
-  cudaFree(d_x);
   return result;
 }
 
