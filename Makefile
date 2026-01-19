@@ -1,16 +1,16 @@
 # Makefile of QUALEX-MS solver for GNU make
 
-# Please substitute correct values for LIBS, LAPACKLIB and BLASLIB
+# Please substitute correct values for LAPACKLIB and BLASLIB
 # to use it on your environment
 
-CFLAGS = -DNDEBUG -Ofast -funroll-all-loops -Wall
+CFLAGS = -DNDEBUG -Ofast -funroll-all-loops -s -Wall
 LINKFLAGS = -s
 
 CC = gcc
 CXX = g++
-LIBS = -lgfortran
-LAPACKLIB = -llapack
-BLASLIB = -lf77blas -latlas
+LIBS = -lcudart
+LAPACKLIB = -llapack_static
+BLASLIB = -lcublas
 
 .SUFFIXES: .o .cc .c
 
