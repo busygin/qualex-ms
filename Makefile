@@ -9,8 +9,8 @@ LINKFLAGS = -s
 CC = gcc
 CXX = g++
 LIBS = -lcudart
-LAPACKLIB = -llapack_static
-BLASLIB = -lcublas
+LAPACKLIB = -llapack
+BLASLIB = -lopenblas -lcublas
 
 .SUFFIXES: .o .cc .c
 
