@@ -1,15 +1,66 @@
 #include <stdlib.h>
 #include <cuda_runtime.h>
+#include <cublas_v2.h>
 #include <cusolverDn.h>
 
-// A C wrapper using cuSOLVER for eigendecomposition of a real symmetric matrix.
-// Uses cusolverDnDsyevd which computes all eigenvalues and eigenvectors
-// on the GPU.
+// Persistent GPU state
+static cublasHandle_t cublas_handle = NULL;
+static cusolverDnHandle_t cusolver_handle = NULL;
+static cudaStream_t gpu_stream = NULL;
+static double* d_q_persistent = NULL;
+static int q_rows = 0, q_cols = 0;
+
+// Pre-allocated work buffers
+static double* d_work_vec1 = NULL;
+static double* d_work_vec2 = NULL;
+static int work_size = 0;
+
+static void ensure_gpu_init() {
+  if (cublas_handle == NULL) {
+    cublasCreate(&cublas_handle);
+    cusolverDnCreate(&cusolver_handle);
+    cudaStreamCreate(&gpu_stream);
+    cublasSetStream(cublas_handle, gpu_stream);
+    cusolverDnSetStream(cusolver_handle, gpu_stream);
+  }
+}
+
+static void ensure_work_buffers(int n) {
+  if (n > work_size) {
+    if (d_work_vec1) cudaFree(d_work_vec1);
+    if (d_work_vec2) cudaFree(d_work_vec2);
+    cudaMalloc((void**)&d_work_vec1, n * sizeof(double));
+    cudaMalloc((void**)&d_work_vec2, n * sizeof(double));
+    work_size = n;
+  }
+}
+
+// Store eigenvector matrix on GPU for repeated use
+void store_eigenvectors_gpu(int n, int k, double* q) {
+  ensure_gpu_init();
+  if (d_q_persistent) cudaFree(d_q_persistent);
+  q_rows = n;
+  q_cols = k;
+  cudaMalloc((void**)&d_q_persistent, (size_t)n * k * sizeof(double));
+  cudaMemcpy(d_q_persistent, q, (size_t)n * k * sizeof(double), cudaMemcpyHostToDevice);
+  ensure_work_buffers(n > k ? n : k);
+}
+
+// Matrix-vector multiply using GPU-resident Q: y = op(Q) * x
+void matrix_dot_vector_q(int n, int k, char trans, double* x, double* y) {
+  double alpha = 1.0, beta = 0.0;
+  cublasOperation_t op = (trans == 'N') ? CUBLAS_OP_N : CUBLAS_OP_T;
+  int x_len = (trans == 'N') ? k : n;
+  int y_len = (trans == 'N') ? n : k;
+
+  cudaMemcpy(d_work_vec1, x, x_len * sizeof(double), cudaMemcpyHostToDevice);
+  cublasDgemv(cublas_handle, op, n, k, &alpha, d_q_persistent, n, d_work_vec1, 1, &beta, d_work_vec2, 1);
+  cudaMemcpy(y, d_work_vec2, y_len * sizeof(double), cudaMemcpyDeviceToHost);
+}
+
+// Eigendecomposition using cuSOLVER
 int symmetric_eigen(int n, double* a, double* lambda, double* q) {
-  cusolverDnHandle_t handle;
-  cudaStream_t stream;
-  cusolverStatus_t status;
-  cudaError_t cudaStat;
+  ensure_gpu_init();
 
   double* d_a = NULL;
   double* d_lambda = NULL;
@@ -18,66 +69,30 @@ int symmetric_eigen(int n, double* a, double* lambda, double* q) {
   int lwork = 0;
   int info = 0;
 
-  // Create cuSOLVER handle and stream
-  status = cusolverDnCreate(&handle);
-  if (status != CUSOLVER_STATUS_SUCCESS) return -1;
+  cudaMalloc((void**)&d_a, sizeof(double) * n * n);
+  cudaMalloc((void**)&d_lambda, sizeof(double) * n);
+  cudaMalloc((void**)&d_info, sizeof(int));
 
-  cudaStat = cudaStreamCreate(&stream);
-  if (cudaStat != cudaSuccess) {
-    cusolverDnDestroy(handle);
-    return -1;
-  }
-  cusolverDnSetStream(handle, stream);
+  cudaMemcpy(d_a, a, sizeof(double) * n * n, cudaMemcpyHostToDevice);
 
-  // Allocate device memory
-  cudaStat = cudaMalloc((void**)&d_a, sizeof(double) * n * n);
-  if (cudaStat != cudaSuccess) goto cleanup;
+  cusolverDnDsyevd_bufferSize(cusolver_handle, CUSOLVER_EIG_MODE_VECTOR,
+    CUBLAS_FILL_MODE_UPPER, n, d_a, n, d_lambda, &lwork);
 
-  cudaStat = cudaMalloc((void**)&d_lambda, sizeof(double) * n);
-  if (cudaStat != cudaSuccess) goto cleanup;
+  cudaMalloc((void**)&d_work, sizeof(double) * lwork);
 
-  cudaStat = cudaMalloc((void**)&d_info, sizeof(int));
-  if (cudaStat != cudaSuccess) goto cleanup;
+  cusolverDnDsyevd(cusolver_handle, CUSOLVER_EIG_MODE_VECTOR,
+    CUBLAS_FILL_MODE_UPPER, n, d_a, n, d_lambda, d_work, lwork, d_info);
 
-  // Copy matrix to device
-  cudaStat = cudaMemcpy(d_a, a, sizeof(double) * n * n, cudaMemcpyHostToDevice);
-  if (cudaStat != cudaSuccess) goto cleanup;
+  cudaStreamSynchronize(gpu_stream);
 
-  // Query workspace size
-  status = cusolverDnDsyevd_bufferSize(
-    handle, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER,
-    n, d_a, n, d_lambda, &lwork
-  );
-  if (status != CUSOLVER_STATUS_SUCCESS) goto cleanup;
+  cudaMemcpy(lambda, d_lambda, sizeof(double) * n, cudaMemcpyDeviceToHost);
+  cudaMemcpy(q, d_a, sizeof(double) * n * n, cudaMemcpyDeviceToHost);
+  cudaMemcpy(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost);
 
-  cudaStat = cudaMalloc((void**)&d_work, sizeof(double) * lwork);
-  if (cudaStat != cudaSuccess) goto cleanup;
-
-  // Compute eigenvalues and eigenvectors
-  status = cusolverDnDsyevd(
-    handle, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER,
-    n, d_a, n, d_lambda, d_work, lwork, d_info
-  );
-
-  cudaStat = cudaStreamSynchronize(stream);
-  if (cudaStat != cudaSuccess) goto cleanup;
-
-  // Copy results back to host
-  cudaStat = cudaMemcpy(lambda, d_lambda, sizeof(double) * n, cudaMemcpyDeviceToHost);
-  if (cudaStat != cudaSuccess) goto cleanup;
-
-  cudaStat = cudaMemcpy(q, d_a, sizeof(double) * n * n, cudaMemcpyDeviceToHost);
-  if (cudaStat != cudaSuccess) goto cleanup;
-
-  cudaStat = cudaMemcpy(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost);
-
-cleanup:
-  if (d_work) cudaFree(d_work);
-  if (d_info) cudaFree(d_info);
-  if (d_lambda) cudaFree(d_lambda);
-  if (d_a) cudaFree(d_a);
-  cudaStreamDestroy(stream);
-  cusolverDnDestroy(handle);
+  cudaFree(d_work);
+  cudaFree(d_info);
+  cudaFree(d_lambda);
+  cudaFree(d_a);
 
   return info;
 }

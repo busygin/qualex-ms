@@ -25,6 +25,8 @@ extern "C" {
   int symmetric_eigen(int,double*,double*,double*);
   double dot_product(int,double*,double*);
   void matrix_dot_vector(int,int,double*,char,double*,double*);
+  void store_eigenvectors_gpu(int,int,double*);
+  void matrix_dot_vector_q(int,int,char,double*,double*);
 }
 
 // EigenCluster hold information about one full cluster of equal eigenvalues
@@ -128,7 +130,7 @@ void QualexInfo::install_eigenvectors (
 
 void QualexInfo::init_c(int n, double* hatb) {
   c = new double[k];
-  matrix_dot_vector(n,k,q,'T',hatb,c);
+  matrix_dot_vector_q(n,k,'T',hatb,c);
 }
 
 void QualexInfo::init_eigenclusters() {
@@ -179,6 +181,7 @@ bool init_projected_formulation (
   delete[] lambda1;
   solver_info.install_eigenvectors(n,q1,n_neg_eigens,n_pos_eigens);
   delete[] q1;
+  store_eigenvectors_gpu(n,solver_info.k,solver_info.q);
   solver_info.init_c(n,hatb);
   delete[] hatb;
   solver_info.init_eigenclusters();
@@ -195,7 +198,7 @@ bool try_stat_point (
   for(ii=solver_info.active_clusters.begin();ii<solver_info.active_clusters.end();ii++) {
     for(i=ii->first;i<ii->last;i++) y[i] = solver_info.c[i]/(mu-solver_info.lambda[i]);
   }
-  matrix_dot_vector(graph_info.g.n,solver_info.k,solver_info.q,'N',y,x);
+  matrix_dot_vector_q(graph_info.g.n,solver_info.k,'N',y,x);
   for(i=0;i<graph_info.g.n;i++) x[i] = (x[i]+graph_info.shift[i])*graph_info.sqrtw[i];
   return refine_clique_MIN(graph_info,x);
 }
@@ -254,7 +257,7 @@ bool try_deg_points (
     }
     if(r2>0.0) {
       r2 = sqrt(r2);
-      matrix_dot_vector(n,solver_info.k,solver_info.q,'N',y,x1);
+      matrix_dot_vector_q(n,solver_info.k,'N',y,x1);
       for(int j=ri->first;j<ri->last;j++) {
         double* qj = solver_info.q+(j*n);
         for(i=0;i<n;i++) x[i] = (x1[i]+qj[i]*r2+graph_info.shift[i])*graph_info.sqrtw[i];
