@@ -1,16 +1,14 @@
 # Makefile of QUALEX-MS solver for GNU make
 
-# Please substitute correct values for LAPACKLIB and BLASLIB
-# to use it on your environment
+# Requires: CUDA toolkit (cuSOLVER, cuBLAS, cudart) and OpenBLAS
 
 CFLAGS = -DNDEBUG -Ofast -funroll-all-loops -s -Wall
 LINKFLAGS = -s
 
 CC = gcc
 CXX = g++
-LIBS = -lcudart
-LAPACKLIB = -llapack
-BLASLIB = -lopenblas -lcublas
+LIBS = -lcudart -lcusolver
+BLASLIB = -lopenblas
 
 .SUFFIXES: .o .cc .c
 
@@ -18,7 +16,7 @@ OBJS_c = bool_vector.cc graph.cc greedy_clique.cc main.cc preproc_clique.cc qual
 OBJS_o = bool_vector.o graph.o greedy_clique.o main.o preproc_clique.o qualex.o refiner.o eigen.o mdv.o
 
 qualex-ms: $(OBJS_c) $(OBJS_o)
-	$(CXX) $(LINKFLAGS) $(CFLAGS) -o $@ $(OBJS_o) $(LAPACKLIB) $(BLASLIB) $(LIBS)
+	$(CXX) $(LINKFLAGS) $(CFLAGS) -o $@ $(OBJS_o) $(BLASLIB) $(LIBS)
 
 clean:
 	rm *.o qualex-ms
