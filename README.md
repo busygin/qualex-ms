@@ -115,6 +115,20 @@ to w_min/2 (see try_eigendir_points in qualex.cc).
 
 These environment variables reproduce the ablations:
 
+QMS_PERTURB=<eta>    experimental: perturb the free entries of the clique
+                     wrapper, i.e. the matrix entries on non-adjacent vertex
+                     pairs, by -eta*U[0,1]*sqrt(w_i*w_j).  Off by default.  Any
+                     value <= 0 there leaves the theory intact, so a perturbed
+                     run is still exact when it reports an optimum; different
+                     wrappers expose different cliques, so the use of this is
+                     to run several and keep the best.  Keep eta small, around
+                     0.01: larger values lose more than they gain.  See the
+                     comment on perturb_wrapper() in main.cc
+QMS_PMODE=unif       make that perturbation uniform instead of random, which is
+                     provably a no-op -- a control for checking the above
+QMS_SEED=<s>         seed selecting the wrapper, so a run reproduces
+QMS_STATS            print the eigenvalue cluster census to stderr, which is
+                     what says whether a wrapper activated anything
 QMS_NO_EIGDIR        take eigenvector directions only from the clusters whose
                      linear form vanishes, as before, instead of from all of them
 QMS_META_N=<k>       hand the k best scoring multipliers to Meta-NBIW

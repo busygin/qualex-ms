@@ -23,6 +23,63 @@
 #include "preproc_clique.h"
 #include "qualex.h"
 
+// perturb_wrapper() replaces the zero entries of the weighted adjacency matrix
+// on non-adjacent vertex pairs, which are the free parameters of the clique
+// wrapper: Proposition 2 of the clique wrapper note admits any value below
+// z_i z_j there.
+//
+// Every value this accepts is safe.  Lowering an entry strictly decreases
+// x^T H x wherever x_i x_j > 0 and leaves every clique-supported point exactly
+// where it was, so a value <= 0 carries the generalized Motzkin-Straus theorem
+// over unchanged, optimum value and clique optima together.  A strictly
+// negative one goes further: the complete multipartite optima of Theorem 4 all
+// contain a non-adjacent pair and so become strictly suboptimal, leaving the
+// maximum weight clique indicators as the only global optima.  A perturbed run
+// therefore never reports a clique that is not one.
+//
+// The reason to do it is that the perturbation moves the spectrum and the
+// eigenvectors, so the trust region stage visits different stationary points,
+// and different wrappers expose different cliques.  Measured on the current
+// solver at eta = 0.01 over three seeds: keller5 26 -> 27, which is optimal,
+// on two of them, and MANN_a45 342 -> 344 against a best known 345.  Nothing
+// regressed at that scale on any instance tried.
+//
+// Keep eta small.  At 0.5 the same two gains survive but several instances
+// fall over -- san400_0.7_3 22 -> 18, gen400_p0.9_55 53 -> 51 on every seed,
+// san200_0.9_3 44 -> 43 -- which is what the loss of nonnegativity in A^(w)
+// costs: the paper's argument for why the stationary points stay roughly
+// nonnegative leans on it.  The response is not monotone in eta either
+// (keller5 on seed 1 reaches 27 at 0.01 through 0.35 and again at 0.8, but not
+// at 0.5 or 1.5), so the effect is diversity among wrappers rather than a
+// threshold to tune past.  Run several and keep the best; a single wrapper is
+// not a better default, and this stays off unless asked for.
+//
+// Small perturbations only became useful once the cluster tolerances were put
+// on the right scale.  Against the old absolute cut of 1e-5 on the summed
+// linear form, an eta of 0.05 split the eigenvalues but left every cluster
+// classified degenerate, because the coefficients it created were real but
+// tiny; against the present n*eps*||hatb|| they count.
+//
+// The uniform mode is a control rather than a strategy.  eps_ij = -eta z_i z_j
+// makes H = (1+eta) H_0 - eta z z^T, and the projection onto z^T x = 1 removes
+// the rank one term, leaving the eigenvectors alone and the eigenvalues
+// affinely mapped; substituting into y_i = c_i/(mu - lambda_i) reproduces the
+// same stationary points.  It should match an unperturbed run exactly, and
+// exists to check that it does.
+void perturb_wrapper(Graph& g, MaxCliqueInfo& info, double* a, double eta,
+                     bool uniform, unsigned long long seed) {
+  int& n = g.n;
+  for(int i=0;i<n;i++) for(int j=0;j<i;j++) {
+    if(g.mates[i].at(j)) continue;
+    // Knuth MMIX linear congruential generator, so that a seed reproduces a
+    // wrapper exactly whatever the platform's long happens to be
+    seed = seed*6364136223846793005ULL + 1442695040888963407ULL;
+    double u = uniform ? 1.0 :
+      (double)((seed>>11)&0xFFFFFFFFULL)/4294967296.0;
+    a[i*n+j] = a[j*n+i] = -eta*u*info.sqrtw[i]*info.sqrtw[j];
+  }
+}
+
 // print_clique() prints a provided clique and its total weight
 // in a file along with the graph header
 void print_clique (
@@ -121,6 +178,14 @@ int main(int argc,char** argv) {
           if(j>i) break;
           a[i*n+j] = a[j*n+i] = info.sqrtw[i]*info.sqrtw[j];
         }
+      }
+
+      // experimental: perturb the free entries of the clique wrapper
+      if(getenv("QMS_PERTURB")!=NULL) {
+        const char* mode = getenv("QMS_PMODE");
+        perturb_wrapper(g,info,a,atof(getenv("QMS_PERTURB")),
+          mode!=NULL && strcmp(mode,"unif")==0,
+          getenv("QMS_SEED")?strtoull(getenv("QMS_SEED"),NULL,10):1ULL);
       }
 
       qualex_ms(info,a);

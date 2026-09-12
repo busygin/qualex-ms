@@ -249,6 +249,20 @@ bool init_projected_formulation (
   delete[] hatb;
   solver_info.init_eigenclusters();
 
+  // experimental: the cluster census, which is what says whether a wrapper has
+  // actually activated anything.  Degeneracy here is a vanishing linear form,
+  // not a repeated eigenvalue, so splitting eigenvalues alone moves nothing
+  // from one column to the other.
+  if(getenv("QMS_STATS")!=NULL)
+    fprintf(stderr,
+      "STATS n=%d k=%d active=%d degenerate=%d lam_max=%.6g lam_tol=%.3g "
+      "c2_tol=%.3g\n",
+      n, solver_info.k, (int)solver_info.active_clusters.size(),
+      (int)solver_info.degenerative_clusters.size(),
+      solver_info.active_clusters.empty() ? 0.0 :
+        solver_info.active_clusters.back().lambda,
+      solver_info.lambda_tol, solver_info.c2_tol);
+
   return true;
 }
 
