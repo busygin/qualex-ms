@@ -73,7 +73,52 @@ qualex-ms probe.clq.b -wprobe.w
 will take into accout the given weights.
 
 
-3. What is new?
+3. SELECTION OF THE TRUST REGION MULTIPLIER
+
+The trust region stage searches stationary points of
+
+  max x^T A_G^(w) x   s.t.  z^T x = 1,  x^T x <= r^2,
+
+each of which is indexed by the multiplier mu of the ball constraint.  On the
+branch mu > lambda_max, where lambda_max is the largest eigenvalue of the
+projected matrix, the stationary point is
+
+  x(mu) = z/W(V) + (mu I - hatA)^{-1} hatb,
+
+so that branch is a one-parameter homotopy running from the plain vertex
+weight vector (mu -> infinity, where NBIW just reproduces the greedy solution
+already in hand) to the leading eigenvector (mu -> lambda_max).  What NBIW
+makes of x(mu) is a piecewise constant function of mu with many pieces, so
+which mu one picks matters a great deal.
+
+Up to version 1.2 a single point of that homotopy was used, at the radius
+Proposition 7 of the paper assigns to the indicator of a clique one minimum
+weight vertex heavier than the greedy one.  A stationary point of the relaxed
+program is not a clique indicator, though, so that radius fixes the scale
+rather than the point.  It is now used as an anchor for a geometric scan of
+radii around it (see try_outer_ladder in qualex.cc).
+
+Each sampled multiplier is scored by the weight of the clique NBIW builds from
+it, and the best scoring ones are then handed to Meta-NBIW (Algorithm 3 of the
+paper, NBIW restarted from every vertex), which is far more thorough and
+correspondingly more expensive.  This is where the choice of mu earns its
+keep: only a couple of multipliers can be afforded at that price.
+
+These environment variables reproduce the ablations:
+
+QMS_META_N=<k>       hand the k best scoring multipliers to Meta-NBIW
+                     (default 2; 0 switches the stage off, which restores the
+                     original running time but keeps only a small part of the
+                     gain -- see benchmarks.md)
+QMS_META_STARTS=<p>  restrict Meta-NBIW to the p percent of vertices the
+                     stationary point rates highest (default 0, meaning all)
+QMS_NO_LADDER        use only the single Proposition 7 radius, as before
+QMS_NO_THM8          drop the multipliers predicted by Theorem 8
+
+See benchmarks.md for the resulting DIMACS and weighted-instance figures.
+
+
+4. What is new?
 
 version 1.1:
 - the preliminary greedy heuristic is now MIN starting n times
@@ -92,3 +137,8 @@ version 1.2:
 - bool_vector is now 64-bit compliant;
 - a new parameter allows numbering of vertices from 1 (not 0) in solution files;
 - Windows executable is recompiled with newest MinGW gcc and LAPACK 3.1.1.
+
+unreleased:
+- eigendecomposition and the dense linear algebra moved to cuSOLVER/cuBLAS;
+- the trust region radius is scanned rather than fixed, and the best scoring
+multipliers are refined by Meta-NBIW (see section 3).

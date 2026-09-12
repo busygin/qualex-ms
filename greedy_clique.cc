@@ -96,6 +96,58 @@ bool meta_greedy_clique(MaxCliqueInfo& graph_info) {
   return result;
 }
 
+// meta_refine_MIN() is the Meta-NBIW algorithm (Algorithm 3) driven by an
+// arbitrary vertex "appealing" vector x instead of the vertex weights: NBIW
+// is started from a vertex, ranking candidates by x, and that is repeated
+// over a set of starting vertices.  best_weight receives the heaviest clique
+// it built, whether or not it is an improvement.
+// Algorithm 3 starts from every vertex, which costs O(n^3).  Since x is the
+// stationary point's own opinion of how promising each vertex is, restricting
+// the starts to the n_starts vertices it rates highest buys the same coverage
+// of the plausible cliques far more cheaply; n_starts<=0 means all of them.
+bool meta_refine_MIN (
+  MaxCliqueInfo& graph_info, double* x, double& best_weight, int n_starts
+) {
+  int& n = graph_info.g.n;
+  double* neigh_weights = new double[n];
+  neighborhood_weights(graph_info.g,x,neigh_weights);
+  double* neigh_weights1 = new double[n];
+  vector<int> act_verts;
+  list<int> clique;
+  bool result = false;
+  best_weight = 0.0;
+
+  vector<int> starts(n);
+  for(int i=0;i<n;i++) starts[i] = i;
+  if(n_starts>0 && n_starts<n) {
+    partial_sort(starts.begin(),starts.begin()+n_starts,starts.end(),
+                 greater_double(x));
+    starts.resize(n_starts);
+  }
+
+  for(vector<int>::iterator si=starts.begin();si<starts.end();si++) {
+    int i = *si;
+    memcpy(neigh_weights1,neigh_weights,sizeof(double)*n);
+    clique.clear();
+    act_verts.resize(n-1);
+    vector<int>::iterator jj = act_verts.begin();
+    int j;
+    for(j=0;j<n;j++) if(i!=j) *(jj++) = j;
+    clear_act_verts(graph_info.g,act_verts,x,neigh_weights1,i);
+    clique.push_back(i);
+    while((j=greedy_choice(graph_info.g,act_verts,x,neigh_weights1)) != -1)
+      clique.push_back(j);
+    double wgt = 0.0;
+    for(list<int>::iterator ii=clique.begin();ii!=clique.end();ii++)
+      wgt += graph_info.g.weights[*ii];
+    if(wgt>best_weight) best_weight = wgt;
+    result |= graph_info.receive_clique(clique);
+  }
+  delete[] neigh_weights;
+  delete[] neigh_weights1;
+  return result;
+}
+
 extern "C" double dot_product(int,double*,double*);
 
 void neighborhood_weights (

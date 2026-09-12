@@ -22,4 +22,9 @@ bool refine_clique_VO(MaxCliqueInfo& graph_info, double* x);
 // Returns true if the known clique was improved
 bool refine_clique_MIN(MaxCliqueInfo& graph_info, double* x);
 
+// refine_clique_MIN_w() is refine_clique_MIN() also reporting the total
+// weight of the clique it has built (regardless of whether it is an
+// improvement of the known one)
+bool refine_clique_MIN_w(MaxCliqueInfo& graph_info, double* x, double& weight);
+
 #endif  // REFINER_H

@@ -45,6 +45,11 @@ bool refine_clique_VO(MaxCliqueInfo& graph_info, double* x) {
 // "appealing" vector x using MIN procedure.
 // Returns true if the known clique was improved
 bool refine_clique_MIN(MaxCliqueInfo& graph_info, double* x) {
+  double weight;
+  return refine_clique_MIN_w(graph_info,x,weight);
+}
+
+bool refine_clique_MIN_w(MaxCliqueInfo& graph_info, double* x, double& weight) {
   int& n = graph_info.g.n;
   double* w = new double[n];
   neighborhood_weights(graph_info.g,x,w);
@@ -53,5 +58,8 @@ bool refine_clique_MIN(MaxCliqueInfo& graph_info, double* x) {
   list<int> clique;
   greedy_clique(graph_info.g,active_vertices,x,w,clique);
   delete[] w;
+  weight = 0.0;
+  for(list<int>::iterator ii=clique.begin();ii!=clique.end();ii++)
+    weight += graph_info.g.weights[*ii];
   return graph_info.receive_clique(clique);
 }
