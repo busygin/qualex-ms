@@ -8,6 +8,7 @@
 ***********************************************************************/
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <float.h>
@@ -20,6 +21,30 @@
 #include "greedy_clique.h"
 
 inline double sqr(double x) { return x*x; }
+
+// Tolerances.
+//
+// A backward stable symmetric eigensolver returns eigenvalues carrying an
+// absolute error of order p(n)*eps*||A||_2, and returns, for any group of
+// eigenvalues lying within that distance of each other, an accurate invariant
+// subspace but individually meaningless eigenvectors.  That error is therefore
+// the scale on which an eigenvalue counts as zero, on which two eigenvalues
+// count as equal, and on which two multipliers count as the same point of the
+// secular equation.  p(n) = n is the usual conservative choice.
+//
+// Nothing here may be an absolute constant: ||hatA|| grows with both the
+// vertex weights and the density, so a fixed threshold such as 1e-5 means
+// something different on every instance, and on a graph with large weights it
+// can fall below the eigensolver's own noise level.
+inline double eigen_tol(int n, double norm) {
+  return (double)n*DBL_EPSILON*norm;
+}
+
+// spectral_norm() is ||hatA||_2, the eigenvalues being sorted ascending
+inline double spectral_norm(int n, double* lambda) {
+  double lo = fabs(lambda[0]), hi = fabs(lambda[n-1]);
+  return lo>hi ? lo : hi;
+}
 
 // BLAS/LAPACK routines
 extern "C" {
@@ -92,7 +117,12 @@ struct QualexInfo {
   vector<EigenCluster> active_clusters;  // the eigenvalue clusters where c2!=0
   vector<EigenCluster> degenerative_clusters;  // the clusters with c2=0
 
-  QualexInfo(): k(0), lambda(NULL), q(NULL), c(NULL) {}
+  double norm;        // ||hatA||_2, the scale of the spectrum
+  double lambda_tol;  // eigenvalues within this distance are indistinguishable
+  double c2_tol;      // cluster linear forms at or below this are zero
+
+  QualexInfo(): k(0), lambda(NULL), q(NULL), c(NULL),
+    norm(0.0), lambda_tol(0.0), c2_tol(0.0) {}
   ~QualexInfo() {
     if(lambda!=NULL) delete[] lambda;
     if(q!=NULL) delete[] q;
@@ -112,12 +142,18 @@ struct QualexInfo {
   void init_eigenclusters();
 };
 
+// install_eigenvalues() drops the eigenvalues that are zero to the accuracy of
+// the eigendecomposition.  hatA always has at least one of them, along z, as
+// hatA = P A P and Pz = 0; a graph can contribute further ones.  They carry no
+// information -- y_i = c_i/(mu - lambda_i) would divide by the noise in
+// lambda_i -- so the whole eigenvector space is restricted to the rest.
 void QualexInfo::install_eigenvalues (
   int n, double* lambda1, int& n_neg_eigens, int& n_pos_eigens
 ) {
-  double* first_zero_lambda = lower_bound(lambda1,lambda1+n,-1e-5);
+  double* first_zero_lambda = lower_bound(lambda1,lambda1+n,-lambda_tol);
   double* last_zero_lambda = first_zero_lambda+1;
-  while(*last_zero_lambda<1e-5) last_zero_lambda++;
+  // the caller has checked lambda1[n-1] > lambda_tol, so this terminates
+  while(*last_zero_lambda<=lambda_tol) last_zero_lambda++;
   n_neg_eigens = first_zero_lambda-lambda1;
   n_pos_eigens = n - (last_zero_lambda-lambda1);
   k = n_neg_eigens + n_pos_eigens;
@@ -137,6 +173,18 @@ void QualexInfo::install_eigenvectors (
 void QualexInfo::init_c(int n, double* hatb) {
   c = new double[k];
   compute_c_gpu(n,k,hatb,c);  // Computes c and keeps it GPU-resident
+
+  // c = Q^T hatb is formed by an orthogonal projection, so each coefficient
+  // carries an absolute error of order n*eps*||hatb||.  A cluster whose entire
+  // linear form sits at or below that is indistinguishable from zero, which is
+  // exactly hypothesis (23) under which the degenerate construction is derived;
+  // above it the cluster has a genuine linear form and belongs to the secular
+  // equation, however small.  A regular graph with equal weights has hatb = 0
+  // identically -- delta is then constant and cancels against x0*D -- so the
+  // comparison has to admit equality for that case to come out degenerate.
+  double hatb2 = 0.0;
+  for(int i=0;i<n;i++) hatb2 += sqr(hatb[i]);
+  c2_tol = sqr((double)n*DBL_EPSILON)*hatb2;
 }
 
 void QualexInfo::init_eigenclusters() {
@@ -146,12 +194,12 @@ void QualexInfo::init_eigenclusters() {
   double last_lambda = lambda[0];
   int i;
   for(i=1;i<k;i++) {
-    if(lambda[i]-last_lambda<1e-5) {
+    if(lambda[i]-last_lambda<=lambda_tol) {
       lambda_sum += lambda[i];
       c2 += sqr(c[i]);
     } else {
       vector<EigenCluster>& clusters = (
-        fabs(c2)<1e-5 ? degenerative_clusters : active_clusters );
+        c2<=c2_tol ? degenerative_clusters : active_clusters );
       clusters.push_back (
         EigenCluster(lambda_sum/(i-first_index), c2, first_index, i) );
       first_index = i;
@@ -161,7 +209,7 @@ void QualexInfo::init_eigenclusters() {
     last_lambda = lambda[i];
   }
   vector<EigenCluster>& clusters = (
-    fabs(c2)<1e-5 ? degenerative_clusters : active_clusters );
+    c2<=c2_tol ? degenerative_clusters : active_clusters );
   clusters.push_back (
     EigenCluster(lambda_sum/(i-first_index), c2, first_index, i) );
 }
@@ -177,7 +225,12 @@ bool init_projected_formulation (
   double* lambda1 = new double[n];
   symmetric_eigen_gpu(n,a,lambda1);
 
-  if(lambda1[n-1]<1e-5) {
+  solver_info.norm = spectral_norm(n,lambda1);
+  solver_info.lambda_tol = eigen_tol(n,solver_info.norm);
+
+  // no eigenvalue is positive to within the accuracy of the decomposition, so
+  // there is no trust region branch to search
+  if(lambda1[n-1]<=solver_info.lambda_tol) {
     delete[] hatb; delete[] lambda1;
     return false;
   }
@@ -204,13 +257,14 @@ bool init_projected_formulation (
 // for cliques, and it ranks the multipliers for the expensive Meta-NBIW stage.
 struct MuRank {
   int capacity;
+  double tol;             // multipliers this close are the same stationary point
   vector<double> mu;      // in decreasing order of weight
   vector<double> weight;
-  MuRank(int _capacity): capacity(_capacity) {}
+  MuRank(int _capacity, double _tol): capacity(_capacity), tol(_tol) {}
   void offer(double m, double w) {
     if(capacity<=0) return;
     size_t i;
-    for(i=0;i<mu.size();i++) if(fabs(mu[i]-m)<=1e-12*(1.0+fabs(m))) return;
+    for(i=0;i<mu.size();i++) if(fabs(mu[i]-m)<=tol) return;
     for(i=0;i<weight.size() && weight[i]>=w;i++) ;
     if((int)i>=capacity) return;
     mu.insert(mu.begin()+i,m);
@@ -258,11 +312,15 @@ bool try_stat_point_w (
 // sum_i c_i^2/(mu-lambda_i)^2 = r2 lying above the largest eigenvalue, i.e.
 // the multiplier of the global maximiser of the trust region program at
 // the radius r2
+// The secular equation has a pole at every eigenvalue, and an eigenvalue is
+// only known to within lambda_tol, so a bracket end must be kept that far off
+// the spectrum -- the old multiplicative nudge of a few ulps put it deep inside
+// the eigensolver's own noise, where 1/(mu-lambda_i)^2 is meaningless.
 double outer_mu (
   QualexInfo& solver_info, double lam_max, double cnorm, double r2
 ) {
   Equation e(solver_info.active_clusters,r2);
-  return root(lam_max*(1.0+3.0*DBL_EPSILON),lam_max+cnorm/sqrt(r2),e);
+  return root(lam_max+solver_info.lambda_tol,lam_max+cnorm/sqrt(r2),e);
 }
 
 bool try_nondeg_points (
@@ -270,7 +328,7 @@ bool try_nondeg_points (
   double* x, double* y, MuRank& rank
 ) {
   double mu_max = solver_info.active_clusters.back().lambda;
-  double mu_min = mu_max*(1.0+3.0*DBL_EPSILON);
+  double mu_min = mu_max+solver_info.lambda_tol;
   mu_max += norm2_c_gpu(solver_info.k)/sqrt(equ.rhs);  // Use GPU-resident c
   double mu = root(mu_min,mu_max,equ);
   double weight;
@@ -279,11 +337,11 @@ bool try_nondeg_points (
   vector<EigenCluster>::reverse_iterator ri;
   for(ri=solver_info.active_clusters.rbegin();ri<solver_info.active_clusters.rend();ri++) {
     if(ri->lambda<graph_info.w_min/2.0) break;
-    mu_max = ri->lambda*(1.0-3.0*DBL_EPSILON);
+    mu_max = ri->lambda-solver_info.lambda_tol;
     vector<EigenCluster>::reverse_iterator ri1 = ri+1;
     if(ri1==solver_info.active_clusters.rend()) mu_min = 0.0;
     else {
-      mu_min = ri1->lambda*(1.0+3.0*DBL_EPSILON);
+      mu_min = ri1->lambda+solver_info.lambda_tol;
       if(mu_min<0.0) mu_min = 0.0;
     }
     if(mu_min<mu_max) {
@@ -447,7 +505,8 @@ bool try_theorem8_points (
     size_t idx = (size_t)((double)j/(THM8_QUANTILES-1)*(att.size()-1));
     double mu = target - graph_info.w_min - att[idx]*scale;
     if(mu<=graph_info.w_min/2.0) continue;
-    if(fabs(mu-last_mu)<1e-9) continue;  // repeated quantile
+    // quantiles that the spectrum cannot tell apart give the same point
+    if(fabs(mu-last_mu)<=solver_info.lambda_tol) continue;
     last_mu = mu;
     double weight;
     if(try_stat_point_w(graph_info,solver_info,mu,x,y,weight)) result = true;
@@ -495,7 +554,7 @@ bool qualex_ms(MaxCliqueInfo& graph_info, double* a) {
   int  start_pct  = getenv("QMS_META_STARTS")?atoi(getenv("QMS_META_STARTS")):0;
   int  n_starts   = start_pct>0 ? 1+(graph_info.g.n*start_pct)/100 : 0;
 
-  MuRank rank(n_meta);
+  MuRank rank(n_meta,solver_info.lambda_tol);
   bool result = false;
 
   if(!solver_info.active_clusters.empty()) {

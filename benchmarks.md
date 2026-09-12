@@ -25,9 +25,9 @@ ranked highest.
 | C125.9 | 34 | 34 | 34 | 0.0% |
 | C250.9 | 44 | 44 | 44 | 0.0% |
 | C500.9 | 55 | 55 | 57 | 3.5% |
-| C1000.9 | 64 | 65 **+1** | 68 | 4.4% |
+| C1000.9 | 64 | 64 | 68 | 5.9% |
 | C2000.5 | 16 | 16 | 16 | 0.0% |
-| C2000.9 | 72 | 73 **+1** | 80 | 8.8% |
+| C2000.9 | 72 | 72 | 80 | 10.0% |
 | C4000.5 | 17 | 17 | 18 | 5.6% |
 | c-fat200-1 | 12 | 12 | 12 | 0.0% |
 | c-fat200-2 | 24 | 24 | 24 | 0.0% |
@@ -96,11 +96,11 @@ ranked highest.
 |  | before | after |
 |--|--------|-------|
 | Optimal / best known | 58/80 | 64/80 |
-| Average % missing | 1.42% | 0.77% |
-| Improved instances | -- | 13 |
+| Average % missing | 1.42% | 0.80% |
+| Improved instances | -- | 11 |
 | Regressions | -- | 0 |
 
-Total wall time over the suite roughly doubles (495 s to 958 s on an RTX 2080 Ti
+Total wall time over the suite roughly doubles (495 s to 999 s on an RTX 2080 Ti
 host), essentially all of it in the two added Meta-NBIW passes, which cost the
 same O(n^3) as the Meta-NBIW the solver already runs once on the plain vertex
 weights.  `QMS_META_N=0` switches that stage off; on the 70 instances outside
@@ -112,8 +112,6 @@ original 78 s.  Everything beyond those two needs the Meta-NBIW stage.
 
 | Benchmark | before | after | Best Known |
 |-----------|--------|-------|------------|
-| C1000.9 | 64 | 65 | 68 |
-| C2000.9 | 72 | 73 | 80 |
 | gen200_p0.9_44 | 42 | 44 | 44 |
 | gen400_p0.9_55 | 51 | 53 | 55 |
 | keller6 | 52 | 53 | 59 |
@@ -126,19 +124,18 @@ original 78 s.  Everything beyond those two needs the Meta-NBIW stage.
 | san200_0.9_3 | 40 | 44 | 44 |
 | san400_0.7_3 | 18 | 22 | 22 |
 
-Six of these reach the best known value for the first time: `gen200_p0.9_44`,
-`p_hat300-3`, `p_hat1000-2`, `p_hat1500-2`, `san200_0.9_3`, `san400_0.7_3`.
+Six of these reach the best known value for the first time: `gen200_p0.9_44`, `p_hat300-3`, `p_hat1000-2`, `p_hat1500-2`, `san200_0.9_3`, `san400_0.7_3`.
 
 ### Remaining hardest instances
 
 | Benchmark | % Missing |
 |-----------|-----------|
 | keller6 | 10.2% |
-| C2000.9 | 8.8% |
+| C2000.9 | 10.0% |
 | DSJC1000.5 | 6.7% |
+| C1000.9 | 5.9% |
 | C4000.5 | 5.6% |
 | sanr400_0.7 | 4.8% |
-| C1000.9 | 4.4% |
 | keller5 | 3.7% |
 | gen400_p0.9_55 | 3.6% |
 
@@ -153,7 +150,7 @@ reference.
 |  | before | after |
 |--|--------|-------|
 | Solved exactly | 32/56 | 38/56 |
-| Average % of optimum | 98.63% | 99.30% |
+| Average % of optimum | 98.63% | 99.32% |
 | Regressions | -- | 0 |
 
 ## Sources

@@ -30,9 +30,19 @@ double preproc_clique (
 ) {
   int& n=g.n;
   double* w = new double[n];
-  neighborhood_weights(g,&(g.weights[0]),w);
-  residual.resize(n);
   int i,j;
+  neighborhood_weights(g,&(g.weights[0]),w);
+
+  // Both tests below compare quantities accumulated by summing up to n vertex
+  // weights, so their rounding error is of order n*eps*W(V), not the single
+  // ulp the comparisons used to allow for.  Weights are usually integers, in
+  // which case the sums are exact and this tolerance never fires; it matters
+  // when they are reals, where a single ulp is far too tight to cover the
+  // accumulation.
+  double weight_tol = 0.0;
+  for(i=0;i<n;i++) weight_tol += g.weights[i];
+  weight_tol *= (double)n*DBL_EPSILON;
+  residual.resize(n);
   for(i=0;i<n;i++) residual[i] = i;
   bool_vector remove_flag(n);
 
@@ -62,7 +72,7 @@ double preproc_clique (
         i = consider.front();
         consider.pop_front();
         considered_flag.put(i);
-        if(w[i] < known_bound*(1.0-DBL_EPSILON)) {
+        if(w[i] < known_bound-weight_tol) {
           vec_del(residual,i);
           remove_flag.put(i);
           bit_iterator bi(g.mates[i]);
@@ -84,7 +94,7 @@ double preproc_clique (
       for(ii=residual.end()-1;ii>=residual.begin();ii--) {
         i = *ii;
         double weight_i = g.weights[i];
-        if(g.weights[i]*(1.0+3.0*DBL_EPSILON) >= total_weight - w[i]) {
+        if(g.weights[i] >= total_weight - w[i] - weight_tol) {
           known_bound -= weight_i;
           if(known_bound < 0.0) known_bound = 0.0;
           vector<bool_vector>::iterator mates_i = g.mates.begin()+i;
