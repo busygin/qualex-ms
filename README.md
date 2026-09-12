@@ -104,8 +104,19 @@ paper, NBIW restarted from every vertex), which is far more thorough and
 correspondingly more expensive.  This is where the choice of mu earns its
 keep: only a couple of multipliers can be afforded at that price.
 
+Separately, the endpoints of that homotopy are worth visiting in their own
+right.  As mu approaches an eigenvalue the stationary point runs off along the
+corresponding eigenvector, so the eigenvector directions are the ends of the
+intervals the scan samples but never reaches.  The method already built such
+candidates for the clusters whose linear form vanishes, where they are genuine
+stationary points; they are now built for every cluster, by deleting the linear
+form on the cluster in question, and over the whole spectrum rather than down
+to w_min/2 (see try_eigendir_points in qualex.cc).
+
 These environment variables reproduce the ablations:
 
+QMS_NO_EIGDIR        take eigenvector directions only from the clusters whose
+                     linear form vanishes, as before, instead of from all of them
 QMS_META_N=<k>       hand the k best scoring multipliers to Meta-NBIW
                      (default 2; 0 switches the stage off, which restores the
                      original running time but keeps only a small part of the

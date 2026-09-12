@@ -3,10 +3,12 @@
 QUALEX-MS performance on 80 DIMACS maximum clique benchmark instances.
 
 `before` is the method as published: one trust region radius, taken from
-Proposition 7 applied to the clique the greedy stage found.  `after` adds the
-multiplier selection described in `qualex.cc` -- a geometric scan of radii
-around that anchor, and a Meta-NBIW pass at the two multipliers the scan
-ranked highest.
+Proposition 7 applied to the clique the greedy stage found, and eigenvector
+directions only where the linear form vanishes.  `after` adds the multiplier
+selection described in `qualex.cc` -- a geometric scan of radii around that
+anchor, a Meta-NBIW pass at the two multipliers the scan ranked highest, and
+the eigenvector directions of every cluster rather than only the degenerate
+ones.
 
 | Benchmark | before | after | Best Known | % Missing |
 |-----------|--------|-------|------------|-----------|
@@ -57,7 +59,7 @@ ranked highest.
 | keller5 | 26 | 26 | 27 | 3.7% |
 | keller6 | 52 | 53 **+1** | 59 | 10.2% |
 | MANN_a9 | 16 | 16 | 16 | 0.0% |
-| MANN_a27 | 125 | 125 | 126 | 0.8% |
+| MANN_a27 | 125 | 126 **+1** | 126 | 0.0% |
 | MANN_a45 | 342 | 342 | 345 | 0.9% |
 | MANN_a81 | 1096 | 1096 | 1100 | 0.4% |
 | p_hat300-1 | 8 | 8 | 8 | 0.0% |
@@ -95,12 +97,12 @@ ranked highest.
 
 |  | before | after |
 |--|--------|-------|
-| Optimal / best known | 58/80 | 64/80 |
-| Average % missing | 1.42% | 0.80% |
-| Improved instances | -- | 11 |
+| Optimal / best known | 58/80 | 65/80 |
+| Average % missing | 1.42% | 0.79% |
+| Improved instances | -- | 12 |
 | Regressions | -- | 0 |
 
-Total wall time over the suite roughly doubles (495 s to 999 s on an RTX 2080 Ti
+Total wall time over the suite roughly doubles (495 s to 1107 s on an RTX 2080 Ti
 host), essentially all of it in the two added Meta-NBIW passes, which cost the
 same O(n^3) as the Meta-NBIW the solver already runs once on the plain vertex
 weights.  `QMS_META_N=0` switches that stage off; on the 70 instances outside
@@ -115,6 +117,7 @@ original 78 s.  Everything beyond those two needs the Meta-NBIW stage.
 | gen200_p0.9_44 | 42 | 44 | 44 |
 | gen400_p0.9_55 | 51 | 53 | 55 |
 | keller6 | 52 | 53 | 59 |
+| MANN_a27 | 125 | 126 | 126 |
 | p_hat300-3 | 35 | 36 | 36 |
 | p_hat500-3 | 48 | 49 | 50 |
 | p_hat1000-2 | 45 | 46 | 46 |
@@ -124,7 +127,7 @@ original 78 s.  Everything beyond those two needs the Meta-NBIW stage.
 | san200_0.9_3 | 40 | 44 | 44 |
 | san400_0.7_3 | 18 | 22 | 22 |
 
-Six of these reach the best known value for the first time: `gen200_p0.9_44`, `p_hat300-3`, `p_hat1000-2`, `p_hat1500-2`, `san200_0.9_3`, `san400_0.7_3`.
+Of these, 7 reach the best known value for the first time: `gen200_p0.9_44`, `MANN_a27`, `p_hat300-3`, `p_hat1000-2`, `p_hat1500-2`, `san200_0.9_3`, `san400_0.7_3`.
 
 ### Remaining hardest instances
 
@@ -149,8 +152,8 @@ reference.
 
 |  | before | after |
 |--|--------|-------|
-| Solved exactly | 32/56 | 38/56 |
-| Average % of optimum | 98.63% | 99.32% |
+| Solved exactly | 32/56 | 39/56 |
+| Average % of optimum | 98.63% | 99.44% |
 | Regressions | -- | 0 |
 
 ## Sources

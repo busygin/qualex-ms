@@ -335,6 +335,10 @@ bool try_nondeg_points (
   bool result = try_stat_point_w(graph_info,solver_info,mu,x,y,weight);
   rank.offer(mu,weight);
   vector<EigenCluster>::reverse_iterator ri;
+  // The w_min/2 floor is inherited and no justification for it is on record;
+  // lifting it was measured to change no result on either benchmark, so it is
+  // kept only because it halves the scan.  It is not a statement about where
+  // useful multipliers live -- see try_eigendir_points(), which does lift it.
   for(ri=solver_info.active_clusters.rbegin();ri<solver_info.active_clusters.rend();ri++) {
     if(ri->lambda<graph_info.w_min/2.0) break;
     mu_max = ri->lambda-solver_info.lambda_tol;
@@ -362,28 +366,75 @@ bool try_nondeg_points (
   return result;
 }
 
-bool try_deg_points (
+// all_clusters() merges the two cluster lists back into one, ascending in
+// lambda, the lists each being in that order already
+void all_clusters(QualexInfo& solver_info, vector<EigenCluster>& out) {
+  vector<EigenCluster>& a = solver_info.active_clusters;
+  vector<EigenCluster>& d = solver_info.degenerative_clusters;
+  out.clear();
+  out.reserve(a.size()+d.size());
+  size_t ia = 0, id = 0;
+  while(ia<a.size() || id<d.size()) {
+    if(id>=d.size() || (ia<a.size() && a[ia].first<d[id].first)) out.push_back(a[ia++]);
+    else out.push_back(d[id++]);
+  }
+}
+
+// try_eigendir_points() walks the eigenvector directions.
+//
+// For a cluster whose linear form vanishes, mu = lambda is a stationary point
+// of the trust region program and the whole cluster eigenspace is free: the
+// remaining coordinates are fixed by (21), the leftover radius (24) is spread
+// over the eigenspace, and the method takes the 2k corner cases (25) where all
+// of it goes onto one eigenvector.  That is what this used to do, for those
+// clusters alone.
+//
+// The same construction is worth making for a cluster whose linear form does
+// not vanish.  There it is no longer a stationary point of this program -- it
+// is the exact construction above applied to the program with c deleted on
+// that eigenspace, so it asks what the trust region would say if the objective
+// had no linear pull along this eigenvector.  In the limit mu -> lambda from
+// either side the genuine stationary point runs off along +-q_j, so these are
+// the endpoints the interval scan approaches but never reaches: the scan
+// samples the open interval between two eigenvalues, and this samples its ends.
+//
+// Until the tolerances were put on the right scale, an ordinary graph had 4 to
+// 20 percent of its clusters misfiled as degenerate, so it was getting some of
+// these candidates by accident.  They are worth having on purpose.
+//
+// The scan runs the whole spectrum.  The interval scan stops at w_min/2, but
+// there is no reason for an eigenvector to stop being worth trying below it --
+// the eigenvalue says how the quadratic form behaves along the direction, not
+// whether the direction ranks a clique's vertices highest -- and measurably it
+// does not: MANN_a27 reaches 126 only from a cluster below that cutoff.
+bool try_eigendir_points (
   MaxCliqueInfo& graph_info, QualexInfo& solver_info, Equation& equ,
-  double* x, double* y
+  double* x, double* y, bool active_too
 ) {
   bool result = false;
   int& n = graph_info.g.n;
+  vector<EigenCluster> clusters;
+  if(active_too) all_clusters(solver_info,clusters);
+  else clusters = solver_info.degenerative_clusters;
   double* x1 = new double[n];
   vector<EigenCluster>::reverse_iterator ri;
-  for(ri=solver_info.degenerative_clusters.rbegin();ri<solver_info.degenerative_clusters.rend();ri++) {
+  for(ri=clusters.rbegin();ri<clusters.rend();ri++) {
     double mu = ri->lambda;
-    if(mu<graph_info.w_min/2.0) break;
     double r2 = equ.rhs;
     vector<EigenCluster>::iterator ii;
     int i;
     for(ii=solver_info.active_clusters.begin();ii<solver_info.active_clusters.end();ii++) {
+      if(ii->first==ri->first) {  // the cluster being stepped onto: c deleted
+        for(i=ii->first;i<ii->last;i++) y[i] = 0.0;
+        continue;
+      }
       for(i=ii->first;i<ii->last;i++) r2 -= sqr(y[i] = solver_info.c[i]/(mu-solver_info.lambda[i]));
     }
     if(r2>0.0) {
       r2 = sqrt(r2);
       matrix_dot_vector_q(n,solver_info.k,'N',y,x1);
       for(int j=ri->first;j<ri->last;j++) {
-        double* qj = solver_info.q+(j*n);
+        double* qj = solver_info.q+((size_t)j*n);
         for(i=0;i<n;i++) x[i] = (x1[i]+qj[i]*r2+graph_info.shift[i])*graph_info.sqrtw[i];
         if(refine_clique_MIN(graph_info,x)) result = true;
 
@@ -576,7 +627,8 @@ bool qualex_ms(MaxCliqueInfo& graph_info, double* a) {
     if(use_thm8 && try_theorem8_points(graph_info, solver_info, x, y, rank))
       result = true;
   }
-  result |= try_deg_points(graph_info, solver_info, equ, x, y);
+  result |= try_eigendir_points(graph_info, solver_info, equ, x, y,
+                                getenv("QMS_NO_EIGDIR")==NULL);
 
   // Finally spend Meta-NBIW on the multipliers the scans ranked highest.
   if(!rank.mu.empty() &&
