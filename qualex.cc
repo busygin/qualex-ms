@@ -273,6 +273,12 @@ struct MuRank {
   }
 };
 
+// mu_positive_floor() is the least multiplier counted as positive: zero, held
+// off by the accuracy to which the eigenvalues it is compared against are known
+inline double mu_positive_floor(QualexInfo& solver_info) {
+  return solver_info.lambda_tol;
+}
+
 // stat_point() builds the stationary point of the trust region program that
 // corresponds to a given value of the ball constraint multiplier mu, and
 // leaves it in x rescaled into the original (Motzkin-Straus) variables
@@ -335,18 +341,23 @@ bool try_nondeg_points (
   bool result = try_stat_point_w(graph_info,solver_info,mu,x,y,weight);
   rank.offer(mu,weight);
   vector<EigenCluster>::reverse_iterator ri;
-  // The w_min/2 floor is inherited and no justification for it is on record;
-  // lifting it was measured to change no result on either benchmark, so it is
-  // kept only because it halves the scan.  It is not a statement about where
-  // useful multipliers live -- see try_eigendir_points(), which does lift it.
+  // Stop once the multiplier can no longer be positive.  Stationarity is
+  // hatA xhat + hatb = mu xhat, so the objective's gradient is 2 mu xhat and
+  //   grad g . xhat = 2 mu ||xhat||^2,
+  // i.e. mu > 0 is exactly the condition that the gradient points out of the
+  // ball -- what a maximiser needs, and the sign of the multiplier Theorem 8
+  // remarks on.  The floor here used to be w_min/2, for which no justification
+  // is on record; since mu_min is clamped below anyway, that only skipped the
+  // band (0, w_min/2), and lifting it changes no result on either benchmark.
+  double mu_floor = mu_positive_floor(solver_info);
   for(ri=solver_info.active_clusters.rbegin();ri<solver_info.active_clusters.rend();ri++) {
-    if(ri->lambda<graph_info.w_min/2.0) break;
+    if(ri->lambda<=mu_floor) break;
     mu_max = ri->lambda-solver_info.lambda_tol;
     vector<EigenCluster>::reverse_iterator ri1 = ri+1;
-    if(ri1==solver_info.active_clusters.rend()) mu_min = 0.0;
+    if(ri1==solver_info.active_clusters.rend()) mu_min = mu_floor;
     else {
       mu_min = ri1->lambda+solver_info.lambda_tol;
-      if(mu_min<0.0) mu_min = 0.0;
+      if(mu_min<mu_floor) mu_min = mu_floor;
     }
     if(mu_min<mu_max) {
       double fx;
@@ -402,11 +413,16 @@ void all_clusters(QualexInfo& solver_info, vector<EigenCluster>& out) {
 // 20 percent of its clusters misfiled as degenerate, so it was getting some of
 // these candidates by accident.  They are worth having on purpose.
 //
-// The scan runs the whole spectrum.  The interval scan stops at w_min/2, but
-// there is no reason for an eigenvector to stop being worth trying below it --
-// the eigenvalue says how the quadratic form behaves along the direction, not
-// whether the direction ranks a clique's vertices highest -- and measurably it
-// does not: MANN_a27 reaches 126 only from a cluster below that cutoff.
+// This scan runs the whole spectrum, and in particular it does not stop where
+// the multiplier stops being positive, as try_nondeg_points() does.  The
+// argument for that floor is that mu > 0 puts the objective's gradient on the
+// outside of the ball, which is what a maximiser needs -- but it is an argument
+// about following a stationary point uphill, and nothing here is followed
+// anywhere.  These vectors are handed to NBIW, which reads only the order they
+// put the vertices in, and a direction that is useless to the continuous
+// program can still rank the right vertices highest.  Measurably it does:
+// MANN_a27 reaches 126 from a cluster of negative eigenvalue, and applying the
+// positive-mu floor here costs exactly that.
 bool try_eigendir_points (
   MaxCliqueInfo& graph_info, QualexInfo& solver_info, Equation& equ,
   double* x, double* y, bool active_too
@@ -555,7 +571,9 @@ bool try_theorem8_points (
   for(int j=0;j<THM8_QUANTILES;j++) {
     size_t idx = (size_t)((double)j/(THM8_QUANTILES-1)*(att.size()-1));
     double mu = target - graph_info.w_min - att[idx]*scale;
-    if(mu<=graph_info.w_min/2.0) continue;
+    // Theorem 8 admits mu > 0 -- that is its remark on the sign of the
+    // multiplier -- and says nothing about w_min/2, which this used to use
+    if(mu<=mu_positive_floor(solver_info)) continue;
     // quantiles that the spectrum cannot tell apart give the same point
     if(fabs(mu-last_mu)<=solver_info.lambda_tol) continue;
     last_mu = mu;
