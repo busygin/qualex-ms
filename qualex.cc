@@ -23,6 +23,8 @@ inline double sqr(double x) { return x*x; }
 extern "C" {
   double norm2(int,double*);
   int symmetric_eigen(int,double*,double*,double*);
+  int symmetric_eigen_gpu(int,double*,double*);
+  void extract_eigenvectors_gpu(int,int,int,double*);
   double dot_product(int,double*,double*);
   void matrix_dot_vector(int,int,double*,char,double*,double*);
   void store_eigenvectors_gpu(int,int,double*);
@@ -169,21 +171,25 @@ bool init_projected_formulation (
   double* hatb = new double[n];
   init_projected_matrices(graph_info,a,hatb);
 
+  // Eigendecomposition: keep eigenvectors on GPU, only copy eigenvalues to CPU
   double* lambda1 = new double[n];
-  double* q1 = new double[n*n];
-  symmetric_eigen(n,a,lambda1,q1);
+  symmetric_eigen_gpu(n,a,lambda1);
 
   if(lambda1[n-1]<1e-5) {
-    delete[] hatb; delete[] lambda1; delete[] q1;
+    delete[] hatb; delete[] lambda1;
     return false;
   }
 
+  // Process eigenvalues on CPU to determine which eigenvectors to keep
   int n_neg_eigens, n_pos_eigens;
   solver_info.install_eigenvalues(n,lambda1,n_neg_eigens,n_pos_eigens);
   delete[] lambda1;
-  solver_info.install_eigenvectors(n,q1,n_neg_eigens,n_pos_eigens);
-  delete[] q1;
-  store_eigenvectors_gpu(n,solver_info.k,solver_info.q);
+
+  // Extract selected eigenvector columns directly on GPU (D2D copy)
+  // Also copies to CPU for try_deg_points which accesses q directly
+  solver_info.q = new double[n*solver_info.k];
+  extract_eigenvectors_gpu(n,n_neg_eigens,n_pos_eigens,solver_info.q);
+
   solver_info.init_c(n,hatb);
   delete[] hatb;
   solver_info.init_eigenclusters();

@@ -91,7 +91,85 @@ double norm2_c_gpu(int k) {
   return result;
 }
 
-// Eigendecomposition using cuSOLVER
+// Temporary storage for eigenvectors on GPU (between eigen and extract)
+static double* d_eigenvectors_temp = NULL;
+static int eigenvectors_temp_n = 0;
+
+// Eigendecomposition using cuSOLVER - keeps eigenvectors on GPU
+// Only eigenvalues are copied to CPU; eigenvectors remain in d_eigenvectors_temp
+int symmetric_eigen_gpu(int n, double* a, double* lambda) {
+  ensure_gpu_init();
+
+  double* d_lambda = NULL;
+  int* d_info = NULL;
+  double* d_work = NULL;
+  int lwork = 0;
+  int info = 0;
+
+  // Allocate/reallocate temp eigenvector storage if needed
+  if (n > eigenvectors_temp_n) {
+    if (d_eigenvectors_temp) cudaFree(d_eigenvectors_temp);
+    cudaMalloc((void**)&d_eigenvectors_temp, sizeof(double) * n * n);
+    eigenvectors_temp_n = n;
+  }
+
+  cudaMalloc((void**)&d_lambda, sizeof(double) * n);
+  cudaMalloc((void**)&d_info, sizeof(int));
+
+  cudaMemcpy(d_eigenvectors_temp, a, sizeof(double) * n * n, cudaMemcpyHostToDevice);
+
+  cusolverDnDsyevd_bufferSize(cusolver_handle, CUSOLVER_EIG_MODE_VECTOR,
+    CUBLAS_FILL_MODE_UPPER, n, d_eigenvectors_temp, n, d_lambda, &lwork);
+
+  cudaMalloc((void**)&d_work, sizeof(double) * lwork);
+
+  cusolverDnDsyevd(cusolver_handle, CUSOLVER_EIG_MODE_VECTOR,
+    CUBLAS_FILL_MODE_UPPER, n, d_eigenvectors_temp, n, d_lambda, d_work, lwork, d_info);
+
+  cudaStreamSynchronize(gpu_stream);
+
+  // Only copy eigenvalues to CPU - eigenvectors stay on GPU
+  cudaMemcpy(lambda, d_lambda, sizeof(double) * n, cudaMemcpyDeviceToHost);
+  cudaMemcpy(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost);
+
+  cudaFree(d_work);
+  cudaFree(d_info);
+  cudaFree(d_lambda);
+
+  return info;
+}
+
+// Extract selected eigenvector columns directly on GPU to d_q_persistent
+// Copies first n_neg columns and last n_pos columns from d_eigenvectors_temp
+void extract_eigenvectors_gpu(int n, int n_neg, int n_pos, double* q_cpu) {
+  int k = n_neg + n_pos;
+
+  // Allocate persistent Q storage
+  if (d_q_persistent) cudaFree(d_q_persistent);
+  q_rows = n;
+  q_cols = k;
+  cudaMalloc((void**)&d_q_persistent, (size_t)n * k * sizeof(double));
+
+  // Copy first n_neg columns (negative eigenvalues)
+  if (n_neg > 0) {
+    cudaMemcpy(d_q_persistent, d_eigenvectors_temp,
+      (size_t)n * n_neg * sizeof(double), cudaMemcpyDeviceToDevice);
+  }
+
+  // Copy last n_pos columns (positive eigenvalues)
+  if (n_pos > 0) {
+    double* src = d_eigenvectors_temp + (size_t)(n - n_pos) * n;
+    double* dst = d_q_persistent + (size_t)n_neg * n;
+    cudaMemcpy(dst, src, (size_t)n * n_pos * sizeof(double), cudaMemcpyDeviceToDevice);
+  }
+
+  // Also copy to CPU for use in try_deg_points (accesses q directly)
+  cudaMemcpy(q_cpu, d_q_persistent, (size_t)n * k * sizeof(double), cudaMemcpyDeviceToHost);
+
+  ensure_work_buffers(n > k ? n : k);
+}
+
+// Legacy function for compatibility
 int symmetric_eigen(int n, double* a, double* lambda, double* q) {
   ensure_gpu_init();
 
