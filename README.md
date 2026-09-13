@@ -136,7 +136,7 @@ QMS_ANCHOR=<theta>   experimental: anchor the wrapper on the best clique Q so
                      as a local exchange around Q.  Off by default.  See the
                      comment on anchor_wrapper() in main.cc
 QMS_ANCHOR_WARM      keep the first pass on the standard wrapper and apply
-                     QMS_ANCHOR and QMS_PERTURB from the second pass on
+                     QMS_ANCHOR, QMS_PERTURB and QMS_ICE from the second pass on
 QMS_ANCHOR_PASSES=<k>
                      anchored passes, each on the clique the previous one
                      found, stopping at the first that finds nothing better
@@ -146,10 +146,12 @@ QMS_ANCHOR_SHUFFLE=<s>
                      outside vertices in a random order, so that Theorem 8 is
                      no longer met
 QMS_ICE=lovasz|spread
-                     experimental: after anchoring, one line-searched step of
-                     lambda_max minimization -- literally towards the Lovasz
-                     theta function, or on the projected matrix within the
-                     anchoring's freedom.  See the comment on ice_step()
+                     experimental: one line-searched step of lambda_max
+                     minimization, after the anchoring if QMS_ANCHOR is set --
+                     literally towards the Lovasz theta function (lovasz, which
+                     also works on the plain wrapper), or on the projected
+                     matrix within the anchoring's freedom (spread).  See the
+                     comment on ice_step()
 QMS_ICE_SHUFFLE=<s>  control: deal the entries of the lovasz step out to the
                      non-edges in a random order
 QMS_STATS            print the eigenvalue cluster census to stderr, which is

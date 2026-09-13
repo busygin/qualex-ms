@@ -289,14 +289,23 @@ double project_wrapper(MaxCliqueInfo& info, double* a, double* b) {
 // Every entry stays <= 0.  Under QMS_STATS the ICE line reports, besides the
 // objective, the spread of the projected spectrum over |hatb|, which is what
 // the gauge H -> (1+t)H - t z z^T leaves alone.
+//
+// Without anchoring (anchored false) "lovasz" steps the plain wrapper and
+// does not re-anchor, and "spread", having no correction to move, does
+// nothing.  There, taking the place of the standard pass, the literal step is
+// a coin flip on weighted random graphs (33 better, 36 worse of 120); as a
+// second pass (QMS_ANCHOR_WARM) it improved DIMACS once in 70 and the random
+// graphs 11 times unweighted and 34 times weighted in 120, against 3, 7 and 28
+// for its shuffled control -- mostly the effect of any large change of wrapper.
 void ice_step(Graph& g, MaxCliqueInfo& info, double* a, double theta,
-              const char* mode) {
+              const char* mode, bool anchored) {
   static const double SIGMAS[] = {0.001,0.003,0.01,0.03,0.1,0.3,1.0,3.0};
   const int N_SIGMAS = sizeof(SIGMAS)/sizeof(SIGMAS[0]);
   int& n = g.n;
   size_t nn = (size_t)n*n;
   bool lovasz = strcmp(mode,"lovasz")==0;
   if(!lovasz && strcmp(mode,"spread")!=0) return;
+  if(!lovasz && !anchored) return;
   bool stats = getenv("QMS_STATS")!=NULL;
   int i,j;
 
@@ -395,7 +404,7 @@ void ice_step(Graph& g, MaxCliqueInfo& info, double* a, double theta,
       if(lovasz) {
         for(i=0;i<n;i++) for(j=0;j<n;j++)
           if(i!=j && !g.mates[i].at(j) && trial[i*n+j]>0.0) trial[i*n+j] = 0.0;
-        anchor_wrapper(g,info,trial,theta,false);
+        if(anchored) anchor_wrapper(g,info,trial,theta,false);
         symmetric_eigenvalues_gpu(n,trial,lam);
       } else {
         project_wrapper(info,trial,b);
@@ -413,7 +422,7 @@ void ice_step(Graph& g, MaxCliqueInfo& info, double* a, double theta,
     if(lovasz) {
       for(i=0;i<n;i++) for(j=0;j<n;j++)
         if(i!=j && !g.mates[i].at(j) && trial[i*n+j]>0.0) trial[i*n+j] = 0.0;
-      anchor_wrapper(g,info,trial,theta,false);
+      if(anchored) anchor_wrapper(g,info,trial,theta,false);
     }
     for(size_t e=0;e<nn;e++) if(trial[e]!=a[e]) changed++;
   }
@@ -542,11 +551,12 @@ int main(int argc,char** argv) {
       // pass on the standard wrapper and modifies the wrapper from the second
       // on, so that the first anchor is the clique the unmodified method ends
       // with rather than the one the greedy stage found.  It defers
-      // QMS_PERTURB in the same way, so with QMS_PERTURB alone it runs the
-      // matching control: a second pass on a random wrapper.
+      // QMS_PERTURB and QMS_ICE in the same way, so with QMS_PERTURB alone it
+      // runs the matching control: a second pass on a random wrapper.
       const char* anchor = getenv("QMS_ANCHOR");
       const char* perturb = getenv("QMS_PERTURB");
-      bool warm = (anchor!=NULL || perturb!=NULL) &&
+      const char* ice = getenv("QMS_ICE");
+      bool warm = (anchor!=NULL || perturb!=NULL || ice!=NULL) &&
         getenv("QMS_ANCHOR_WARM")!=NULL;
       int anchored_passes = anchor==NULL ? 1 :
         (getenv("QMS_ANCHOR_PASSES")?atoi(getenv("QMS_ANCHOR_PASSES")):1);
@@ -569,10 +579,11 @@ int main(int argc,char** argv) {
         if(anchor!=NULL && modify) {
           anchored = anchor_wrapper(g,info,a,atof(anchor));
           if(!anchored && pass>0) break;
-          // experimental: blend in one step of lambda_max minimization
-          if(anchored && getenv("QMS_ICE")!=NULL)
-            ice_step(g,info,a,atof(anchor),getenv("QMS_ICE"));
         }
+        // experimental: one step of lambda_max minimization, after the
+        // anchoring when there is one, on the plain wrapper otherwise
+        if(ice!=NULL && modify && (anchored || anchor==NULL))
+          ice_step(g,info,a,anchor!=NULL ? atof(anchor) : 1.0,ice,anchored);
         double start = info.lower_clique_bound;
         qualex_ms(info,a);
         if(getenv("QMS_STATS")!=NULL)
