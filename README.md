@@ -127,8 +127,34 @@ QMS_PERTURB=<eta>    experimental: perturb the free entries of the clique
 QMS_PMODE=unif       make that perturbation uniform instead of random, which is
                      provably a no-op -- a control for checking the above
 QMS_SEED=<s>         seed selecting the wrapper, so a run reproduces
+QMS_ANCHOR=<theta>   experimental: anchor the wrapper on the best clique Q so
+                     far, lowering the entries on the non-edges between Q and
+                     the vertices outside it until Q meets the hypothesis of
+                     Theorem 8 exactly (theta=1; theta<1 goes that fraction of
+                     the way).  Anchored on the greedy clique it loses; use it
+                     with QMS_ANCHOR_WARM, where it cannot, and where it works
+                     as a local exchange around Q.  Off by default.  See the
+                     comment on anchor_wrapper() in main.cc
+QMS_ANCHOR_WARM      keep the first pass on the standard wrapper and apply
+                     QMS_ANCHOR and QMS_PERTURB from the second pass on
+QMS_ANCHOR_PASSES=<k>
+                     anchored passes, each on the clique the previous one
+                     found, stopping at the first that finds nothing better
+                     (default 1)
+QMS_ANCHOR_SHUFFLE=<s>
+                     control: deal the anchoring corrections out to the
+                     outside vertices in a random order, so that Theorem 8 is
+                     no longer met
+QMS_ICE=lovasz|spread
+                     experimental: after anchoring, one line-searched step of
+                     lambda_max minimization -- literally towards the Lovasz
+                     theta function, or on the projected matrix within the
+                     anchoring's freedom.  See the comment on ice_step()
+QMS_ICE_SHUFFLE=<s>  control: deal the entries of the lovasz step out to the
+                     non-edges in a random order
 QMS_STATS            print the eigenvalue cluster census to stderr, which is
-                     what says whether a wrapper activated anything
+                     what says whether a wrapper activated anything, and the
+                     ANCHOR, THM8, PASS and ICE lines of the experiments above
 QMS_NO_EIGDIR        take eigenvector directions only from the clusters whose
                      linear form vanishes, as before, instead of from all of them
 QMS_META_N=<k>       hand the k best scoring multipliers to Meta-NBIW

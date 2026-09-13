@@ -616,8 +616,75 @@ bool try_meta_points (
   return result;
 }
 
+// theorem8_attachments() reads the least and the greatest attachment
+// sum_{j in Q} a_ij z_j / z_i of a vertex i outside the incumbent clique Q off
+// the wrapper, before it is projected; Theorem 8 needs them to be equal
+bool theorem8_attachments (
+  MaxCliqueInfo& graph_info, double* a, double& lo, double& hi
+) {
+  int& n = graph_info.g.n;
+  bool_vector in_q(n);
+  list<int>::iterator ci;
+  for(ci=graph_info.clique.begin();ci!=graph_info.clique.end();ci++)
+    in_q.put(*ci);
+  lo = DBL_MAX; hi = -DBL_MAX;
+  for(int i=0;i<n;i++) {
+    if(in_q.at(i)) continue;
+    double s = 0.0;
+    for(ci=graph_info.clique.begin();ci!=graph_info.clique.end();ci++)
+      s += a[i*n+*ci]*graph_info.sqrtw[*ci];
+    s /= graph_info.sqrtw[i];
+    if(s<lo) lo = s;
+    if(s>hi) hi = s;
+  }
+  return lo<=hi;
+}
+
+// check_theorem8_point() is a diagnostic for anchored wrappers.  When every
+// attachment equals C, the indicator of Q has to be the stationary point at
+// mu = W(Q) - w_min - C, which in the variables stat_point() returns is w/W(Q)
+// on Q and 0 elsewhere.  Reports how far stat_point() lands from it, and how
+// many eigenvalues lie above that multiplier: none means the indicator is on
+// the outer branch the ladder scans, where it is the global maximiser at its
+// own radius.
+void check_theorem8_point (
+  MaxCliqueInfo& graph_info, QualexInfo& solver_info,
+  double att_lo, double att_hi, double* x, double* y
+) {
+  int& n = graph_info.g.n;
+  bool_vector in_q(n);
+  double wq = 0.0;
+  list<int>::iterator ci;
+  for(ci=graph_info.clique.begin();ci!=graph_info.clique.end();ci++) {
+    in_q.put(*ci);
+    wq += graph_info.g.weights[*ci];
+  }
+  double mu = wq-graph_info.w_min-att_lo;
+  int above = 0;
+  for(int i=0;i<solver_info.k;i++) if(solver_info.lambda[i]>mu) above++;
+  double dev = -1.0;  // not applicable: the attachments differ
+  if(att_hi-att_lo<=1e-9*wq && !solver_info.active_clusters.empty()) {
+    stat_point(graph_info,solver_info,mu,x,y);
+    dev = 0.0;
+    for(int i=0;i<n;i++) {
+      double d = fabs(x[i]-(in_q.at(i) ? graph_info.g.weights[i]/wq : 0.0));
+      if(d>dev) dev = d;
+    }
+  }
+  fprintf(stderr,
+    "THM8 |Q|=%d W(Q)=%g att=%g..%g mu*=%g lam_max=%g above=%d/%d "
+    "maxdev=%.3g (indicator entries ~%.3g)\n",
+    (int)graph_info.clique.size(), wq, att_lo, att_hi, mu,
+    solver_info.lambda[solver_info.k-1], above, solver_info.k, dev,
+    graph_info.w_min/wq);
+}
+
 bool qualex_ms(MaxCliqueInfo& graph_info, double* a) {
   QualexInfo solver_info;
+  // experimental: read before init_projected_formulation() overwrites a
+  double att_lo = 0.0, att_hi = 0.0;
+  bool check_thm8 = getenv("QMS_STATS")!=NULL && !graph_info.clique.empty() &&
+    theorem8_attachments(graph_info,a,att_lo,att_hi);
   if(!init_projected_formulation(graph_info,a,solver_info)) return false;
   Equation equ (
     solver_info.active_clusters,
@@ -625,6 +692,8 @@ bool qualex_ms(MaxCliqueInfo& graph_info, double* a) {
   double* x = new double[graph_info.g.n];
   double* y = new double[solver_info.k];
   memset(y,0,sizeof(double)*solver_info.k);
+  if(check_thm8)
+    check_theorem8_point(graph_info,solver_info,att_lo,att_hi,x,y);
 
   // Knobs for reproducing the ablations of the multiplier selection; the
   // defaults are the shipped behaviour.  QMS_NO_LADDER and QMS_NO_THM8 switch

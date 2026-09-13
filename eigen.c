@@ -169,6 +169,46 @@ void extract_eigenvectors_gpu(int n, int n_neg, int n_pos, double* q_cpu) {
   ensure_work_buffers(n > k ? n : k);
 }
 
+// Eigenvalues only, ascending; a is left unchanged on the host and no
+// eigenvector state is touched, so this can be called between
+// symmetric_eigen_gpu() and extract_eigenvectors_gpu()
+int symmetric_eigenvalues_gpu(int n, double* a, double* lambda) {
+  ensure_gpu_init();
+
+  double* d_a = NULL;
+  double* d_lambda = NULL;
+  int* d_info = NULL;
+  double* d_work = NULL;
+  int lwork = 0;
+  int info = 0;
+
+  cudaMalloc((void**)&d_a, sizeof(double) * n * n);
+  cudaMalloc((void**)&d_lambda, sizeof(double) * n);
+  cudaMalloc((void**)&d_info, sizeof(int));
+
+  cudaMemcpy(d_a, a, sizeof(double) * n * n, cudaMemcpyHostToDevice);
+
+  cusolverDnDsyevd_bufferSize(cusolver_handle, CUSOLVER_EIG_MODE_NOVECTOR,
+    CUBLAS_FILL_MODE_UPPER, n, d_a, n, d_lambda, &lwork);
+
+  cudaMalloc((void**)&d_work, sizeof(double) * lwork);
+
+  cusolverDnDsyevd(cusolver_handle, CUSOLVER_EIG_MODE_NOVECTOR,
+    CUBLAS_FILL_MODE_UPPER, n, d_a, n, d_lambda, d_work, lwork, d_info);
+
+  cudaStreamSynchronize(gpu_stream);
+
+  cudaMemcpy(lambda, d_lambda, sizeof(double) * n, cudaMemcpyDeviceToHost);
+  cudaMemcpy(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost);
+
+  cudaFree(d_work);
+  cudaFree(d_info);
+  cudaFree(d_lambda);
+  cudaFree(d_a);
+
+  return info;
+}
+
 // Legacy function for compatibility
 int symmetric_eigen(int n, double* a, double* lambda, double* q) {
   ensure_gpu_init();
