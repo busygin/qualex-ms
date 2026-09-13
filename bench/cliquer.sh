@@ -1,36 +1,40 @@
 #!/bin/bash
 # bench/cliquer.sh -- prove optima of the random graphs with cliquer, resumably.
 #
-# Usage: bench/cliquer.sh [-j JOBS] [-l SECONDS] [-n REGEX] SUITE
+# Usage: bench/cliquer.sh [-a] [-j JOBS] [-l SECONDS] [-n REGEX] SUITE
 #
 #   SUITE  ru or rw (n <= 1000), ru2000 or rw2000; the ru suites use -u
+#   -a     every graph of the suite, not only the cells known to be provable
 #   -j     graphs solved at once (default 8)
 #   -l     time limit per graph in seconds (default 3600)
 #   -n     only the graphs whose names match this extended regex
 #
 # Appends "graph optimum seconds", or "graph TIMEOUT limit", to
-# bench/optima/u.tsv or bench/optima/w.tsv, smallest and sparsest graphs first.
-# A graph with an optimum is skipped, and so is a TIMEOUT unless -l gives it
-# more time than it had.  cliquer is $CLIQUER (default ~/cliquer-1.21/cl); it
-# reads the ASCII DIMACS files that tools/random_graphs.py writes with
-# --cliquer, which are generated into bench/graphs/rnd if missing.
+# bench/optima/u.tsv or bench/optima/w.tsv, smallest and sparsest graphs first,
+# running cliquer at nice 10.  A graph with an optimum is skipped, and so is a
+# TIMEOUT unless -l gives it more time than it had.  cliquer is $CLIQUER
+# (default ~/cliquer-1.21/cl); it reads the ASCII DIMACS files that
+# tools/random_graphs.py writes with --cliquer, generated into bench/graphs/rnd
+# if missing.
 #
-# What an hour per graph proved with cliquer 1.21 on 2026-09-12: weighted
-# graphs with n = 200 and p <= 0.9, n = 300 and p <= 0.8, n = 500 and p <= 0.7,
-# n = 1000 and p <= 0.5 (the slowest took 47 minutes); unweighted ones only with
-# n = 200 and p <= 0.8, n = 300 and p <= 0.7, n = 500 and p <= 0.5, n = 1000
-# and p = 0.25.
+# Without -a only the cells cliquer 1.21 proved within an hour per graph on
+# 2026-09-12 are attempted, the reference set of benchmarks.md: weighted graphs
+# with n = 200 and p <= 0.9, n = 300 and p <= 0.8, n = 500 and p <= 0.7, and
+# n = 1000 and p <= 0.5 (the slowest took 47 minutes); unweighted ones with
+# n = 200 and p <= 0.8, n = 300 and p <= 0.7, n = 500 and p <= 0.5, and
+# n = 1000 and p = 0.25.  Nothing with n = 2000 was proved.
 set -u
 BENCH=$(cd "$(dirname "$0")" && pwd)
 REPO=$(dirname "$BENCH")
 RND=$BENCH/graphs/rnd
 CLIQUER=${CLIQUER:-$HOME/cliquer-1.21/cl}
 
-usage() { sed -n '4,9p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+usage() { sed -n '4,10p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
-JOBS=8 LIMIT=3600 FILTER=""
-while getopts "j:l:n:h" opt; do
+ALL=0 JOBS=8 LIMIT=3600 FILTER=""
+while getopts "aj:l:n:h" opt; do
   case $opt in
+    a) ALL=1 ;;
     j) JOBS=$OPTARG ;;
     l) LIMIT=$OPTARG ;;
     n) FILTER=$OPTARG ;;
@@ -46,6 +50,11 @@ case $1 in
   rw2000) MODE=w; SIZES=2000 ;;
   *) usage ;;
 esac
+if [ "$MODE" = w ]; then
+  KNOWN='^g(200_(25|50|70|80|90)|300_(25|50|70|80)|500_(25|50|70)|1000_(25|50))_[0-9]+$'
+else
+  KNOWN='^g(200_(25|50|70|80)|300_(25|50|70)|500_(25|50)|1000_25)_[0-9]+$'
+fi
 [ -x "$CLIQUER" ] || { echo "no cliquer at $CLIQUER" >&2; exit 1; }
 OUT=$BENCH/optima/$MODE.tsv
 mkdir -p "$BENCH/optima"
@@ -61,7 +70,7 @@ solve() {  # GRAPH
   local flag="" out status t0 t1 value
   [ "$MODE" = u ] && flag=-u
   t0=$(date +%s.%N)
-  out=$(timeout "$LIMIT" "$CLIQUER" -q -q $flag "$RND/$1.clq" 2>/dev/null)
+  out=$(timeout "$LIMIT" nice -n 10 "$CLIQUER" -q -q $flag "$RND/$1.clq" 2>/dev/null)
   status=$?
   t1=$(date +%s.%N)
   if [ $status -eq 124 ]; then
@@ -84,6 +93,7 @@ export MODE LIMIT CLIQUER RND OUT
 
 for n in $SIZES; do cat "$RND/n$n.lst"; done |
   while read -r name; do
+    if [ "$ALL" = 0 ] && ! [[ $name =~ $KNOWN ]]; then continue; fi
     if [ -n "$FILTER" ] && ! [[ $name =~ $FILTER ]]; then continue; fi
     awk -v g="$name" -v l="$LIMIT" '$1 == g && ($2 != "TIMEOUT" || $3 + 0 >= l + 0) { found = 1 }
                                     END { exit !found }' "$OUT" && continue

@@ -57,12 +57,14 @@ set is the one benchmarked.  `--diag` summarizes the diagnostic lines of
 
 ## Optima
 
-    bench/cliquer.sh -j 8 rw
+    nohup bench/cliquer.sh rw > bench/runs/cliquer-rw.log 2>&1 &
+    nohup bench/cliquer.sh ru > bench/runs/cliquer-ru.log 2>&1 &
 
-proves optima of the random graphs with cliquer into `optima/w.tsv` (`u.tsv`
-for the unweighted suites), which `compare.py` then takes as references.  The
-optima behind `benchmarks.md` were lost with `/tmp` and have to be recomputed
-this way; the slowest of them needed 47 minutes.
+prove optima of the random graphs with cliquer into `optima/w.tsv` and
+`optima/u.tsv`, which `compare.py` then takes as references.  By default only
+the cells proved within an hour per graph before are attempted -- the reference
+set of `benchmarks.md`, 70 weighted and 50 unweighted graphs, the slowest of
+them 47 minutes -- and `-a` also tries the rest, none of which was proved then.
 
 ## Checking an idea in numpy
 
