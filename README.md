@@ -140,7 +140,8 @@ QMS_META_STARTS=<p>  restrict Meta-NBIW to the p percent of vertices the
 QMS_NO_LADDER        use only the single Proposition 7 radius, as before
 QMS_NO_THM8          drop the multipliers predicted by Theorem 8
 
-See benchmarks.md for the resulting DIMACS and weighted-instance figures.
+See benchmarks.md for the resulting DIMACS, weighted-instance and uniform random
+graph figures; tools/random_graphs.py generates the random graphs.
 
 
 4. What is new?
