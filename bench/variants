@@ -1,0 +1,35 @@
+# Variants for bench/run.sh: a name, then the environment the solver runs with.
+# Every QMS_* variable a line does not set is unset for the run.  QMS_STATS only
+# adds diagnostic lines on stderr (read by compare.py --diag); it changes no
+# result.  Add a line to define a new variant.
+#
+# name    environment
+
+# the solver as shipped
+head
+
+# random perturbation of the wrapper, see perturb_wrapper() in main.cc
+pert1     QMS_PERTURB=0.01 QMS_SEED=1
+pert2     QMS_PERTURB=0.01 QMS_SEED=2
+pert3     QMS_PERTURB=0.01 QMS_SEED=3
+# the same as a second pass after the standard one, the control for warm passes
+pw1       QMS_STATS=1 QMS_PERTURB=0.01 QMS_SEED=1 QMS_ANCHOR_WARM=1
+pw2       QMS_STATS=1 QMS_PERTURB=0.01 QMS_SEED=2 QMS_ANCHOR_WARM=1
+pw3       QMS_STATS=1 QMS_PERTURB=0.01 QMS_SEED=3 QMS_ANCHOR_WARM=1
+
+# Theorem 8 anchoring, see anchor_wrapper() in main.cc
+anc       QMS_STATS=1 QMS_ANCHOR=1                        # on the greedy clique
+anc05     QMS_STATS=1 QMS_ANCHOR=0.5                      # half the correction
+ancs      QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_SHUFFLE=1   # control: wrong vertices
+ancp      QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_PASSES=4    # re-anchored, <= 4 passes
+ancw      QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1      # on the standard pass's clique
+ancws     QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1 QMS_ANCHOR_SHUFFLE=1
+ancwp     QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1 QMS_ANCHOR_PASSES=4
+
+# one line-searched lambda_max step, see ice_step() in main.cc
+icel      QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1 QMS_ICE=lovasz
+icels     QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1 QMS_ICE=lovasz QMS_ICE_SHUFFLE=1
+ices      QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1 QMS_ICE=spread
+lz        QMS_STATS=1 QMS_ICE=lovasz                      # plain wrapper, the only pass
+lzw       QMS_STATS=1 QMS_ICE=lovasz QMS_ANCHOR_WARM=1    # plain wrapper, second pass
+lzws      QMS_STATS=1 QMS_ICE=lovasz QMS_ANCHOR_WARM=1 QMS_ICE_SHUFFLE=1

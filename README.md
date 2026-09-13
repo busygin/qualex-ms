@@ -169,7 +169,8 @@ QMS_NO_LADDER        use only the single Proposition 7 radius, as before
 QMS_NO_THM8          drop the multipliers predicted by Theorem 8
 
 See benchmarks.md for the resulting DIMACS, weighted-instance and uniform random
-graph figures; tools/random_graphs.py generates the random graphs.
+graph figures; tools/random_graphs.py generates the random graphs, and
+bench/README.md describes the tooling that runs and compares the experiments.
 
 
 4. What is new?

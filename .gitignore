@@ -1,3 +1,10 @@
 *.o
 qualex-ms
 *.sol
+__pycache__/
+bench/graphs/
+bench/runs/*.log
+bench/runs/*/bin/
+bench/runs/*/log/
+bench/runs/*/work/
+bench/runs/*/jobs.*
