@@ -74,3 +74,35 @@ spread) to import, and as a script summarizes them for one graph:
 
     bench/wrapper.py ~/DIMACS/gen400_p0.9_55.clq.b \
         -q bench/runs/bin-*/work/dimacs/head/gen400_p0.9_55.sol
+
+## Anchoring several cliques at once
+
+`anchor_all.py` asks whether every maximum clique of a graph can be anchored in
+one wrapper, with the maximum cliques listed by clen (`$CLEN`, default
+`~/clen/clen`):
+
+    bench/anchor_all.py checks                 # the lemmas on small graphs
+    bench/anchor_all.py dimacs                 # DIMACS, 2..20000 maximum cliques
+    bench/anchor_all.py random 200 300         # the unweighted random graphs
+    bench/anchor_all.py witness GRAPH OMEGA    # why the level is forced to 0
+
+Its docstring states what the checks confirm and what the survey reports;
+`runs/anchor-all-2026-09-26.txt` holds the first survey.
+
+## Lovasz theta
+
+`theta.py` computes theta of the complement, the upper bound on omega, with CSDP
+(`$CSDP`, default `~/Csdp/solver/csdp`; build it there with plain `make`, which
+links the system OpenBLAS statically), solving whichever of the two equivalent
+SDPs has fewer constraints -- one per non-edge (what CSDP's `theta` program does
+with the complement) or one per edge -- and recovering the wrapper that attains
+theta:
+
+    bench/theta.py brock200_1 c-fat500-5
+    nohup setsid bench/theta.py p_hat500-2 > bench/runs/theta/big.log 2>&1 &
+
+CSDP holds the m x m Schur complement, m the number of constraints: 31 GB and
+45 minutes for m = 62000 on this machine, so run such graphs one at a time.
+Values go to `runs/theta/theta.tsv`, the problem, solution and log to the ignored
+`runs/theta/work/`.  When theta = omega it also checks that the optimal wrapper
+anchors every maximum clique at C = 0, as Lovasz optimality forces.
