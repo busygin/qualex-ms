@@ -107,6 +107,27 @@ Values go to `runs/theta/theta.tsv`, the problem, solution and log to the ignore
 `runs/theta/work/`.  When theta = omega it also checks that the optimal wrapper
 anchors every maximum clique at C = 0, as Lovasz optimality forces.
 
+The Cholesky factorization of that matrix takes about half of CSDP's time at
+m = 23000 and more beyond, growing as m^3.  Give CSDP 12 threads, the physical
+cores of the i9-9920X: with 20 or 24, hyperthreads cut OpenBLAS's factorization
+from 790 to 536 GFLOPS (numpy's products suffer alike).  Intel MKL factorizes
+at 830 GFLOPS; `~/Csdp/solver/csdp-mkl` is CSDP linked against it, 10% faster
+than the static OpenBLAS build on a 23000 constraint SDP (209 s against 233 s
+at 12 threads, 307 s at 20), and is chosen with `CSDP=~/Csdp/solver/csdp-mkl`.
+The MKL libraries come from the PyPI wheel `mkl` (`pip download mkl`, unpacked,
+not installed) into `~/opt/intel-mkl-2026.1/lib`; the GNU threading layer
+shares CSDP's libgomp, and the binary is linked from CSDP's own objects:
+
+    cd ~/Csdp/solver && D=~/opt/intel-mkl-2026.1/lib && gcc -m64 -march=native \
+      -Ofast -fopenmp csdp.o -L../lib -lsdp $D/libmkl_gf_lp64.so.3 \
+      $D/libmkl_gnu_thread.so.3 $D/libmkl_core.so.3 -lgomp -lpthread -lm -ldl \
+      -Wl,--disable-new-dtags,-rpath,$D -o csdp-mkl
+
+The old-style rpath also covers the CPU-specific kernel (`libmkl_avx512`) that
+MKL opens at run time.  A GeForce RTX 2080 Ti is no help here: cuSOLVER
+factorizes at 490 GFLOPS in double precision, and 11 GB hold the Schur
+complement only up to about m = 37000.
+
 ## Quasigroups with holes
 
 `qwh.py` builds random quasigroup-with-holes instances (a Jacobson-Matthews
@@ -120,3 +141,25 @@ the colouring wrapper of the cells:
 
 `runs/qwh/qwh-2026-09-26.txt` holds the survey behind the report's
 quasigroup section.
+
+## SAT01
+
+`sat01.py` takes SAT01 instances (Busygin's exact cover with contradictions,
+`~/SAT01/sat01theta.tex`) to weighted clique problems with `sat012clique -w`:
+an instance with m equations is satisfiable iff the weighted clique number is
+m, and theta is at most m, so theta < m refutes it.  For each instance it
+builds the SAT01 file (`f<N>` factors N; the graph names in the docstring are
+Hamiltonian cycle problems), runs the SAT01 solver, converts the instance after
+light and after full preprocessing (`sat012clique -w [-p]`), and computes the
+weighted theta with CSDP, together with lambda_max of the dual wrapper as a
+certified upper bound.  `--span` lists the solutions of the satisfiable ones
+and compares their span with the rank of the Lovasz optimum and the top
+multiplicities of the optimal wrapper and of H_A:
+
+    bench/sat01.py --prep full --max-pairs 60000 f14887 flower5 coxeter
+    bench/sat01.py --span f143 dodecahedron
+
+The SAT01 tools are compiled from `$SAT01` (default `~/SAT01`) into the
+ignored `runs/sat01/bin`, and the solver runs in a directory of its own per
+instance, since it keeps its backtracking states in the current directory.
+Rows go to `runs/sat01/sat01.tsv` and `runs/sat01/span.tsv`.

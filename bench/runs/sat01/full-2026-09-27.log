@@ -1,0 +1,44 @@
+flower5        full  n=265 m=38 pairs=14796 blind 0.744  theta 38.0000000  (wrapper lambda_max 38.0000003)  m - theta 0.00e+00  rank 211  solver: unsat, 2 guesses
+gp11_2         full  n=329 m=42 pairs=19316 blind 0.727  theta 42.0000000  (wrapper lambda_max 42.0000001)  m - theta 0.00e+00  rank 269  solver: unsat, 5 guesses
+f14887         full  n=510 m=365 pairs=22926 blind 0.928  theta 364.9362400  (wrapper lambda_max 364.9362450)  m - theta 6.38e-02  rank 113  solver: unsat, 1 guesses
+cubic16_1      full  n=57 m=30 pairs=1010 blind 0.598  theta 30.0000000  (wrapper lambda_max 30.0000000)  m - theta 0.00e+00  rank 12  solver: sat, 1 guesses
+cubic20_1      full  n=195 m=38 pairs=9025 blind 0.739  theta 38.0000000  (wrapper lambda_max 38.0000003)  m - theta 0.00e+00  rank 152  solver: sat, 2 guesses
+f14471         full  n=511 m=367 pairs=23319 blind 0.930  theta 367.0000000  (wrapper lambda_max 367.0000000)  m - theta 0.00e+00  rank 1  solver: sat, 1 guesses
+f14631         full  n=514 m=370 pairs=23094 blind 0.928  theta 370.0000000  (wrapper lambda_max 370.0000000)  m - theta 0.00e+00  rank 1  solver: sat, 1 guesses
+f15591         full  n=501 m=359 pairs=23376 blind 0.932  theta 359.0000000  (wrapper lambda_max 359.0000000)  m - theta 0.00e+00  rank 1  solver: sat, 1 guesses
+f16041         full  n=506 m=362 pairs=24100 blind 0.933  theta 362.0000000  (wrapper lambda_max 362.0000000)  m - theta 0.00e+00  rank 1  solver: sat, 1 guesses
+f32717         full  n=568 m=404 pairs=29157 blind 0.936  theta 403.9655000  (wrapper lambda_max 403.9654962)  m - theta 3.45e-02  rank 1  solver: unsat, 1 guesses
+f32713         full  n=612 m=419 pairs=29772 blind 0.932  theta 419.0000000  (wrapper lambda_max 419.0000014)  m - theta 0.00e+00  rank 180  solver: unsat, 1 guesses
+# resumed at 13:40 with CSDP=~/Csdp/solver/csdp-mkl (MKL 2026.1) and 12 threads; the rows above ran the static OpenBLAS build with 20
+f32719         full  n=615 m=425 pairs=30173 blind 0.934  theta 424.9991100  (wrapper lambda_max 424.9991112)  m - theta 8.90e-04  rank 101  solver: unsat, 1 guesses
+f32687         full  n=638 m=435 pairs=34862 blind 0.940  theta 434.9999300  (wrapper lambda_max 434.9999313)  m - theta 7.00e-05  rank 106  solver: unsat, 1 guesses
+cubic24_1      full  n=403 m=46 pairs=33335 blind 0.782  theta 46.0000000  (wrapper lambda_max 46.0000001)  m - theta 0.00e+00  rank 335  solver: sat, 3 guesses
+gp13_2         full  n=481 m=50 pairs=37848 blind 0.748  theta 50.0000000  (wrapper lambda_max 50.0000002)  m - theta 0.00e+00  rank 409  solver: sat, 3 guesses
+f32399         full  n=636 m=441 pairs=34709 blind 0.940  theta 441.0000000  (wrapper lambda_max 441.0000000)  m - theta 0.00e+00  rank 5  solver: sat, 2 guesses
+f65521         full  n=713 m=482 pairs=41260 blind 0.942  theta 481.9999950  (wrapper lambda_max 482.0000021)  m - theta 5.00e-06  rank 198  solver: unsat, 1 guesses
+f60491         full  n=740 m=514 pairs=44477 blind 0.944  theta 514.0000000  (wrapper lambda_max 514.0000016)  m - theta 0.00e+00  rank 205  solver: sat, 2 guesses
+coxeter        full  n=585 m=54 pairs=50832 blind 0.743  theta 54.0000000  (wrapper lambda_max 54.0000001)  m - theta 0.00e+00  rank 509  solver: unsat, 83 guesses
+flower7        full  n=543 m=54 pairs=55123 blind 0.793  theta 54.0000005  (wrapper lambda_max 54.0000009)  m - theta -5.00e-07  rank 465  solver: unsat, 30 guesses
+# ranks in sat01.tsv were recomputed afterwards as the eigenvalues above 1e-5 of the largest
+# (theta.py's largest relative jump gave f32717 rank 1); the lines above keep the old values
+#
+# which factoring instances survive full preprocessing (sat012clique -w -p), scanned 2026-09-27:
+#   primes: none of the 137, 255 and 464 primes with 11, 12 and 13 bits; 1 of the 872 with 14 bits
+#   (14887); of the 8 largest below 2^15, 32719, 32717, 32713 and 32687 survive (32749, 32707, 32693
+#   and 32653 are refuted); the 8 largest below 2^16 and below 2^17 all survive
+#   odd semiprimes below 2^14 reduce to the two vertices of the p*q / q*p choice, except 14471,
+#   14631, 15591 and 16041; above that most survive (32765 = 5*6553 is solved)
+#   sizes after full preprocessing: 14887 n=510, 22926 pairs; 16 bits n~700-740, 36-47k pairs;
+#   17 bits n~850-940, 57-66k pairs; 20 bits n~1260-1350, 113-119k pairs
+# HCP: unbalanced bipartite graphs are refuted even by light preprocessing (clique analysis
+#   propagates the parity of positions); the snarks, Coxeter and GP(n,2) survive full preprocessing
+#
+# summary (full preprocessing; certified = lambda_max of the dual wrapper below m):
+#   primes refuted by theta: 14887 (m - theta 0.064), 32717 (0.035), 32719 (8.9e-4), 32687 (7.0e-5)
+#   primes with theta = m: 32713 (exactly), 65521 (to 5e-6, CSDP's accuracy): the gap is hidden
+#   satisfiable semiprimes: the Lovasz optimum is the unique solution (rank 1) at 14 bits; 179*181 has
+#   rank 5 for 2 solutions, 241*251 rank 205 for 2 solutions
+#   HCP: theta = m on every non-Hamiltonian graph that survives (flower5, gp11_2, coxeter, flower7);
+#   on the Hamiltonian ones the optimum's rank is far above the span of the cycles (span.tsv)
+#   the edge LP (A p = 1, p >= 0, p_i + p_j <= 1 on the contradiction pairs) is feasible on
+#   f101, f1009, f14887, petersen, flower5, gp11_2 and f143: the refutations are semidefinite
