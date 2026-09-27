@@ -75,9 +75,13 @@ $\omega(G,w)=\vartheta(\bar G,w)$, in which case every Lov\'asz-optimal wrapper
 anchors all maximum cliques at the top of the spectrum, in the hard case of
 the trust region problem. Odd holes and odd antiholes admit no nontrivial
 anchoring of all their maximum cliques, which with the strong perfect graph
-theorem characterizes perfect graphs. Computations with a maximal clique
-enumerator and with CSDP illustrate the results on the DIMACS graphs and on
-random graphs.
+theorem characterizes perfect graphs. For the quasigroup completion graphs
+of Busygin and Pasechnik the standard wrapper is itself Lov\'asz-optimal on
+every completable instance, and the completions are exactly the nonnegative
+points of its degenerate sphere of global minimizers; this is why the hard
+case cannot be exploited. Computations with a maximal clique enumerator and
+with CSDP illustrate the results on the DIMACS graphs, on random graphs and
+on random quasigroups with holes.
 \end{abstract}
 
 \tableofcontents
@@ -157,6 +161,12 @@ maximum cliques, 11 do
 not admit anchoring all of them at a nonzero level; of the remaining 20,
 14 have $\vartheta=\omega$ and 6 have $\vartheta>\omega$
 (Section~\ref{sec:comp}).
+\item For the quasigroup completion graphs of \cite{BP03} the standard
+wrapper is Lov\'asz-optimal on every completable instance, and the
+completions are exactly the nonnegative points of its sphere of global
+minimizers (Proposition~\ref{prop:qcp}); finding one is QCP. On random
+quasigroups with holes its degenerate eigenspace was up to 55 times the
+span of the completions (Section~\ref{sec:qwh}).
 \end{itemize}
 
 \section{Setting}
@@ -1054,6 +1064,105 @@ for $Q_3$ reads $0=\mu$. The system has 418 distinct equations in 1693
 defects and is still inconsistent; this certificate combines nine of them.
 \end{example}
 
+\subsection{Quasigroup completion: why the hard case does not help}
+\label{sec:qcp}
+
+Busygin and Pasechnik \cite{BP03} reduce the quasigroup completion problem
+(QCP) to the maximum independent set problem. For a partial latin square of
+order $n$ with $h$ empty cells (holes), the {\em QCP graph} $G$ has as
+vertices the triples $(i,j,k)$ such that $(i,j)$ is a hole and the symbol $k$
+occurs neither in row $i$ nor in column $j$, and two triples are adjacent when
+they agree in two coordinates; it is the subgraph of the Hamming graph
+$H(3,n)$ induced by the non-neighbours of the prefilled triples. Its
+independent sets have at most $h$ vertices, and the independent sets of size
+$h$ are exactly the completions of the square \cite[Lemma~2]{BP03}. The
+candidates of one hole form a clique, so $\overline{\chi}(G)\leq h$
+\cite[Lemma~3]{BP03}, and deciding whether $\alpha(G)=\overline{\chi}(G)$ is
+NP-hard even when this clique partition is given \cite[Theorem~1]{BP03}.
+Hence every completable instance has
+\[ \alpha(G)=\vartheta(G)=\overline{\chi}(G)=h, \]
+with $\vartheta(G)$ the bound (\ref{eq:thetaprimal}) for the graph $\bar G$,
+and the hard instances of QCP are among these or look like them to
+$\vartheta$. The independent sets of $G$ are the cliques of $\bar G$, so we
+use the wrapping matrices of $\bar G$ with unit weights; defects now sit on
+the edges of $G$, and the standard wrapping matrix of $\bar G$ is
+$J-A_G$.
+
+Besides the cells, $G$ has two more partitions into cliques: the
+row--symbol lines $\{(i,\cdot,k)\}$ and the column--symbol lines
+$\{(\cdot,j,k)\}$. Two distinct triples share at most one line (sharing two
+coordinates of two different kinds would make them equal).
+
+\begin{prop}
+\label{prop:qcp}
+Let $G$ be the QCP graph of a completable instance with $h$ holes, and let
+$\mathcal{P}_1,\mathcal{P}_2,\mathcal{P}_3$ be its partitions into cells,
+row--symbol lines and column--symbol lines, each of $h$ cliques. Then:
+\begin{enumerate}
+\item[(a)] $H=J-\frac h3A_G$, the standard wrapping matrix of $\bar G$ up to
+gauge, has $\lmax(H)=h=\vartheta(G)$; it is Lov\'asz-optimal and anchors
+every completion $S$ at level $h$ ($C=0$);
+\item[(b)] its eigenspace for $h$ is
+$L=\{x:\ \one_C^Tx \mbox{ is the same for all } C\in\mathcal{P}_t,\
+t=1,2,3\}$;
+\item[(c)] the global minimizers of (\ref{eq:v}) for $H$ are the $x\in L$
+with $\one^Tx=1$ and $x^Tx=1/h$, and the nonnegative ones among them are
+exactly the indicators $\one_S/h$ of the completions $S$.
+\end{enumerate}
+\end{prop}
+\begin{proof}
+For $t=1,2,3$ let $K_t=h\sum_{C\in\mathcal{P}_t}\one_C\one_C^T-J$, which is
+positive semidefinite by the Cauchy--Schwarz inequality as in
+Proposition~\ref{prop:colour}, and $H_t=hI-K_t$, the colouring wrapper of
+$\bar G$ for the colouring $\mathcal{P}_t$. $H_t$ has $1-h$ on the pairs that
+share a line of $\mathcal{P}_t$ and $1$ elsewhere. Every edge of $G$ shares
+exactly one line, so $(H_1+H_2+H_3)/3$ has $1$ on the diagonal and on the
+non-adjacent pairs of $G$ and $1-h/3$ on its edges: it is $H$, with defect
+$h/3$ on every non-edge of $\bar G$, i.e. $(J-A_G)_t$ with $1+t=h/3$ in the
+notation of Lemma~\ref{lem:gauge}. Moreover $H=hI-\frac13(K_1+K_2+K_3)
+\preceq hI$, and $\ker(hI-H)=\bigcap_t\ker K_t$, where $\ker K_t$ consists
+of the vectors whose sums over the $h$ classes of $\mathcal{P}_t$ are equal
+(the equality case of the Cauchy--Schwarz inequality). This is (b). A
+completion meets every line exactly once, so $\one_S\in L$ and
+$H\one_S=h\one_S$, which gives $\lmax(H)=h$, the anchoring at level $h$
+(Lemma~\ref{lem:tau}(c)), and $\vartheta(G)\leq h=\alpha(G)\leq
+\vartheta(G)$.
+
+For (c), $v(H)=1/h$ by Theorem~\ref{thm:theta}. A point of $\Wc^H$ has
+$1=x^THx\leq h\,x^Tx$, with equality iff $x\in L$; so the global minimizers
+are the points of $L$ with $\one^Tx=1$ and $x^Tx=1/h$ (on $L$,
+$x^THx=h\,x^Tx$). Let such an $x$ be nonnegative. Each partition has $h$
+classes covering $V$, so all its class sums equal $1/h$, and
+\[ x^Tx=\sum_{\rm holes}\ \sum_k x_{ijk}^2\ \leq\ \sum_{\rm holes}
+\Bigl(\sum_k x_{ijk}\Bigr)^2=\frac1h, \]
+with equality iff every hole carries a single candidate, with value $1/h$.
+Those candidates meet every row--symbol and column--symbol line once, so they
+form a completion.
+\end{proof}
+
+So the standard wrapper that QUALEX-MS builds for the independent sets of a
+completable QCP graph is Lov\'asz-optimal, its trust region program at the
+radius of the completions is in the hard case with the degenerate
+eigenspace $L\cap\one^\perp$, and the completions are exactly the points of
+the sphere of global minimizers that lie in the nonnegative orthant, i.e.
+the points of largest norm of the polytope $\{x\in L:\ x\geq0,\ \one^Tx=1\}$
+of fractional completions. The hard case therefore carries all the
+information about the completions, but finding a nonnegative point on that
+sphere is QCP itself, which is NP-complete \cite{Co84}. The colouring wrapper
+of the cells alone (Proposition~\ref{prop:colour} for $\mathcal{P}_1$) is
+Lov\'asz-optimal as well but blind to every row and column conflict: by the
+same argument every transversal, one candidate for each hole, is a global
+minimizer, and its top eigenspace has dimension $|V|-h+1$. For the empty
+square, $G=H(3,n)$, $L$ is the sum $V_0\oplus V_3$ of the eigenspaces of the
+Hamming scheme, of dimension $(n-1)^3+1$, and (a) is the tightness of
+Hoffman's bound $\alpha(H(3,n))=n^2$ (Corollary~\ref{cor:hoffman}).
+
+Every Lov\'asz-optimal wrapper has at least the rank of every Lov\'asz
+optimum as the multiplicity of its top eigenvalue (Corollary~\ref{cor:hard}),
+and that rank is at least the dimension spanned by the completions.
+Section~\ref{sec:qwh} measures where between that span and $\dim L$ the
+Lov\'asz optimum falls on random instances.
+
 \section{Computations}
 \label{sec:comp}
 
@@ -1282,6 +1391,97 @@ wrapper against $\vartheta$, which the optimal wrapper attains
 (Theorem~\ref{thm:theta}), and Hoffman's bound for the regular graphs.}
 \end{table}
 
+\subsection{Quasigroups with holes}
+\label{sec:qwh}
+
+Proposition~\ref{prop:qcp} places the least top multiplicity of a
+Lov\'asz-optimal wrapper of a completable QCP graph between the span of the
+completions and $\dim L$. To see where it falls, we generated
+quasigroup-with-holes (QWH) instances \cite{AGKS00}: a random latin square of
+order $n$ from the Jacobson--Matthews chain \cite{JM96}, with $h$ cells
+emptied uniformly at random, for $n=10,15,20$ and hole fractions from 30 to
+70\% (four instances per cell, three for $n=20$). The range covers the
+passage from a single completion to tens of thousands, where QWH instances
+are hardest for search \cite{AGKS00}. The completions were listed by exact
+cover search; where there were more than 20000 of them, the span was
+measured on the first 20000 together with about 2000 sampled by randomized
+descents, restarted after a node limit because such searches have
+heavy-tailed run times. $\vartheta$ and a Lov\'asz optimum were computed with CSDP.
+Table~\ref{tab:qwh} summarizes the 68 instances; \texttt{bench/qwh.py}
+reproduces them.
+
+Every instance confirms Proposition~\ref{prop:qcp}: $\vartheta(G)=h$, the
+standard wrapper in the gauge $J-\frac h3A_G$ has the top eigenvalue $h$
+with multiplicity exactly $\dim L$, and every completion is anchored at
+$C=0$ to $10^{-13}$.
+
+The Lov\'asz optimum spans exactly the completions whenever there are few of
+them: its rank equals their span on 29 of the 41 instances listed in full,
+among them all nine with a unique completion, where the optimum found by
+CSDP is the projector of that completion. It does so again when there are
+very many: on the 27 instances whose listing was capped, the listed and
+sampled completions span as much as the optimum on 26 of them and one
+dimension less on the other, and at 70\% holes both fill all of $L$. In between, with
+tens to hundreds of completions, the optimum exceeds their span: 64
+dimensions against 34, 40 against 18 and 75 against 60 on three instances
+with $n=15$ and 45\% holes, 15 against 7 on one with $n=10$. Every
+Lov\'asz-optimal wrapper of those graphs has top eigendirections that no
+completion spans. On a few of them complementarity is not strict: some
+directions carry both an eigenvalue of the optimum and a gap of the wrapper
+of order $\sqrt\mu$, and the rank is only bracketed (the parenthesized
+ranges of Table~\ref{tab:qwh}).
+
+The natural wrappers are far more degenerate. The standard wrapper's top
+eigenspace $L$ had dimension 111 on an instance whose two completions span 2
+dimensions ($n=20$, 35\% holes), and 194 against a span of 4 on another
+($n=20$, 40\% holes); the colouring wrapper of the cells had 327 and 453.
+So on such instances only a handful of the degenerate directions of the
+standard QUALEX-MS wrapper carry information on the completions, as
+\cite{BP03} anticipates. The least degenerate Lov\'asz-optimal wrapper can be
+much sharper, but it too exceeds the completions in the middle of the
+transition. These instances are small: all nine with a unique completion
+were solved by propagation alone, so they say nothing about hard instances
+with a unique completion.
+
+\begin{table}[ht]
+\begin{center}
+\small
+\setlength\tabcolsep{4pt}
+\begin{tabular}{|r|r|r|r|l|r|l|r|r|}
+\hline
+$n$ & holes & inst. & $|V|$ & completions & span & rank of $X^*$ & $\dim L$ & $|V|-h+1$ \\
+\hline
+10 & 30\% & 4 & 50--59 & 1--2 & 1--2 & 1--2 & 1--3 & 21--30 \\
+10 & 35\% & 4 & 73--81 & 1--4 & 1--3 & 1--3 & 4--11 & 39--47 \\
+10 & 40\% & 4 & 87--92 & 1--2 & 1--2 & 1--2 & 6--9 & 48--53 \\
+10 & 45\% & 4 & 126--143 & 3--15 & 3--12 & 3--13 & 22--39 & 82--99 \\
+10 & 50\% & 4 & 154--164 & 4--11 & 3--8 & 3--15 (3--17) & 34--44 & 105--115 \\
+10 & 60\% & 4 & 241--261 & $>$20000 & 88--101 & 88--101 & 91--111 & 182--202 \\
+10 & 70\% & 4 & 369--379 & $>$20000 & 189--199 & 189--199 & 189--199 & 300--310 \\
+15 & 30\% & 4 & 145--170 & 1--2 & 1--2 & 1--2 & 5--18 & 78--103 \\
+15 & 35\% & 4 & 192--216 & 1--4 & 1--4 & 1--4 & 12--36 & 114--138 \\
+15 & 40\% & 4 & 277--312 & 14--38 & 10--15 & 11--19 (14--23) & 56--87 & 188--223 \\
+15 & 45\% & 4 & 369--381 & 49--5029 & 18--104 & 40--105 (41--105) & 111--125 & 269--281 \\
+15 & 50\% & 4 & 485--520 & $>$20000 & 176--192 & 176--192 & 194--230 & 374--409 \\
+15 & 60\% & 4 & 780--805 & $>$20000 & 416--437 & 416--437 & 420--445 & 646--671 \\
+15 & 70\% & 4 & 1216--1260 & $>$20000 & 787--831 & 787--831 & 787--831 & 1059--1103 \\
+20 & 35\% & 3 & 452--466 & 2--9 & 2--8 & 2--9 & 102--111 & 313--327 \\
+20 & 40\% & 3 & 612--684 & 8--7132, $>$20000 & 4--218 & 4--218 & 194--266 & 453--525 \\
+20 & 45\% & 3 & 837--868 & $>$20000 & 329--360 & 329--360 & 358--388 & 658--689 \\
+20 & 50\% & 3 & 1120--1140 & $>$20000 & 533--585 & 533--585 & 580--600 & 921--941 \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:qwh} QWH instances, ranges over the instances of a cell.
+$|V|$: vertices of the QCP graph; completions: listed by exact cover,
+$>$20000 where the listing was capped (the span then also covers about 2000
+sampled completions); span: dimension spanned by the completion indicators;
+rank of the Lov\'asz optimum $X^*$ found by CSDP, counting eigenvalues above
+$10^{-4}$ of the largest (in parentheses above $10^{-6}$, where that
+differs); $\dim L$: top multiplicity of the standard wrapper; $|V|-h+1$: top
+multiplicity of the colouring wrapper of the cells.}
+\end{table}
+
 \section{Conclusions and open questions}
 
 For one clique, anchoring is always possible and puts the clique on the
@@ -1300,6 +1500,17 @@ wrappers for the relaxed program. On odd holes and odd antiholes no
 nontrivial wrapper anchors all maximum cliques, and this
 characterizes perfect graphs through the strong perfect graph theorem.
 
+The quasigroup completion graphs of Busygin and Pasechnik \cite{BP03} show
+why the hard case cannot be put to work in general. For a completable
+instance the standard wrapper that QUALEX-MS builds is itself Lov\'asz-optimal,
+its degenerate top eigenspace contains all the completions, and they are
+exactly the nonnegative points of its sphere of global minimizers
+(Proposition~\ref{prop:qcp}); finding one of them is QCP. On random
+instances that eigenspace is often much larger than the span of the
+completions, and even the least degenerate Lov\'asz-optimal wrapper exceeds
+that span in the middle of the transition from one completion to many
+(Section~\ref{sec:qwh}).
+
 Questions left open:
 \begin{enumerate}
 \item Characterize the graphs whose maximum cliques can all be anchored at a
@@ -1314,14 +1525,15 @@ cliques?
 \item What structure makes the Lov\'asz optimum of \gr{gen200_p0.9_44} full
 support and rank 157, and is it typical of generated instances with a
 planted clique?
-\item Can the hard case be used rather than avoided? When QUALEX-MS finds a
-cluster with $c=0$, cliques anchored together sit on a sphere in
-$x^0+\hx_p+E$; with $\dim E=1$ (\gr{hamming6-2}) the eigenvector itself
-leads to them, but for larger $E$ a search inside $E$ (for instance over
-the vertices of $\{x\geq0\}\cap(x^0+\hx_p+E)$) would be needed.
+\item On QCP graphs, when does the Lov\'asz optimum span more than the
+completions? On the small instances of Section~\ref{sec:qwh} it did only
+between the regimes of few and of very many completions, and none of them
+was hard for search. (An earlier version of these notes asked whether the
+hard case could be exploited by a search inside the degenerate eigenspace;
+Section~\ref{sec:qcp} answers that it cannot in general, unless P = NP.)
 \end{enumerate}
 
-\begin{thebibliography}{CRST06}
+\begin{thebibliography}{AGKS00}
 
 \bibitem[Ba95]{Ba95}
   A.I. Barvinok,
@@ -1333,6 +1545,19 @@ the vertices of $\{x\geq0\}\cap(x^0+\hx_p+E)$) would be needed.
   CSDP, a C library for semidefinite programming,
   {\em Optimization Methods and Software\/} 11 (1999) 613--623.
 
+\bibitem[AGKS00]{AGKS00}
+  D. Achlioptas, C. Gomes, H. Kautz and B. Selman,
+  Generating satisfiable problem instances,
+  in: {\em Proceedings of the 17th National Conference on Artificial
+  Intelligence (AAAI-00)\/}, 2000, 256--261.
+
+\bibitem[BP03]{BP03}
+  S. Busygin and D.V. Pasechnik,
+  On $\overline{\chi}(G)-\alpha(G)>0$ gap recognition and
+  $\alpha(G)$-upper bounds,
+  {\em Electronic Colloquium on Computational Complexity\/}, Report
+  TR03-052, 2003 (\texttt{qcp.tex}).
+
 \bibitem[Bu06]{B02}
   S. Busygin,
   A new trust region technique for the maximum weight clique problem,
@@ -1342,6 +1567,11 @@ the vertices of $\{x\geq0\}\cap(x^0+\hx_p+E)$) would be needed.
   S. Busygin,
   A least squares framework for the maximum weight clique problem,
   note, 2007, updated 2010 (\texttt{CliqueWrapper.tex}).
+
+\bibitem[Co84]{Co84}
+  C. Colbourn,
+  The complexity of completing partial latin squares,
+  {\em Discrete Applied Mathematics\/} 8 (1984) 25--30.
 
 \bibitem[CRST06]{CRST06}
   M. Chudnovsky, N. Robertson, P. Seymour and R. Thomas,
@@ -1363,6 +1593,11 @@ the vertices of $\{x\geq0\}\cap(x^0+\hx_p+E)$) would be needed.
   On eigenvalues and colorings of graphs,
   in: B. Harris, ed., {\em Graph Theory and its Applications\/},
   Academic Press, 1970, 79--91.
+
+\bibitem[JM96]{JM96}
+  M.T. Jacobson and P. Matthews,
+  Generating uniformly distributed random latin squares,
+  {\em Journal of Combinatorial Designs\/} 4 (1996) 405--437.
 
 \bibitem[Kn94]{K94}
   D.E. Knuth,
