@@ -70,3 +70,22 @@ g300_70_1        n=300  w=20  k=11    |U|=97   affdim=9    rows=2428(3080) cols=
 g300_70_2        n=300  w=20  k=4     |U|=49   affdim=3    rows=988(1120) cols=4102   std-anchors=no | gamma free; nearest (gamma 4.935): mult 3 above 92 |c_E| 6e-12 stat 7e-11 | tau>=0: margin -0.000 zeros 455 (11%) mult 3 above 127  [47s]
 g300_70_3        n=300  w=20  k=1     |U|=20   affdim=0    (single maximum clique)
 g300_70_4        n=300  w=20  k=32    |U|=136  affdim=29   rows=5879(8960) cols=9332   std-anchors=no | gamma forced to 0 (lsmr rel.res 3.5e-02, LP infeasible)  [58s]
+
+## Correction (2026-09-26, later): the "zeros" column above overcounts
+# nonneg() stopped after six rounds of linear programs, so its count of defects that
+# vanish in every nonnegative solution was only an upper bound (hamming8-2: 128 against a
+# positive margin, which means 0).  The fixed nonneg() finds them with one linear program
+# over the cone of solutions.  Exact counts, of the non-edges involved:
+#   0 (a proper anchoring exists): hamming6-2, hamming8-2, hamming10-2, johnson8-4-4,
+#     johnson8-2-4, hamming8-4, brock200_1; g300_25_0, g300_25_3, g300_50_0, g300_50_1,
+#     g300_50_3
+#   san200_0.7_2 29 (2.6%), gen200_p0.9_55 43 (3.9%), gen200_p0.9_44 37 (4.1%),
+#   sanr400_0.5 415 (10.1%), p_hat300-3 435 (20.8%), p_hat500-2 982 (16.2%),
+#   p_hat700-1 318 (5.9%), c-fat200-1 1932 (14.7%), c-fat200-5 2465 (23.2%),
+#   c-fat500-1 4725 (8.1%), c-fat500-2 16497 (18.1%), c-fat500-5 3008 (6.2%),
+#   c-fat500-10 11781 (17.7%)
+#   g200_50_1 118 (2.7%), g200_80_3 124 (8.0%), g300_25_1 222 (3.9%), g300_25_2 349 (2.4%),
+#   g300_25_4 99 (2.1%), g300_70_0 177 (9.4%), g300_70_2 146 (3.6%); g200_70_3 has no
+#   nonnegative solution
+# The "mult/above" figures after "tau>=0" were measured at the old point and are not
+# reproduced by the fixed nonneg(); the "nearest" figures are unaffected.

@@ -243,37 +243,33 @@ def nearest(S):
     return 1.0 + x, 1.0
 
 
-def nonneg(S, max_rounds=6):
+def nonneg(S):
     """tau >= 0 at gamma = 1: feasible?, the largest min tau, the non-edges that are 0
-    in every solution, and a point positive on all the others"""
-    m = S.shape[1]
-    b = np.ones(S.shape[0])
+    in every solution, and a point positive on all the others.
+
+    The solutions (tau, gamma) with tau >= 0 form a cone, so one linear program
+    max sum y_k, y_k <= tau_k, 0 <= y <= 1, S tau = gamma, gamma >= 1
+    reaches y_k = 1 on every defect that some solution makes positive (a sum of such
+    solutions, scaled up, makes them all >= 1 at once) and y_k = 0 on the rest."""
+    m, r = S.shape[1], S.shape[0]
+    b = np.ones(r)
     res = highs(np.zeros(m), S, b, [(0, None)] * m)
     if res.status != 0:
         return dict(feasible=False if res.status == 2 else None)
     A_ub = sp.hstack([-sp.identity(m), sp.csr_matrix(np.ones((m, 1)))]).tocsr()
-    r = highs(np.r_[np.zeros(m), -1.0], sp.hstack([S, sp.csr_matrix((S.shape[0], 1))]).tocsr(), b,
-              [(0, None)] * m + [(None, 1.0)], A_ub=A_ub, b_ub=np.zeros(m))
-    margin = r.x[-1] if r.status == 0 else float("nan")
-    point = res.x.copy()
-    free = point > 1e-9
-    for _ in range(max_rounds):
-        rest = np.flatnonzero(~free)
-        if len(rest) == 0:
-            break
-        nr = len(rest)
-        A_ub = sp.hstack([-sp.csr_matrix((np.ones(nr), (np.arange(nr), rest)), shape=(nr, m)),
-                          sp.identity(nr)]).tocsr()
-        r = highs(np.r_[np.zeros(m), -np.ones(nr)], sp.hstack([S, sp.csr_matrix((S.shape[0], nr))]).tocsr(),
-                  b, [(0, None)] * m + [(0, 1)] * nr, A_ub=A_ub, b_ub=np.zeros(nr))
-        if r.status != 0:
-            break
-        grown = r.x[:m] > 1e-9
-        point = 0.5 * (point + r.x[:m])
-        if not (grown & ~free).any():
-            break
-        free |= grown
-    return dict(feasible=True, margin=margin, zeros=int((~free).sum()), point=point)
+    res = highs(np.r_[np.zeros(m), -1.0], sp.hstack([S, sp.csr_matrix((r, 1))]).tocsr(), b,
+                [(0, None)] * m + [(None, 1.0)], A_ub=A_ub, b_ub=np.zeros(m))
+    margin = res.x[-1] if res.status == 0 else float("nan")
+    # variables tau (m), y (m), gamma (1)
+    A_eq = sp.hstack([S, sp.csr_matrix((r, m)), sp.csr_matrix(-np.ones((r, 1)))]).tocsr()
+    A_ub = sp.hstack([-sp.identity(m), sp.identity(m), sp.csr_matrix((m, 1))]).tocsr()
+    res = highs(np.r_[np.zeros(m), -np.ones(m), 0.0], A_eq, np.zeros(r),
+                [(0, None)] * m + [(0, 1)] * m + [(1, None)], A_ub=A_ub, b_ub=np.zeros(m))
+    if res.status != 0:
+        return dict(feasible=None)
+    positive = res.x[m:2 * m] > 0.5
+    return dict(feasible=True, margin=margin, zeros=int((~positive).sum()),
+                point=res.x[:m] / res.x[-1])
 
 
 def analyse(name, adj, w, Qs, lp=True):
