@@ -106,3 +106,17 @@ CSDP holds the m x m Schur complement, m the number of constraints: 31 GB and
 Values go to `runs/theta/theta.tsv`, the problem, solution and log to the ignored
 `runs/theta/work/`.  When theta = omega it also checks that the optimal wrapper
 anchors every maximum clique at C = 0, as Lovasz optimality forces.
+
+## Quasigroups with holes
+
+`qwh.py` builds random quasigroup-with-holes instances (a Jacobson-Matthews
+random latin square with cells emptied at random), turns each into the QCP
+graph of `reports/qcp.tex`, lists its completions by exact cover, computes
+theta with CSDP, and compares the span of the completions with the rank of
+the Lovasz optimum and the top multiplicities of the standard wrapper and of
+the colouring wrapper of the cells:
+
+    bench/qwh.py -n 10,15 -p 0.3,0.4,0.5 -r 4 --sample 2000
+
+`runs/qwh/qwh-2026-09-26.txt` holds the survey behind the report's
+quasigroup section.
