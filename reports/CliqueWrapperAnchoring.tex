@@ -1,0 +1,1402 @@
+\documentclass[11pt]{article}
+
+\setlength\textwidth{160mm}
+\setlength\textheight{220mm}
+\setlength\oddsidemargin{-3mm}
+\setlength\headheight{0mm}
+\setlength\topmargin{-10mm}
+
+\usepackage{amsfonts,amsmath,amssymb,amsthm}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{fact}[thm]{Fact}
+\theoremstyle{definition}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{example}[thm]{Example}
+\theoremstyle{remark}
+\newtheorem{rem}[thm]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Hc}{\mathcal{H}}
+\newcommand{\Wc}{\mathcal{W}}
+\newcommand{\hH}{\hat{H}}
+\newcommand{\hb}{\hat{b}}
+\newcommand{\hx}{\hat{x}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\lmax}{\lambda_{\max}}
+\newcommand{\lmin}{\lambda_{\min}}
+\newcommand{\vt}{\vartheta(\bar G,w)}
+\newcommand{\om}{\omega(G,w)}
+\newcommand{\gr}[1]{\texttt{\detokenize{#1}}}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\spn}{span}
+\DeclareMathOperator{\aff}{aff}
+\DeclareMathOperator{\rank}{rank}
+
+\begin{document}
+
+\title{Anchoring Cliques in Clique Wrappers\\[1ex]
+{\large A supplement to ``A Least Squares Framework for the Maximum Weight
+Clique Problem''}}
+
+\author{Research notes prepared for Stanislav Busygin\\
+with Claude (Anthropic)}
+
+\date{September 26, 2026}
+
+\maketitle
+
+\begin{abstract}
+The non-edge entries of a wrapping matrix are free parameters of the clique
+wrapper. {\em Anchoring} spends them on a chosen maximal clique $Q$ so that
+$Q$ satisfies the hypothesis of \cite[Theorem~2]{CW}; its indicator then
+becomes a stationary point of the relaxed least squares program and lies on
+the curve that the secular equation traces. We collect what was established
+about anchoring, theoretically and in experiments with QUALEX-MS.
+For a single clique we give the construction, show that
+the indicator is then a point of the secular curve, and compute the curvature
+of the wrapper towards every other clique, which explains why anchoring acts
+as a local exchange around $Q$; the experiments confirm this and show that
+anchoring pays off as a second pass on a good clique and not otherwise. For
+several cliques the levels at which they can be anchored are forced: two
+anchored cliques $Q_a,Q_b$ satisfy
+$\mu_a W(Q_b\setminus Q_a)=\mu_b W(Q_a\setminus Q_b)$, so cliques of equal
+weight share one level, and a shared level creates exactly the degenerate
+case (multiple eigenvalues with vanishing linear form) that the secular
+equation cannot see. We characterize when two cliques can be anchored
+together. Over all wrappers the best value of the relaxed program is
+$1/\vartheta(\bar G,w)$, the reciprocal of the Lov\'asz number, and the
+standard wrapper gives Hoffman's bound on regular graphs; a clique indicator can be a global minimizer of the relaxed program only if
+$\omega(G,w)=\vartheta(\bar G,w)$, in which case every Lov\'asz-optimal wrapper
+anchors all maximum cliques at the top of the spectrum, in the hard case of
+the trust region problem. Odd holes and odd antiholes admit no nontrivial
+anchoring of all their maximum cliques, which with the strong perfect graph
+theorem characterizes perfect graphs. Computations with a maximal clique
+enumerator and with CSDP illustrate the results on the DIMACS graphs and on
+random graphs.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+
+This note supplements \cite{CW}, whose notation it follows, and refers to
+its statements as \cite[Theorem~2]{CW} and so on. The same notation is used in
+QUALEX-MS \cite{B02}, whose trust region stage finds the stationary points
+of \cite[Section~5]{CW}; Remark~\ref{rem:qualex} gives the dictionary.
+
+\cite[Theorem~2]{CW} says that a maximal clique $Q$ is recognized through
+a stationary point of the relaxed least squares program \cite[(7)]{CW} whenever
+every vertex outside $Q$ is attached to $Q$ with the same weight, measured
+through the wrapping matrix $H$ \cite[(6)]{CW}:
+\begin{equation}
+\label{eq:cw3}
+\sum_{j \in Q} h_{ij} z_j = C z_i \quad \forall i \in V\setminus Q.
+\end{equation}
+For the standard wrapping matrix this is a strong combinatorial condition
+(\cite[Corollary~1]{CW}), and it rarely holds. But the entries of $H$ on
+non-adjacent pairs are free, and (\ref{eq:cw3}) is linear in them. {\em
+Anchoring} $Q$ means choosing them so that (\ref{eq:cw3}) holds. (The
+solver's sources and diagnostics call (\ref{eq:cw3}) ``Theorem 8''.)
+
+The questions studied were:
+\begin{enumerate}
+\item What does anchoring one clique do to the stationary points, and is
+it useful in QUALEX-MS? (Sections~\ref{sec:one} and~\ref{sec:exp}.)
+\item Can several cliques, in particular all maximum weight cliques, be
+anchored in one wrapper, and what does such a wrapper look like?
+(Sections~\ref{sec:several} and~\ref{sec:all}.) For perfect graphs one
+expects the Lov\'asz-optimal wrapper to anchor all maximum cliques at
+$\mu=\lmax$; for general graphs the conditions look overdetermined.
+\item How do these statements look on actual graphs?
+(Section~\ref{sec:comp}.)
+\end{enumerate}
+
+The main findings, in the order of the text:
+\begin{itemize}
+\item Anchoring one maximal clique is always possible, lowering entries
+only (Proposition~\ref{prop:construct}); it makes the indicator of $Q$ the
+point of the secular curve at the multiplier $\mu_Q=W(Q)-C$
+(Lemma~\ref{lem:onsecular}). The curvature of the wrapper along the
+direction from $x^Q$ to any other clique $Q'$ exceeds $\mu_Q$ by exactly
+$\mu_Q (W(Q')-W(Q))/W(Q \triangle Q')$, whatever the free entries are
+(Proposition~\ref{prop:curv}).
+\item In QUALEX-MS, anchoring the clique found by a standard pass and
+solving again never lost on 366 test graphs and improved 55 of 120 weighted
+random graphs; anchoring the greedy clique lost far more often than it won
+(Section~\ref{sec:exp}).
+\item Two cliques anchored in one wrapper satisfy the {\em level identity}
+$\mu_a W(Q_b\setminus Q_a)=\mu_b W(Q_a\setminus Q_b)$
+(Theorem~\ref{thm:level}). Cliques of equal weight therefore share a level,
+and a shared level forces an eigenvalue of $\hH$ whose eigenspace contains
+the differences of their indicators and carries no linear form
+(Theorem~\ref{thm:collision}): the degenerate case excluded in
+\cite[Section~5]{CW}. Theorem~\ref{thm:two} characterizes when two
+cliques can be anchored together; two maximum weight cliques always can
+(Corollary~\ref{cor:twomax}), though some non-edges may have to be made
+invisible (Proposition~\ref{prop:blind}).
+\item $\max_H \min\{x^Tx : x\in\Wc^H\} = 1/\vt$
+(Theorem~\ref{thm:theta}); for regular graphs the standard wrapper attains
+Hoffman's ratio bound instead (Corollary~\ref{cor:hoffman}). A clique
+indicator is a global minimizer of the relaxed program for some wrapper iff
+$W(Q)=\om=\vt$ (Theorem~\ref{thm:global}); then every Lov\'asz-optimal
+wrapper anchors every maximum clique at $\mu=\lmax(\hH)$, the hard case of
+the trust region problem (Corollary~\ref{cor:hard}).
+\item Anchoring all maximum cliques of an odd hole or an odd antihole
+forces the level to $0$ (Theorem~\ref{thm:holes}), while graphs with
+$\chi=\omega$ have an explicit Lov\'asz-optimal wrapper anchoring them all
+(Proposition~\ref{prop:colour}). Hence a graph is perfect iff every induced
+subgraph admits an anchoring of all its maximum cliques at a nonzero level
+(Theorem~\ref{thm:perfect}).
+\item Of the 31 DIMACS graphs with $n\leq1100$ and between 2 and 20000
+maximum cliques, 11 do
+not admit anchoring all of them at a nonzero level; of the remaining 20,
+14 have $\vartheta=\omega$ and 6 have $\vartheta>\omega$
+(Section~\ref{sec:comp}).
+\end{itemize}
+
+\section{Setting}
+\label{sec:setting}
+
+\subsection{Wrapping matrices}
+
+Let $G(V,E)$, $V=\{1,\ldots,n\}$, have positive vertex weights $w$, let
+$z_i=\sqrt{w_i}$ and $W(S)=\sum_{i\in S} w_i$, and let $N(i)$ be the
+neighborhood of $i$. For $S\subseteq V$ we write $\one_S$ for its
+characteristic vector, $z_S$ for the vector with $(z_S)_i=z_i$ on $S$ and
+$0$ elsewhere, and $x^S=z_S/W(S)$ for its indicator \cite[Definition~1]{CW}.
+
+\begin{defn}
+\label{def:family}
+$\Hc(G,w)$ is the set of real symmetric $n\times n$ matrices $H$ with
+$h_{ij}=z_i z_j$ whenever $i=j$ or $(i,j)\in E$. For $H\in\Hc(G,w)$ and a
+non-adjacent pair $i\neq j$ we write
+\[ h_{ij} = z_i z_j (1-\tau_{ij}), \]
+and call $\tau_{ij}=\tau_{ji}$ the {\em defect} of the non-edge. The
+standard wrapping matrix $H_0$ of \cite{CW} has $\tau\equiv 1$. The wrapping
+matrices of \cite{CW}, which need $h_{ij}<z_iz_j$ off $E$, are the $H$ with
+all defects positive; we call them {\em proper}.
+\end{defn}
+
+Every $H\in\Hc(G,w)$ defines the surface
+$\Wc^H=\{x\in\R^n: x^THx=1,\ z^Tx=1\}$. The computation in the proof of
+\cite[Proposition~2]{CW} involves only entries of $H$ inside the clique, so
+{\em every clique indicator lies on $\Wc^H$ for every $H\in\Hc(G,w)$}.
+Nonnegative defects are exactly what \cite[Proposition~1]{CW} needs.
+
+The weighted Lov\'asz number of the complement of $G$ is
+\begin{align}
+\label{eq:thetaprimal}
+\vt &= \min_{H\in\Hc(G,w)} \lmax(H) \\
+\label{eq:thetadual}
+    &= \max \{ \langle zz^T, X\rangle :\ X\succeq 0,\ \tr X = 1,\
+       X_{ij}=0 \mbox{ for } i\neq j,\ (i,j)\notin E \},
+\end{align}
+where both optima are attained \cite{L79,GLS88,K94}. We call a matrix
+attaining (\ref{eq:thetaprimal}) a {\em Lov\'asz-optimal} wrapping matrix
+and a matrix attaining (\ref{eq:thetadual}) a {\em Lov\'asz optimum}.
+Since the two programs have equal values, every Lov\'asz-optimal $H$ and
+every Lov\'asz optimum $X$ satisfy the complementarity condition
+\begin{equation}
+\label{eq:compl}
+(\vt\, I - H)\,X = 0,
+\end{equation}
+because $\tr((\vt I-H)X)=\vt-\langle zz^T,X\rangle=0$ ($H$ and $zz^T$
+agree on the support of $X$) and both factors are positive semidefinite.
+
+\begin{lem}
+\label{lem:cliquevec}
+For every $H\in\Hc(G,w)$ and every clique $Q$, $z_Q^THz_Q=W(Q)^2$. Hence
+$\lmax(H)\geq W(Q)$ and $\om\leq\vt$; and $X_Q=z_Qz_Q^T/W(Q)$ is feasible
+in (\ref{eq:thetadual}) with value $W(Q)$.
+\end{lem}
+\begin{proof}
+$z_Q^THz_Q=\sum_{i,j\in Q} z_iz_jh_{ij}=\sum_{i,j\in Q}w_iw_j=W(Q)^2$ and
+$\|z_Q\|^2=W(Q)$, so the Rayleigh quotient of $z_Q$ is $W(Q)$. $X_Q$ is
+positive semidefinite with trace $1$ and is supported on $Q\times Q$, where
+all pairs are adjacent; its value is $(z^Tz_Q)^2/W(Q)=W(Q)$.
+\end{proof}
+
+\subsection{The relaxed program and its stationary points}
+
+For $H\in\Hc(G,w)$ let
+\begin{equation}
+\label{eq:v}
+v(H) = \min \{ x^Tx :\ x\in\Wc^H \},
+\end{equation}
+the relaxed program \cite[(7)]{CW}. It is feasible (clique indicators) and its
+objective is coercive, so the minimum is attained, and
+$v(H)\leq 1/\om$.
+
+As in \cite[Section~5]{CW} let $x^0=z/W(V)$, $P=I-zz^T/W(V)$, $\hH=PHP$,
+$\hb=PHx^0$ and $s=1-(x^0)^THx^0$. Writing $x=x^0+\hx$ with $\hx\perp z$,
+\[ x^Tx=\|x^0\|^2+\|\hx\|^2, \qquad
+   x^THx=1 \iff q(\hx):=\hx^T\hH\hx+2\hb^T\hx=s. \]
+In terms of the defects,
+$s = W(V)^{-2}\sum w_iw_j\tau_{ij}$, the sum running over ordered
+non-adjacent pairs $i\neq j$, so $s>0$ for proper wrapping matrices.
+Throughout, eigenvalues of $\hH$ are those of its restriction to
+$z^\perp$ (on $z$ itself $\hH$ vanishes).
+
+With the multiplier convention of \cite{CW} (the multiplier of the
+quadratic constraint written as $-1/\mu$), a point $x=x^0+\hx\in\Wc^H$ is
+{\em stationary with multiplier $\mu\neq 0$} if
+\begin{equation}
+\label{eq:stat}
+(\mu I-\hH)\,\hx=\hb \quad\mbox{on } z^\perp.
+\end{equation}
+In the eigenvector basis $\hH=U\,{\rm diag}(\lambda_i)\,U^T$, $c=U^T\hb$,
+$y=U^T\hx$, (\ref{eq:stat}) reads $(\mu-\lambda_i)y_i=c_i$. For $\mu$ not
+an eigenvalue, $x(\mu)=x^0+(\mu I-\hH)^{-1}\hb$ is the {\em secular curve},
+and $x(\mu)\in\Wc^H$ iff $\mu$ solves the secular equation
+\cite[(19)]{CW}.
+
+\begin{lem}
+\label{lem:global}
+Let $x=x^0+\hx\in\Wc^H$.
+\begin{enumerate}
+\item[(a)] If $x$ is stationary with a multiplier $\mu>0$ such that
+$\mu\geq\lmax(\hH)$, then $x$ is a global minimizer of (\ref{eq:v}).
+\item[(b)] If $s>0$, $\lmax(\hH)>0$ and $x$ is a global minimizer of
+(\ref{eq:v}), then $x$ is stationary with a multiplier
+$\mu\geq\lmax(\hH)$.
+\end{enumerate}
+\end{lem}
+\begin{proof}
+(a) On $z^\perp$ the function $L(y)=\|y\|^2-\mu^{-1}(q(y)-s)$ has the
+Hessian $2(I-\hH/\mu)\succeq 0$, so it is convex, and $\nabla L(\hx)=0$ by
+(\ref{eq:stat}). Hence for every feasible $y$ (i.e. $q(y)=s$)
+$\|y\|^2=L(y)\geq L(\hx)=\|\hx\|^2$.
+
+(b) Let $r=\|\hx\|$. If some $y\in z^\perp$ with $\|y\|<r$ had
+$q(y)\geq s$, then, since $q(0)=0<s$, $q(ty)=s$ for some $t\in(0,1]$, a
+feasible point of norm $t\|y\|<r$. So $q<s$ on the open ball of radius $r$
+and, by continuity, $\hx$ maximizes $q$ over the closed ball. By the
+characterization of trust region solutions \cite{MS83} applied to $-q$
+there is $\mu\geq0$ with $(\mu I-\hH)\hx=\hb$ and $\mu I-\hH\succeq 0$ on
+$z^\perp$; thus $\mu\geq\lmax(\hH)>0$.
+\end{proof}
+
+\begin{rem}[QUALEX-MS]
+\label{rem:qualex}
+The trust region program of \cite{B02} (cf. \cite[Theorem~3]{CW}) maximizes
+$x^TAx$, $A=H-w_{\min}I$, over $z^Tx=1$, $\|x\|=r$. On such a sphere
+$x^Tx$ is constant, so its stationary points are those of $q$ on
+$\|\hx\|=\sqrt{r^2-\|x^0\|^2}$; they satisfy (\ref{eq:stat}) with the same
+$\hx$. The solver works with $\hat A=PAP=\hH-w_{\min}P$ and the multiplier
+$\mu^*=\mu-w_{\min}$: the same eigenvectors and linear form, all eigenvalues
+and multipliers shifted by $w_{\min}$. By Lemma~\ref{lem:global}, when $s>0$
+and $\lmax(\hH)>0$ the global minimizers of (\ref{eq:v}) are the stationary
+points with $\mu\geq\lmax(\hH)$, which are the global maximizers of the
+trust region objective on their own sphere \cite{MS83}; in the solver's
+terms, $\mu^*\geq\lmax(\hat A)$. Counts of ``eigenvalues above $\mu^*$'' reported by the solver are counts of
+eigenvalues of $\hH$ above $\mu$.
+\end{rem}
+
+\subsection{The gauge}
+
+\begin{lem}
+\label{lem:gauge}
+For $H\in\Hc(G,w)$ and $t\neq-1$ let $H_t=(1+t)H-t\,zz^T$. Then
+$H_t\in\Hc(G,w)$ with defects $(1+t)\tau$, $\Wc^{H_t}=\Wc^H$ and
+$v(H_t)=v(H)$; moreover $\hH_t=(1+t)\hH$, $\hb_t=(1+t)\hb$, $s_t=(1+t)s$,
+and a point is stationary for $H$ with multiplier $\mu$ iff it is
+stationary for $H_t$ with multiplier $(1+t)\mu$.
+\end{lem}
+\begin{proof}
+On $E$ and the diagonal the entries of $H_t$ are
+$(1+t)z_iz_j-tz_iz_j=z_iz_j$, and on a non-edge
+$(1+t)z_iz_j(1-\tau_{ij})-tz_iz_j=z_iz_j(1-(1+t)\tau_{ij})$. For $z^Tx=1$,
+$x^TH_tx=(1+t)x^THx-t$, which equals $1$ iff $x^THx=1$. Since $Pz=0$,
+$\hH_t=(1+t)\hH$ and $\hb_t=(1+t)PHx^0-tPz(z^Tx^0)=(1+t)\hb$, and
+$s_t=1-(1+t)(x^0)^THx^0+t=(1+t)s$. Multiplying (\ref{eq:stat}) by $1+t$
+gives the last claim.
+\end{proof}
+
+So the wrapper surface depends only on the defects up to a common factor,
+and the multipliers are defined up to the same factor. In particular the
+uniform perturbation of the standard wrapper, $h_{ij}=-t z_iz_j$ on every
+non-edge, is $(H_0)_t$ and changes nothing. For $1+t>0$
+the position of a multiplier within the spectrum of $\hH$ and the ratio
+\[ \rho(H)=\frac{\lmax(\hH)-\lmin(\hH)}{\|\hb\|} \]
+are invariant; absolute spectral widths are not.
+
+\section{Anchoring one clique}
+\label{sec:one}
+
+\begin{defn}
+A maximal clique $Q$ is {\em anchored at level $\mu$} in $H\in\Hc(G,w)$ if
+(\ref{eq:cw3}) holds with $C=W(Q)-\mu$.
+\end{defn}
+
+\begin{lem}
+\label{lem:tau}
+The following are equivalent:
+\begin{enumerate}
+\item[(a)] $Q$ is anchored at level $\mu$ in $H$;
+\item[(b)] $\sum_{j\in Q\setminus N(i)} w_j\tau_{ij}=\mu$ for every
+$i\in V\setminus Q$;
+\item[(c)] $Hz_Q=(W(Q)-\mu)\,z+\mu\,z_Q$.
+\end{enumerate}
+\end{lem}
+\begin{proof}
+For $i\notin Q$,
+$\sum_{j\in Q}h_{ij}z_j=z_i\sum_{j\in Q\cap N(i)}w_j
++z_i\sum_{j\in Q\setminus N(i)}w_j(1-\tau_{ij})
+=z_i\bigl(W(Q)-\sum_{j\in Q\setminus N(i)}w_j\tau_{ij}\bigr)$,
+which gives (a)$\iff$(b). For $i\in Q$, $(Hz_Q)_i=z_iW(Q)$, which is the
+$i$-th entry of the right-hand side of (c) for every $\mu$; for $i\notin Q$
+the $i$-th entry of (c) is (\ref{eq:cw3}).
+\end{proof}
+
+For the standard wrapper the sum in (b) is $W(Q\setminus N(i))$, the weight
+of the non-neighbours of $i$ in $Q$, so $Q$ is anchored in $H_0$ iff that
+weight is the same for all outside vertices, which is \cite[Corollary~1]{CW}.
+Note that a clique that is not maximal can only be ``anchored'' at level
+$0$: a vertex adjacent to all of $Q$ has an empty sum in (b).
+
+\begin{lem}
+\label{lem:onsecular}
+Let $Q$ be a maximal clique and $\mu\neq0$. Then $Q$ is anchored at level
+$\mu$ in $H$ iff $x^Q$ is a stationary point of (\ref{eq:v}) with
+multiplier $\mu$. In that case $\hx^Q=x^Q-x^0$ satisfies
+$(\mu I-\hH)\hx^Q=\hb$, and if $\mu$ is not an eigenvalue of $\hH$ then
+$x^Q=x(\mu)$ is the point of the secular curve at $\mu$ and $\mu$ is a
+root of the secular equation.
+\end{lem}
+\begin{proof}
+Since $z^Tx^Q=1$, $Px^Q=x^Q-x^0=\hx^Q$, and $PHx^Q=PH(x^0+\hx^Q)=
+\hb+\hH\hx^Q$. If $Q$ is anchored, Lemma~\ref{lem:tau}(c) gives
+$Hx^Q=\frac{W(Q)-\mu}{W(Q)}z+\mu x^Q$, so $PHx^Q=\mu\hx^Q$, which is
+(\ref{eq:stat}). Conversely, (\ref{eq:stat}) says $P(Hx^Q-\mu x^Q)=0$, i.e.
+$Hz_Q=\mu z_Q+\kappa z$ for some $\kappa$; comparing an entry in $Q$ gives
+$\kappa=W(Q)-\mu$, which is Lemma~\ref{lem:tau}(c).
+\end{proof}
+
+So anchoring is exactly what makes the secular equation of \cite{CW} find
+$Q$: the curve $x(\mu)$ passes through $x^Q$ at $\mu=\mu_Q$. \cite[Theorem~2]{CW}
+is the direction ``anchored $\Rightarrow$ stationary''; for proper wrappers
+$\mu_Q>0$ by Lemma~\ref{lem:tau}(b).
+
+\begin{prop}[the construction]
+\label{prop:construct}
+Let $Q$ be a maximal clique and $H\in\Hc(G,w)$. For $i\notin Q$ let
+$C_i=z_i^{-1}\sum_{j\in Q}h_{ij}z_j$ and $m_i=W(Q\setminus N(i))>0$. For
+any $C\leq\min_{i\notin Q}C_i$, the matrix $H'$ obtained by
+\[ h'_{ij}=h'_{ji}=h_{ij}+\frac{C-C_i}{m_i}\,z_iz_j
+\qquad (i\notin Q,\ j\in Q\setminus N(i)), \]
+all other entries unchanged, lies in $\Hc(G,w)$, satisfies $H'\leq H$
+entrywise, and anchors $Q$ at level $W(Q)-C$. If $H$ is proper so is $H'$.
+\end{prop}
+\begin{proof}
+A non-edge between $i\notin Q$ and $j\in Q$ enters condition
+(\ref{eq:cw3}) of $i$ only, so the conditions can be met one outside vertex
+at a time; the correction raises $C_i$ by
+$\frac{C-C_i}{m_i}\sum_{j\in Q\setminus N(i)}w_j=C-C_i$. The corrections
+are nonpositive, which lowers entries and raises defects.
+\end{proof}
+
+QUALEX-MS implements this as \texttt{anchor\_wrapper()} with $C=\min_iC_i$,
+optionally damping all corrections by a factor $\theta\in(0,1]$. For a single
+clique every level can be reached; $C\leq\min_iC_i$ is what keeps the
+corrections nonpositive.
+
+\begin{prop}[curvature towards other cliques]
+\label{prop:curv}
+Let $Q$ be anchored at level $\mu$ in $H$, let $Q'\neq Q$ be any clique and
+$u=x^{Q'}-x^Q$. Then $u\perp z$ and
+\[ \frac{u^T\hH u}{u^Tu} = \mu\left(1+\frac{W(Q')-W(Q)}{W(Q\triangle Q')}
+\right). \]
+\end{prop}
+\begin{proof}
+Write $a=W(Q')$, $b=W(Q)$, $c=W(Q\cap Q')$. Since $z^Tu=0$,
+$u^T\hH u=u^THu$. By Lemma~\ref{lem:cliquevec}, $z_{Q'}^THz_{Q'}=a^2$ and
+$z_Q^THz_Q=b^2$; by Lemma~\ref{lem:tau}(c),
+$z_{Q'}^THz_Q=(b-\mu)z_{Q'}^Tz+\mu z_{Q'}^Tz_Q=(b-\mu)a+\mu c$. Hence
+\[ u^THu=\frac{a^2}{a^2}+\frac{b^2}{b^2}-\frac{2((b-\mu)a+\mu c)}{ab}
+=\frac{2\mu(a-c)}{ab},\qquad
+u^Tu=\frac1a+\frac1b-\frac{2c}{ab}=\frac{a+b-2c}{ab}, \]
+and $a+b-2c=W(Q\triangle Q')$, so the quotient is
+$2\mu(a-c)/(a+b-2c)=\mu(1+(a-b)/(a+b-2c))$.
+\end{proof}
+
+\begin{cor}
+\label{cor:curv}
+Let $Q$ be anchored at a level $\mu>0$.
+\begin{enumerate}
+\item[(a)] If some clique $Q'$ is heavier than $Q$, then $\lmax(\hH)>\mu$:
+the anchored indicator is not a maximizer of the trust region program on
+its sphere, and the excess curvature towards $Q'$ is the gain
+$W(Q')-W(Q)$ per unit of exchanged weight $W(Q\triangle Q')$, times $\mu$.
+\item[(b)] Towards a clique of the same weight the curvature equals $\mu$;
+towards a lighter one it is smaller.
+\end{enumerate}
+\end{cor}
+
+Part (a) is quantitative, not merely the observation that $x^{Q'}$ is a
+feasible point of smaller norm: the directions of positive excess curvature
+point to heavier cliques, most strongly to those that differ from $Q$ by a
+small exchange with a gain. This is the local exchange behaviour measured in
+Section~\ref{sec:exp}.
+
+\section{Anchoring one clique in QUALEX-MS: experiments}
+\label{sec:exp}
+
+\subsection{Protocol and provenance}
+
+A QUALEX-MS {\em pass} builds a wrapping matrix, runs the trust region
+stage and refines the stationary points into cliques. The variants (named
+as in \texttt{bench/variants}) were:
+\begin{description}
+\item[head] the standard pass with $H_0$;
+\item[anc] ({\em cold}) one pass with $H_0$ anchored on the clique of the
+greedy MIN heuristic; \textbf{anc05} the same with $\theta=0.5$;
+\textbf{ancs} with the corrections dealt out to randomly permuted outside
+vertices, so that (\ref{eq:cw3}) fails (a control); \textbf{ancp} re-anchored
+on each improvement, at most 4 anchored passes;
+\item[ancw] ({\em warm}) the standard pass, then one pass anchored on its
+final clique; \textbf{ancws} its shuffled control; \textbf{ancwp} re-anchored
+on each improvement, at most 4 anchored passes;
+\item[icel] as ancw, then one line-searched step of $\lmax(H)$ minimization
+along the gradient $2u_iu_j$ ($u$ the top eigenvector) on all non-edges,
+entries clipped at $h_{ij}\leq0$, and re-anchoring (``fire and ice'');
+\textbf{icels} with the step's entries shuffled over the non-edges;
+\textbf{ices} a step on $\lmax(\hH)$ that only moves each outside vertex's
+correction among its non-neighbours in $Q$, so that (\ref{eq:cw3}) stays
+exact;
+\item[lz] the standard pass replaced by a pass on the $\lmax$-stepped
+standard wrapper; \textbf{lzw} that wrapper as a second pass after the
+standard one; \textbf{lzws} its shuffled control.
+\end{description}
+The test sets were the 70 DIMACS graphs outside the ten largest; a set of
+56 weighted graphs; uniform random graphs $G(n,p)$ with
+$n\in\{200,300,500,1000\}$, $p\in\{0.25,0.5,0.7,0.8,0.9,0.95\}$, five of each,
+unweighted (\texttt{ru}) and with integer weights uniform on $\{1..10\}$
+(\texttt{rw}), for 70 of the weighted and 50 of the unweighted of which
+cliquer \cite{NO03} proved the optimum; and for the largest runs the ten
+largest DIMACS graphs and 24 random graphs with $n=2000$.
+
+Results quoted from the experiments of 12--13 September 2026 were measured
+before the benchmark tooling was put under version control; their logs,
+and the generator of the 56-graph weighted set, were lost when the machine's
+\texttt{/tmp} was wiped. Tables~\ref{tab:rw} and~\ref{tab:lz} are
+reproducible: \texttt{bench/compare.py} computes them from the results
+committed to the QUALEX-MS repository (directory \texttt{bench/runs},
+solver built from commit 6cebb51), and they reproduce the corresponding
+earlier figures exactly.
+
+\subsection{The construction and the spectrum}
+
+The construction is exact: on every anchored run the stationary point at
+$\mu_Q$ returned the indicator to $10^{-15}$. The anchored indicator was
+never the maximizer on its sphere: between 8 and 276 eigenvalues of $\hH$
+lay above $\mu_Q$ (median 30 of 399 on DIMACS). Taking $C$ below
+$\min_iC_i$ does not change this: each unit taken off $C$ raises $\mu_Q$ by
+one but $\lmax$ by 1.2 to 2.6, and the count above $\mu_Q$ levels off at up
+to $|Q|$ (the correction is supported on the $Q\times(V\setminus Q)$ block,
+so it has at most $|Q|$ positive eigenvalues). By Theorem~\ref{thm:global}
+below, no choice could have made the indicator a global maximizer on these
+graphs unless $\vartheta=\omega$.
+
+The corrections are large (smallest $t_i=(C-C_i)/m_i$: median $-7$ on DIMACS,
+$-10$ on weighted graphs, down to $-132$), and forced: a vertex missing a
+single vertex of $Q$ must put its whole correction on one entry. One
+anchoring widens the absolute spectrum of $\hH$ (spectral radius $\times1.3$
+to $2.1$ on unweighted graphs, $\times1.9$ to $3.6$ on weighted random ones,
+9 graphs), but it inflates $\hb$ as well, and the gauge-invariant ratio
+$\rho(H)$ decreased on 5 of the 9 graphs (\gr{brock200_1} 57 to 37,
+\gr{g500_50_0} 88 to 40) and increased on 3 (\gr{p_hat300-3} 23 to 40).
+Iterated anchoring does not compound: each pass rebuilds the standard
+wrapper and anchors once, and $\lmax$ even fell as the anchor improved
+(\gr{g2000_95_0} weighted: 127 standard, then 407, 266, 266, 261).
+
+\subsection{Cold, warm and iterated anchoring}
+
+{\em Cold} anchoring loses: DIMACS 2 better and 9 worse
+(\gr{gen400_p0.9_65} $65\to52$), weighted random graphs 15 better and 67
+worse. Neither $\theta=0.5$, nor a shuffled anchor (11/76), nor iterating
+(31/50) rescued it. By Corollary~\ref{cor:curv}, anchoring makes the
+neighbourhood of $Q$ attractive; around a poor clique that is a bad place.
+
+{\em Warm} anchoring never lost on 366 graphs. It improved 3 DIMACS graphs
+(\gr{keller5} $26\to27$, \gr{gen400_p0.9_55} $53\to55$, \gr{MANN_a45}
+$342\to343$), 8 of the weighted-56, 15 of 120 unweighted and 55 of 120
+weighted random graphs, at 1.5 to 1.9 times the time of one pass. A second
+pass on a randomly perturbed wrapper of comparable cost improved 2, 0, 2 and
+21 of the same.
+
+{\em Iterating} it (ancwp) keeps climbing on dense weighted graphs: 35 of
+the 120 weighted random graphs improved beyond the first anchored pass
+(total weight $+179$, seven still improving at the cap of four passes),
+3 of the weighted-56 (\gr{w_nrm_200_90_1}: $263\to267\to268\to270\to272$,
+the optimum), 2 unweighted random graphs and no DIMACS graph; 38 of the 70
+proven weighted optima were reached. On the largest graphs iterated warm
+anchoring improved \gr{keller6} $53\to55$ and \gr{MANN_a81} $1096\to1098$,
+3 of 12 unweighted $n=2000$ graphs (\gr{g2000_50_1} $15\to16$) and 8 of 12
+weighted ones, with the largest gains seen (\gr{g2000_95_0} $891\to932$,
+\gr{g2000_90_0} $530\to555$), at 2 to 4 times the time.
+
+The gains are local: a median of 2 vertices dropped and 3 added, 95--97\% of
+the anchor kept (91\% after iterating), against about 59\% for the gains of a
+random wrapper. Whether meeting (\ref{eq:cw3}) exactly matters depends on
+density: on weighted random graphs with $p\leq0.7$ the shuffled control did
+as well (11 improved against 7; 37 proven optima each), but for $p\in\{0.9,
+0.95\}$ only the exact anchor worked (38 against 6), and likewise on dense
+unweighted graphs (12 against 1).
+
+\subsection{Blending in one step of \texorpdfstring{$\lambda_{\max}$}{lambda-max} minimization}
+
+Minimizing $\lmax(H)$ over $\Hc(G,w)$ is the Lov\'asz program
+(\ref{eq:thetaprimal}); its optima are known to be highly degenerate, and
+Sections~\ref{sec:several}--\ref{sec:all} explain why. One step of it was
+tried instead of the full minimization. The top eigenvector $u$ of $H$ was
+within about a percent of $z/\|z\|$, so the gradient $2u_iu_j$ has cosine
+$0.98$ to $1.00$ with the gauge direction $z_iz_j$ of Lemma~\ref{lem:gauge},
+which changes nothing. The remainder drives $\hb$ towards $0$: by
+definition $\hb=PHz/W(V)$ vanishes iff $z$ is an eigenvector of $H$. The
+ratio $\rho(H)$ grew by a median factor of $1.23$ to $1.65$ per suite, where
+the shuffled control stayed at $1.00$.
+
+Against one warm anchored pass the step (icel) raised the proven weighted
+optima from 37 to 41 of 70, all four gains at $p\leq0.5$ (5 better and 0
+worse there, against 0 and 1 for icels), and the unweighted ones from 43 to
+44 of 50; on dense graphs it was 7 better and 9 worse, no different from its
+control, and on DIMACS it gave back \gr{MANN_a45} $343\to342$. The
+projected variant (ices) changed little (7 better, 5 worse on weighted random
+graphs). Without anchoring (lz, lzw) the step is mostly the effect of any
+large change of wrapper (Table~\ref{tab:lz}). The step also raised the
+number of eigenvalues above $\mu_Q$ at the anchored point on 93 of the 120
+weighted random graphs and lowered it on none (median 29.5 to 43): the
+benefit of icel over ancw is not a more stable anchor.
+
+\begin{table}[ht]
+\begin{center}
+\small
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+variant & proven optima & vs head & $p\leq0.5$ & $p=0.7$ & $p\geq0.8$ \\
+        & (of 70) & better/worse & & & \\
+\hline
+head & 33 & -- & -- & -- & -- \\
+ancw & 37 & 55/0 & 3/0 & 4/0 & 48/0 \\
+icel & 41 & 59/0 & 7/0 & 4/0 & 48/0 \\
+lz   & 35 & 33/36 & 6/6 & 4/9 & 23/21 \\
+lzw  & 40 & 34/0 & 6/0 & 5/0 & 23/0 \\
+lzws & 35 & 28/0 & 3/0 & 3/0 & 22/0 \\
+\hline
+icel vs ancw & & 12/9 & 5/0 & 0/0 & 7/9 \\
+lzw vs lzws  & & 20/18 & 5/1 & 3/3 & 12/14 \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:rw} Weighted random graphs (120, of which 70 with proven
+optima). Time relative to head: ancw 1.88, icel 2.20, lz 1.34, lzw 1.98,
+lzws 1.76.}
+\end{table}
+
+\begin{table}[ht]
+\begin{center}
+\small
+\begin{tabular}{|l|c|c|c|}
+\hline
+variant & DIMACS (70) & unweighted random (120) & weighted random (120) \\
+\hline
+lz   & 2/0 & 10/3 & 33/36 \\
+lzw  & 1/0 & 11/0 & 34/0 \\
+lzws & 3/0 & 7/0  & 28/0 \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:lz} One $\lmax$ step without anchoring, better/worse
+against head. The DIMACS changes were \gr{DSJC1000.5} $14\to15$ (lz, lzw),
+\gr{gen400_p0.9_55} $53\to54$ (lz) and $\to55$ (lzws), \gr{keller5}
+$26\to27$ and \gr{MANN_a45} $342\to343$ (lzws). On the unweighted random
+graphs all three reach 43 of the 50 proven optima (head 42). For
+comparison, as second passes: a random wrapper 2/2/21, warm anchoring
+3/15/55.}
+\end{table}
+
+\section{Anchoring several cliques}
+\label{sec:several}
+
+We say that $H$ anchors the maximal cliques $Q_1,\ldots,Q_k$ at levels
+$\mu_1,\ldots,\mu_k$ if it anchors each $Q_a$ at $\mu_a$. By
+Lemma~\ref{lem:tau} this is a system of linear equations in the defects,
+one for each pair $(Q_a,i)$ with $i\notin Q_a$:
+\begin{equation}
+\label{eq:system}
+\sum_{j\in Q_a\setminus N(i)} w_j\tau_{ij}=\mu_a .
+\end{equation}
+A non-edge $\{i,j\}$ can now occur in several equations, and the system can
+be inconsistent. For $Q_a\neq Q_b$ we write $D_a=Q_a\setminus Q_b$,
+$D_b=Q_b\setminus Q_a$ and $K=Q_a\cap Q_b$; for maximal cliques $D_a$ and
+$D_b$ are nonempty.
+
+\begin{thm}[level identity]
+\label{thm:level}
+If $H$ anchors two distinct maximal cliques $Q_a,Q_b$ at levels
+$\mu_a,\mu_b$, then
+\[ \mu_a\,W(Q_b\setminus Q_a) = \mu_b\,W(Q_a\setminus Q_b). \]
+\end{thm}
+\begin{proof}
+A vertex $i\in D_b$ lies outside $Q_a$ and is adjacent to all of $K$, so
+its non-neighbours in $Q_a$ lie in $D_a$ and (\ref{eq:system}) reads
+$\sum_{j\in D_a\setminus N(i)}w_j\tau_{ij}=\mu_a$. Multiplying by $w_i$ and
+summing over $i\in D_b$ gives
+$\sum w_iw_j\tau_{ij}=\mu_aW(D_b)$, the sum running over the non-edges
+between $D_a$ and $D_b$. The same computation from the side of $Q_b$ gives
+the same sum equal to $\mu_bW(D_a)$.
+\end{proof}
+
+A second proof: apply Proposition~\ref{prop:curv} to $u=x^{Q_b}-x^{Q_a}$
+from both ends. The Rayleigh quotient of $u$ is
+$\mu_a(1+(W_b-W_a)/W(\triangle))=\mu_b(1+(W_a-W_b)/W(\triangle))$, with
+$W_a=W(Q_a)$ and $W(\triangle)=W(D_a)+W(D_b)$, which rearranges to the
+identity.
+
+\begin{cor}
+\label{cor:equal}
+Cliques of equal weight anchored in one wrapper share one level; in
+particular all maximum weight cliques do. Pairwise disjoint anchored cliques
+have levels proportional to their weights.
+\end{cor}
+
+For three or more cliques the pairwise ratios
+$W(D_a)/W(D_b)$ must also be consistent around every cycle, which for
+overlapping cliques of different weights generically fails, and then only
+the level $0$ remains.
+
+\begin{thm}[collision]
+\label{thm:collision}
+Let $H$ anchor distinct maximal cliques $Q_1,\ldots,Q_k$, $k\geq2$, at a
+common level $\mu\neq0$, and let $E=\ker(\mu I-\hH)\cap z^\perp$. Then
+\begin{enumerate}
+\item[(a)] every difference $x^{Q_a}-x^{Q_b}$ lies in $E$, so $\mu$ is an
+eigenvalue of $\hH$ of multiplicity at least
+$d=\dim\aff\{x^{Q_1},\ldots,x^{Q_k}\}\geq1$;
+\item[(b)] $\hb\perp E$: the linear form $c$ vanishes on the whole
+eigenspace;
+\item[(c)] $\hx^{Q_a}=\hx_p+e_a$ with a common $\hx_p\in E^\perp$ and
+$e_a\in E$; if the $W(Q_a)$ are equal, no $x^{Q_a}$ lies on the secular
+curve, which passes through $x^0+\hx_p$ at $\mu$.
+\end{enumerate}
+\end{thm}
+\begin{proof}
+By Lemma~\ref{lem:onsecular}, $(\mu I-\hH)\hx^{Q_a}=\hb$ for every $a$;
+subtracting two of these gives (a). Then $\hb$ lies in the range of the
+symmetric operator $\mu I-\hH$ on $z^\perp$, which is $E^\perp$, giving
+(b). Decompose $\hx^{Q_a}$ along $E^\perp\oplus E$; the $E^\perp$
+components solve the same nonsingular system on $E^\perp$ and so coincide.
+If the weights are equal,
+$\|\hx^{Q_a}\|^2=1/W(Q_a)-1/W(V)$ is the same for all $a$, hence so is
+$\|e_a\|$; if one $e_a$ vanished all would, and all the indicators would
+coincide. Since $c=0$ on $E$, the secular curve has no pole at $\mu$ and
+tends to $x^0+(\mu I-\hH)^+\hb=x^0+\hx_p$ there; at any other multiplier
+it cannot meet $x^{Q_a}$, whose multiplier is $\mu$ by
+Lemma~\ref{lem:onsecular}.
+\end{proof}
+
+This is precisely the ``degenerate case of multiple eigenvalues with
+$c_i=0$'' that \cite[Section~5]{CW} sets aside: anchoring several cliques
+of equal weight forces it, whatever the remaining free entries. The
+contrapositive is useful as well: if $\hb$ has a nonzero component along
+$x^{Q_a}-x^{Q_b}$ for two cliques of equal weight, then $H$ does not anchor
+both. Making a degenerate direction ``active'' ($c\neq0$ on it) and
+anchoring the cliques that span it are mutually exclusive.
+
+\begin{thm}[two cliques]
+\label{thm:two}
+Let $Q_a\neq Q_b$ be maximal cliques and let $B$ be the bipartite graph on
+$D_a\cup D_b$ whose edges are the non-adjacent pairs of $G$ between $D_a$
+and $D_b$. There is $H\in\Hc(G,w)$ anchoring $Q_a$ and $Q_b$ at nonzero
+levels iff
+\begin{enumerate}
+\item[(i)] every connected component $\Gamma$ of $B$ satisfies
+$W(\Gamma\cap D_a)/W(\Gamma\cap D_b)=W(D_a)/W(D_b)$, and
+\item[(ii)] if some vertex outside $Q_a\cup Q_b$ is adjacent to all of
+$Q_a\triangle Q_b$, then $W(Q_a)=W(Q_b)$.
+\end{enumerate}
+The levels then satisfy $\mu_a:\mu_b=W(D_a):W(D_b)$.
+\end{thm}
+\begin{proof}
+Every vertex of $B$ has a neighbour in $B$: a vertex $j\in D_a$ adjacent to
+all of $D_b$ would be adjacent to all of $Q_b$, contradicting maximality.
+The equations (\ref{eq:system}) and the defects they involve split into
+independent blocks.
+
+{\em Outside vertices.} For $i\notin Q_a\cup Q_b$ let $A_i=D_a\setminus
+N(i)$, $B_i=D_b\setminus N(i)$, $K_i=K\setminus N(i)$. The equations of $i$
+are $\tau(K_i)+\tau(A_i)=\mu_a$ and $\tau(K_i)+\tau(B_i)=\mu_b$, where
+$\tau(S)=\sum_{j\in S}w_j\tau_{ij}$, and their defects occur in no other
+equation. By maximality $K_i\cup A_i$ and $K_i\cup B_i$ are nonempty. If
+$A_i=B_i=\emptyset$ (i.e. $i$ is adjacent to all of $Q_a\triangle Q_b$),
+both read $\tau(K_i)=\mu_a=\mu_b$; otherwise they are solvable for any
+levels (if, say, $B_i=\emptyset\neq A_i$, set $\tau(K_i)=\mu_b$ and
+$\tau(A_i)=\mu_a-\mu_b$).
+
+{\em The two differences.} As in the proof of Theorem~\ref{thm:level} the
+remaining equations are, with $\xi_{ij}=w_iw_j\tau_{ij}$ on the edges of
+$B$, $\sum_j\xi_{ij}=w_i\mu_a$ for $i\in D_b$ and $\sum_i\xi_{ij}=w_j\mu_b$
+for $j\in D_a$: edge values of $B$ with prescribed sums at the vertices.
+The incidence matrix of a connected bipartite graph has corank one, its
+left kernel spanned by the vector that is $+1$ on one side and $-1$ on the
+other; so this is solvable iff every component satisfies
+$\mu_aW(\Gamma\cap D_b)=\mu_bW(\Gamma\cap D_a)$. Summing over components
+gives Theorem~\ref{thm:level}, and for nonzero levels the component
+conditions hold iff (i) does. With (ii) for the outside vertices this
+proves the claim.
+\end{proof}
+
+\begin{cor}
+\label{cor:twomax}
+Any two maximum weight cliques can be anchored in one wrapper at a common
+positive level with all defects nonnegative.
+\end{cor}
+\begin{proof}
+Here $W(D_a)=W(D_b)$ and the level is common. For $S\subseteq D_b$ let
+$N_B(S)$ be its neighbourhood in $B$. The set $(Q_a\setminus N_B(S))\cup S$
+is a clique (vertices of $S$ are adjacent to $K$, and to every vertex of
+$D_a$ outside $N_B(S)$), of weight $W(Q_a)-W(N_B(S))+W(S)$, so
+$W(N_B(S))\geq W(S)$ by maximality of $W(Q_a)$. By the supply--demand
+theorem of Gale \cite{G57}, the transportation problem with supplies
+$w_i\mu$ on $D_b$, demands $w_j\mu$ on $D_a$ and routes along the edges of
+$B$ then has a nonnegative solution. For an outside vertex $i$ take
+$\tau(K_i)=\mu$ and $\tau(A_i)=\tau(B_i)=0$ if $A_i$ or $B_i$ is empty
+($K_i$ is then nonempty), and $\tau(K_i)=0$, $\tau(A_i)=\tau(B_i)=\mu$
+otherwise, spreading each sum evenly over its non-edges.
+\end{proof}
+
+Nonnegative, however, does not mean proper:
+
+\begin{prop}[forced blindness]
+\label{prop:blind}
+Let $H$ anchor $Q_a$ and $Q_b$ at a common level, and let
+$i\notin Q_a\cup Q_b$ be adjacent to all of $D_b$. Then
+$\sum_{j\in D_a\setminus N(i)}w_j\tau_{ij}=0$. In particular a proper
+wrapper cannot anchor both if such an $i$ has a non-neighbour in $D_a$;
+with nonnegative defects all these $\tau_{ij}$ vanish, so $h_{ij}=z_iz_j$ on
+those non-edges: the wrapper does not distinguish them from edges.
+\end{prop}
+\begin{proof}
+Subtract the two equations of $i$ in the proof of Theorem~\ref{thm:two}:
+with $B_i=\emptyset$ they give $\tau(A_i)=\mu_a-\mu_b=0$.
+\end{proof}
+
+In dense graphs, maximum cliques that differ by a single exchange
+$Q_b=Q_a-j+j'$ are common, and every outside vertex $i$ adjacent to $j'$ but
+not to $j$ then makes the non-edge $\{i,j\}$ invisible, here without any sign
+condition, since $D_a=\{j\}$ leaves a single defect in the sum. Once invisible
+non-edges cover all the non-neighbours of some vertex in some other anchored
+clique, that vertex's equation reads $0=\mu$ and the common level collapses;
+Example~\ref{ex:cascade} shows this with three maximum cliques.
+
+\section{Anchoring every maximum clique}
+\label{sec:all}
+
+\subsection{The best relaxation is the Lov\'asz number}
+
+\begin{thm}
+\label{thm:theta}
+For every $H\in\Hc(G,w)$, $v(H)\leq 1/\vt$, with equality whenever
+$\lmax(H)=\vt$. Hence
+\[ \max_{H\in\Hc(G,w)}\ \min\{x^Tx:\ x\in\Wc^H\}=\frac{1}{\vt}. \]
+\end{thm}
+\begin{proof}
+{\em Equality for Lov\'asz-optimal $H$.} For $x\in\Wc^H$,
+$1=x^THx\leq\lmax(H)\,x^Tx=\vt\,x^Tx$, so $v(H)\geq1/\vt$; the upper bound
+below then gives equality.
+
+{\em The upper bound.} Consider the semidefinite relaxation
+\[ v_{\rm SDP}(H)=\min\{\tr X:\ \langle H,X\rangle=1,\
+\langle zz^T,X\rangle=1,\ X\succeq0\}. \]
+If $x\in\Wc^H$ then $X=xx^T$ is feasible with $\tr X=x^Tx$, so
+$v_{\rm SDP}(H)\leq v(H)$. Conversely, the feasible set is nonempty and the
+trace is bounded below and coercive on it, so the minimum is attained and
+the optimal set is a nonempty compact face of the feasible set. An extreme
+point of it is an extreme point of the feasible set, which is cut out of
+the positive semidefinite cone by two linear equations; by the rank bound
+of Barvinok and Pataki \cite{Ba95,P98} it has rank $r$ with
+$r(r+1)/2\leq2$, so $r\leq1$, and $r=0$ is excluded by
+$\langle zz^T,X\rangle=1$. Writing it as $xx^T$ with $z^Tx=1$ (replacing $x$ by
+$-x$ if necessary) gives $x\in\Wc^H$ with $x^Tx=v_{\rm SDP}(H)$. Hence
+$v(H)=v_{\rm SDP}(H)$.
+
+Now let $X^*$ be a Lov\'asz optimum. $H$ and $zz^T$ agree on the support of
+$X^*$ (the diagonal and $E$), so $X=X^*/\vt$ has
+$\langle H,X\rangle=\langle zz^T,X\rangle=1$ and $\tr X=1/\vt$. Thus
+$v(H)=v_{\rm SDP}(H)\leq1/\vt$.
+\end{proof}
+
+So every wrapping matrix gives an upper bound $1/v(H)\geq\vt\geq\om$ on the
+weighted clique number, and the Lov\'asz-optimal wrappers give the best of
+them. In the sense of the relaxed least squares program they are the best
+wrappers. By Lemma~\ref{lem:gauge}, $v$ is constant on gauge orbits. For
+the standard wrapper of a regular graph the bound is a classical one:
+
+\begin{cor}
+\label{cor:hoffman}
+Let $G$ be $d$-regular, not complete, with unit weights, and let
+$\lambda_2$ be the largest eigenvalue of $A_G$ on $\one^\perp$. Then
+\[ \frac{1}{v(H_0)}=\frac{n(1+\lambda_2)}{n-d+\lambda_2}, \]
+Hoffman's ratio bound \cite{Ho70} on $\alpha(\bar G)=\omega(G)$ applied to
+the $(n-1-d)$-regular graph $\bar G$.
+\end{cor}
+\begin{proof}
+Here $x^0=\one/n$ and $H_0x^0=(1+d)x^0$, so $\hb=0$ and
+$s=1-(1+d)/n$. As $A_G$ preserves $\one^\perp$, $\lmax(\hH_0)=1+\lambda_2$,
+which is at least $1$ for a non-complete graph ($\lambda_2$ is then the
+second eigenvalue of $A_G$, at least $0$ by interlacing with two
+non-adjacent vertices). The program is
+$\min\|\hx\|^2$ subject to $\hx^T\hH_0\hx=s$, with value
+$s/(1+\lambda_2)$, so $v(H_0)=1/n+(n-1-d)/(n(1+\lambda_2))$, which
+rearranges to the claim. The smallest eigenvalue of $A_{\bar G}$ is
+$-1-\lambda_2$, and Hoffman's bound for $\bar G$ is
+$n(1+\lambda_2)/(n-1-d+1+\lambda_2)$.
+\end{proof}
+
+With Theorem~\ref{thm:theta} this recovers Lov\'asz's inequality
+$\vartheta\leq$ Hoffman's bound for regular graphs \cite[Theorem 9]{L79}:
+passing from the standard to a Lov\'asz-optimal wrapper improves the relaxed
+bound from Hoffman's to $\vartheta$.
+
+\subsection{Global anchoring}
+
+\begin{thm}
+\label{thm:global}
+For a clique $Q$ the following are equivalent:
+\begin{enumerate}
+\item[(a)] $x^Q$ is a global minimizer of (\ref{eq:v}) for some
+$H\in\Hc(G,w)$;
+\item[(b)] $W(Q)=\om=\vt$.
+\end{enumerate}
+If they hold, every Lov\'asz-optimal $H$ anchors every maximum weight clique
+at level $\vt$ ($C=0$), and every maximum weight clique indicator is a
+global minimizer of (\ref{eq:v}) for it. Moreover, if some $H$ anchors a
+clique $Q$ at a level $\mu>0$ with $\mu\geq\lmax(\hH)$, then (b) holds.
+\end{thm}
+\begin{proof}
+(a)$\Rightarrow$(b): $1/W(Q)=\|x^Q\|^2=v(H)\leq1/\vt$ by
+Theorem~\ref{thm:theta}, so $W(Q)\geq\vt\geq\om\geq W(Q)$.
+(b)$\Rightarrow$(a): for Lov\'asz-optimal $H$, $v(H)=1/\vt=1/W(Q)=\|x^Q\|^2$.
+For a Lov\'asz-optimal $H$ and a maximum weight clique $Q'$, the Rayleigh
+quotient of $z_{Q'}$ is $W(Q')=\vt=\lmax(H)$ (Lemma~\ref{lem:cliquevec}),
+so $z_{Q'}$ is a top eigenvector, $Hz_{Q'}=\vt z_{Q'}$, which is
+Lemma~\ref{lem:tau}(c) with $\mu=W(Q')=\vt$. The last claim follows from
+Lemmas~\ref{lem:onsecular} and~\ref{lem:global}(a) and (a)$\Rightarrow$(b).
+\end{proof}
+
+So the relaxed program can be exact, in the sense that some wrapper makes a
+clique indicator its global minimizer, exactly when $\vartheta=\omega$; and
+then {\em anchoring one maximum clique globally is the same as anchoring all
+of them}. On graphs with $\vartheta>\omega$, which include most hard
+benchmark graphs, every anchored clique is a non-global stationary point.
+This is why QUALEX-MS must examine the stationary points in all intervals of
+the secular equation and not only the one beyond $\lmax$.
+
+\begin{cor}[the hard case]
+\label{cor:hard}
+Let $\vt=\om$ and let $G$ have $k\geq2$ maximum weight cliques, whose
+indicators span an affine space of dimension $d$. For every Lov\'asz-optimal
+$H$, $\mu=\vt$ equals $\lmax(\hH)$, with multiplicity at least $d$ and with
+$\hb$ orthogonal to its eigenspace. The multiplicity of $\lmax(H)$ is at
+least the rank of every Lov\'asz optimum, in particular at least
+$\dim\spn\{z_Q\}$ over the maximum weight cliques $Q$.
+\end{cor}
+\begin{proof}
+All maximum cliques are anchored at $\mu=\vt$ (Theorem~\ref{thm:global}).
+The restriction of $\hH$ to $z^\perp$ is a compression of $H$, so
+$\lmax(\hH)\leq\lmax(H)=\vt$ by interlacing, while
+Theorem~\ref{thm:collision} makes $\mu$ an eigenvalue of $\hH$ of
+multiplicity at least $d$ with $\hb$ orthogonal to its eigenspace. By
+(\ref{eq:compl}) the range of every Lov\'asz optimum $X$ lies in
+$\ker(\vt I-H)$, and the matrices $X_Q$ of Lemma~\ref{lem:cliquevec} are
+Lov\'asz optima when $W(Q)=\vt$.
+\end{proof}
+
+In trust region terms, the sphere of radius $\|\hx^Q\|$ is in the {\em hard
+case} \cite{MS83}: its global maximizers form a sphere inside
+$x^0+\hx_p+E$, which contains all the maximum clique indicators, none of
+them on the secular curve. This is the structural reason why the
+Lov\'asz-optimal wrappers, although best by Theorem~\ref{thm:theta}, are
+useless for recognizing a clique through the secular equation when there are
+several maximum cliques. When $\vartheta>\omega$ the Lov\'asz-optimal wrappers
+are degenerate for a different reason, the generic multiplicity of optimal
+eigenvalues \cite{O92,P98}; Section~\ref{sec:comp} shows both.
+
+\subsection{Colourings, holes and perfect graphs}
+
+In this subsection all weights are $1$, so $z=\one$ and $\hH$, $\tau$ are
+those of an unweighted graph.
+
+\begin{prop}[the colouring wrapper]
+\label{prop:colour}
+Let $\chi(G)=\omega(G)=\omega$, with colour classes $S_1,\ldots,S_\omega$.
+Then
+\[ H_\chi=\omega I-\Bigl(\omega\sum_{c=1}^{\omega}\one_{S_c}\one_{S_c}^T
+-\one\one^T\Bigr) \]
+lies in $\Hc(G,\one)$, with defects $\tau_{ij}=\omega$ inside colour
+classes and $\tau_{ij}=0$ between them, has $\lmax(H_\chi)=\omega$ and
+anchors every maximum clique at level $\omega$ ($C=0$).
+\end{prop}
+\begin{proof}
+The diagonal of $H_\chi$ is $\omega-(\omega-1)=1$; between classes the
+entries are $1$, which covers all edges; inside a class (non-adjacent
+pairs) they are $1-\omega$. The bracket is positive semidefinite by the
+Cauchy--Schwarz inequality,
+$\omega\sum_c(\one_{S_c}^Tx)^2\geq(\sum_c\one_{S_c}^Tx)^2$, so
+$H_\chi\preceq\omega I$, and $\lmax(H_\chi)=\omega$ by
+Lemma~\ref{lem:cliquevec}. A maximum clique $Q$ meets every class in one
+vertex; for $i\notin Q$ in class $c$, $\sum_{j\in Q}h_{ij}=(1-\omega)+
+(\omega-1)=0$, so $C=0$.
+\end{proof}
+
+The colouring wrapper sees only the complete $\omega$-partite graph on the
+colour classes: the indicator of every transversal of the colouring lies on
+$\Wc^{H_\chi}$ and has norm $1/\sqrt{\omega}$, exactly like a maximum
+clique, although most transversals are not cliques. Such pseudo-cliques are
+what the strict inequality of \cite[Proposition~2]{CW} rules out; the
+colouring wrapper is improper as soon as two colour classes are not
+completely joined.
+
+\begin{thm}
+\label{thm:holes}
+Let $G$ be an odd hole $C_{2k+1}$ or an odd antihole $\bar C_{2k+1}$,
+$k\geq2$, with unit weights. Every $H\in\Hc(G,\one)$ that anchors all
+maximum cliques of $G$ does so at level $0$, and then $H=\one\one^T$.
+\end{thm}
+\begin{proof}
+All maximum cliques share one level $\mu$ (Corollary~\ref{cor:equal}).
+Vertices are taken modulo $n=2k+1$.
+
+{\em Odd holes.} The maximum cliques are the edges $\{a,a+1\}$. For
+$Q=\{a,a+1\}$ the outside vertex $a+2$ misses only $a$ and $a-1$ misses
+only $a+1$, so every non-edge at distance $2$ has $\tau=\mu$; a vertex $v$
+with $a+3\leq v\leq a-2$ misses both, giving
+$\tau_{a,v}+\tau_{a+1,v}=\mu$. With $v=a+j+1$ this reads
+$\tau_{a,a+j+1}=\mu-\tau_{a+1,a+j+1}$, so by induction on $j$ every pair
+$\{b,b+j\}$ has $\tau=\mu$ for even $j$ and $\tau=0$ for odd $j$,
+$2\leq j\leq n-2$. The pair $\{b,b+2\}$ is also the pair
+$\{b+2,(b+2)+(n-2)\}$ with $n-2$ odd, so $\mu=0$, and then every defect is
+$0$.
+
+{\em Odd antiholes.} The non-edges are the pairs $\{b,b+1\}$; write
+$\tau_b$ for their defects. The maximum cliques of $\bar C_{2k+1}$ are the
+stable sets of size $k$ of $C_{2k+1}$, namely
+$Q_a=\{a,a+2,\ldots,a+2k-2\}$ (consecutive elements differ by $2$ except for
+one gap of $3$). The non-neighbours of an outside vertex $v$ in $Q_a$ are
+its neighbours on the cycle that belong to $Q_a$. For $v=a+2k-1$ this is
+$\{a+2k-2\}$ and for $v=a+2k$ it is $\{a\}$, so $\tau_{a+2k-2}=\mu$ and
+$\tau_{a-1}=\mu$ for all $a$: every defect equals $\mu$. For $v=a+1$ (which
+is outside $Q_a$ since $k\geq2$) it is $\{a,a+2\}$, giving
+$\tau_a+\tau_{a+1}=\mu$, i.e. $2\mu=\mu$. So $\mu=0$ and all defects vanish.
+\end{proof}
+
+Even holes behave differently. The same induction shows that $H$ anchors all
+maximum cliques of $C_{2k}$ ($k\geq2$) iff $\tau=\mu$ at even distances and
+$\tau=0$ at odd distances, which is consistent because $j$ and $2k-j$ have
+the same parity. At $\mu=2$ this is the colouring wrapper of the
+bipartition, so it is Lov\'asz-optimal ($\vartheta=\omega=2$). For $k\geq3$
+the odd-distance non-edges are invisible to {\em every} wrapper anchoring
+all maximum cliques, hence to every Lov\'asz-optimal wrapper. For $C_6$ the
+three long diagonals $\{i,i+3\}$ then satisfy $x^THx=1$ for
+$x=(e_i+e_{i+3})/2\in\Delta_n$, which has $x^Tx=1/2=1/\omega$: they are
+global minimizers of the program of \cite[Theorem~1]{CW} although they are not
+cliques. The Lov\'asz-optimal wrappers of $C_6$ are necessarily improper.
+
+\begin{thm}
+\label{thm:perfect}
+For a graph $G$ with unit weights the following are equivalent:
+\begin{enumerate}
+\item[(a)] $G$ is perfect;
+\item[(b)] for every induced subgraph $G'$ of $G$ some $H\in\Hc(G',\one)$
+anchors all maximum cliques of $G'$ at a common nonzero level.
+\end{enumerate}
+When (a) holds, $H$ in (b) can be taken Lov\'asz-optimal for $G'$.
+\end{thm}
+\begin{proof}
+(a)$\Rightarrow$(b): induced subgraphs of perfect graphs are perfect, so
+$\chi(G')=\omega(G')$, and Proposition~\ref{prop:colour} applies.
+(b)$\Rightarrow$(a): if $G$ is not perfect, by the strong perfect graph
+theorem \cite{CRST06} it has an induced odd hole or odd antihole, for which
+(b) fails by Theorem~\ref{thm:holes}.
+\end{proof}
+
+Condition (b) is linear (no semidefiniteness is involved), but it must be
+required hereditarily: an imperfect graph with a unique maximum clique
+satisfies it for $G'=G$, and so do the graphs of Section~\ref{sec:comp} with
+$\vartheta>\omega$ whose maximum cliques can all be anchored. One direction
+holds without heredity:
+
+\begin{cor}
+\label{cor:certificate}
+If the maximum weight cliques of $G$ cannot all be anchored at a common
+nonzero level, then $\vt>\om$.
+\end{cor}
+\begin{proof}
+If $\vt=\om$, a Lov\'asz-optimal wrapper anchors them all at level $\vt$
+(Theorem~\ref{thm:global}).
+\end{proof}
+
+\begin{example}
+\label{ex:cascade}
+The unweighted random graph \gr{g200_80_0} ($n=200$, $p=0.8$, $\omega=26$)
+has three maximum cliques. $Q_2=Q_1-14+53$ (vertex labels of the DIMACS
+file), and $Q_3$ shares only four vertices with them. The vertices 95, 113,
+158 and 176 of $Q_3$ are adjacent to 53 but not to 14, so by
+Proposition~\ref{prop:blind} (with $D_a=\{14\}$, a single vertex, so
+without any sign condition) $\tau_{i,14}=0$ for each of them. But these four
+are exactly the non-neighbours of vertex 14 in $Q_3$, so the equation of 14
+for $Q_3$ reads $0=\mu$. The system has 418 distinct equations in 1693
+defects and is still inconsistent; this certificate combines nine of them.
+\end{example}
+
+\section{Computations}
+\label{sec:comp}
+
+\subsection{Tools}
+
+The maximum cliques were listed with an unpublished maximal clique
+enumerator (CLEN). The system (\ref{eq:system}) with a common level was set
+up with repeated equations removed and tested for a solution at level $1$
+(least squares, confirmed by linear programming); when solvable, the
+spectrum was examined for the solution nearest the standard wrapper (least
+change of the defects, level free), and nonnegative solutions were explored
+by linear programming (largest smallest defect, and the defects that vanish
+in every nonnegative solution). $\vartheta$ was computed with CSDP
+\cite{Bo99} from whichever of two equivalent programs has fewer
+constraints: (\ref{eq:thetadual}), one constraint per non-edge, or
+$\min t$ subject to $tI-H\succeq0$, $H\in\Hc(G,w)$, i.e. a positive
+semidefinite $Y=tI-H$ with $y_{ii}=t-1$ and $y_{ij}=-1$ on $E$, one
+constraint per edge. The Lov\'asz-optimal $H$ was recovered from the solution.
+The scripts are \texttt{bench/anchor\_all.py} and \texttt{bench/theta.py} of
+the QUALEX-MS repository (commit c9af3f8), and their outputs are
+\texttt{bench/runs/anchor-all-2026-09-26.txt} and
+\texttt{bench/runs/theta/theta.tsv}.
+
+The following checks agree with the statements above:
+Theorem~\ref{thm:level} to $4\cdot10^{-13}$ on 127 pairs of maximal cliques
+of weighted $G(40,0.5)$ that admit nonzero levels; the criterion of
+Theorem~\ref{thm:two} on all 150 pairs tried (23 of which admit only level
+$0$); Proposition~\ref{prop:curv} to $10^{-15}$ on 1997 pairs of cliques;
+Theorem~\ref{thm:collision} with multiplicity equal to $d$ and $|c|\leq
+10^{-16}$ on the eigenspace; Theorem~\ref{thm:holes} and the even hole
+statement for $C_5,\ldots,C_{10}$ and $\bar C_7,\bar C_9,\bar C_{11}$; for
+$C_5$, over a grid of the free parameters of one anchored edge,
+$\lmax(\hH)-\mu\geq0.138$ (Theorem~\ref{thm:global}, $\vartheta=\sqrt5>2$);
+the colouring wrapper on random interval graphs; and
+Theorem~\ref{thm:theta} and Corollary~\ref{cor:hoffman} on the graphs of
+Table~\ref{tab:bounds}. CSDP was validated on \gr{hamming6-2} (32),
+\gr{johnson8-4-4} (14), \gr{hamming6-4} ($16/3$) and \gr{MANN_a9}
+($17.47503$), with both programs and with CSDP's own \texttt{theta} program.
+
+\subsection{Anchoring all maximum cliques of DIMACS graphs}
+
+Table~\ref{tab:dimacs} covers every DIMACS graph with $n\leq1100$ and
+between 2 and 20000 maximum cliques. For 11 of them the common level is
+forced to $0$; by Corollary~\ref{cor:certificate} all have $\vartheta>
+\omega$. For the other 20 the level is free. On 6 of these the anchoring
+nearest the standard wrapper already puts $\mu$ at the top of the spectrum
+of $\hH$, which by Theorem~\ref{thm:global} certifies $\vartheta=\omega$;
+for five of them the standard wrapper itself anchors all maximum cliques,
+because every outside vertex has the same number of non-neighbours in each.
+(For \gr{johnson8-4-4} the maximum cliques are the 30 Steiner systems
+$S(3,4,8)$, and a 4-set outside such a system meets exactly 4 of its 14
+blocks in three points.) On the remaining 14 the nearest anchoring leaves
+between 2 and 232 eigenvalues above $\mu$, and CSDP decides:
+$\vartheta=\omega$ on 8 of them and $\vartheta>\omega$ on 6. Wherever the
+level is free, the multiplicity of $\mu$ in $\hH$ equals $d$ exactly, as
+Theorem~\ref{thm:collision} predicts as a lower bound, with the single
+exception of \gr{hamming8-4} (127 against 71).
+
+\begin{table}[p]
+\begin{center}
+\small
+\begin{tabular}{|l|r|r|r|r|l|r|l|}
+\hline
+graph & $n$ & $\omega$ & $k$ & $d$ & common level & above $\mu$ & $\vartheta(\bar G)$ \\
+\hline
+\gr{p_hat300-1}   & 300  & 8   & 13   & 12  & forced to 0 & & $>\omega$ \\
+\gr{sanr200_0.7}  & 200  & 18  & 13   & 10  & forced to 0 & & $>\omega$ \\
+\gr{p_hat300-2}   & 300  & 25  & 52   & 17  & forced to 0 & & $>\omega$ \\
+\gr{DSJC500.5}    & 500  & 13  & 56   & 55  & forced to 0 & & $>\omega$ \\
+\gr{p_hat500-1}   & 500  & 9   & 78   & 74  & forced to 0 & & $>\omega$ \\
+\gr{p_hat700-2}   & 700  & 44  & 138  & 23  & forced to 0 & & $>\omega$ \\
+\gr{hamming6-4}   & 64   & 4   & 240  & 51  & forced to 0 & & 5.33333 \\
+\gr{p_hat1000-1}  & 1000 & 10  & 276  & 260 & forced to 0 & & $>\omega$ \\
+\gr{C125.9}       & 125  & 34  & 924  & 24  & forced to 0 & & $>\omega$ \\
+\gr{keller4}      & 171  & 11  & 2304 & 133 & forced to 0 & & $>\omega$ \\
+\gr{MANN_a9}      & 45   & 16  & 9540 & 44  & forced to 0 & & 17.47503 \\
+\hline
+\gr{hamming6-2}   & 64   & 32  & 2    & 1   & free, standard & 0 & 32 \\
+\gr{hamming8-2}   & 256  & 128 & 2    & 1   & free, standard & 0 & $=\omega$ \\
+\gr{hamming10-2}  & 1024 & 512 & 2    & 1   & free, standard & 0 & $=\omega$ \\
+\gr{johnson8-4-4} & 70   & 14  & 30   & 14  & free, standard & 0 & 14 \\
+\gr{johnson8-2-4} & 28   & 4   & 105  & 20  & free, standard & 0 & $=\omega$ \\
+\gr{hamming8-4}   & 256  & 16  & 480  & 71  & free & 0 & $=\omega$ \\
+\hline
+\gr{san200_0.7_2}   & 200 & 18  & 2  & 1  & free & 43  & 18 \\
+\gr{gen200_p0.9_55} & 200 & 55  & 4  & 2  & free & 13  & 55 \\
+\gr{gen200_p0.9_44} & 200 & 44  & 4  & 2  & free & 33  & 44 \\
+\gr{c-fat200-1}     & 200 & 12  & 14 & 13 & free & 8   & 12 \\
+\gr{c-fat500-1}     & 500 & 14  & 19 & 18 & free & 19  & 14 \\
+\gr{c-fat500-2}     & 500 & 26  & 19 & 18 & free & 7   & 26 \\
+\gr{c-fat500-5}     & 500 & 64  & 3  & 2  & free & 4   & 64 \\
+\gr{c-fat500-10}    & 500 & 126 & 3  & 2  & free & 2   & 126 \\
+\gr{brock200_1}     & 200 & 21  & 2  & 1  & free & 49  & 27.45664 \\
+\gr{p_hat700-1}     & 700 & 11  & 2  & 1  & free & 232 & 15.11986 \\
+\gr{c-fat200-5}     & 200 & 58  & 3  & 2  & free & 2   & 60.34528 \\
+\gr{sanr400_0.5}    & 400 & 13  & 4  & 3  & free & 143 & 20.31766 \\
+\gr{p_hat300-3}     & 300 & 36  & 10 & 5  & free & 90  & 41.16993 \\
+\gr{p_hat500-2}     & 500 & 36  & 14 & 5  & free & 151 & 38.97466 \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:dimacs} DIMACS graphs with $2\leq k\leq20000$ maximum
+cliques and $n\leq1100$. $d$ is the dimension of the affine hull of their
+indicators; ``standard'': the standard wrapper already anchors them all;
+``above $\mu$'': eigenvalues of $\hH$ above the common level for the
+anchoring nearest the standard wrapper. $\vartheta$: computed with CSDP
+where a value is given; $>\omega$ by Corollary~\ref{cor:certificate};
+$=\omega$ by Theorem~\ref{thm:global} (and, for the hamming graphs of
+distance 2, which are complements of bipartite graphs, by perfection).}
+\end{table}
+
+Two features of the solutions are worth recording. First,
+Proposition~\ref{prop:blind} is not an exception. Only 7 of the 20 graphs,
+the six symmetric ones and \gr{brock200_1}, admit a proper anchoring of all
+their maximum cliques; on the other 13, between 2.6\% (\gr{san200_0.7_2})
+and 23\% (\gr{c-fat200-5}) of the non-edges involved are invisible in every
+nonnegative solution. (The solutions $(\tau,\mu)$ form a cone, so a single
+linear program finds these non-edges: maximize $\sum_k\min(\tau_k,1)$
+subject to (\ref{eq:system}), $\tau\geq0$ and $\mu\geq1$; exactly the
+defects that can be positive reach $1$.) Second, in the graphs with the
+level forced to $0$ the collapse is local and has small certificates, of the
+kind of Example~\ref{ex:cascade}.
+
+\subsection{Random graphs}
+
+On the 35 unweighted random graphs with proven $\omega$ ($n=200$ with
+$p\leq0.8$ and $n=300$ with $p\leq0.7$), 5 have a unique maximum clique. Of
+the 30 others the common level is forced to $0$ on 17 (with $k$ between 3
+and 797) and free on 13 (with $k$ between 2 and 15); where free, $\mu$ had
+55 to 99 eigenvalues of $\hH$ above it and the multiplicity of $\mu$ was $d$
+exactly. One of the 13 admitted no nonnegative solution, 5 admitted proper
+ones, and on the other 7 between 2.1\% and 9.4\% of the non-edges involved
+are invisible in every nonnegative solution. Weighted random graphs almost always have a unique maximum weight
+clique, for which anchoring is the single clique construction of
+Section~\ref{sec:one}.
+
+\subsection{The Lov\'asz number of the 14 undecided graphs}
+
+Table~\ref{tab:theta} lists the CSDP results for the 14 graphs on which the
+nearest anchoring stayed below the top. In all eight graphs with
+$\vartheta=\omega$ the optimal wrapper anchors every maximum clique at $C=0$
+(to $10^{-9}$ to $10^{-4}$), as Theorem~\ref{thm:global} requires. The
+multiplicity of $\lmax(H)$ agrees with the rank of the Lov\'asz optimum found
+by CSDP (strict complementarity) and, but for one graph, with
+$\dim\spn\{z_Q\}$, the lower bound of Corollary~\ref{cor:hard}. The
+exception is \gr{gen200_p0.9_44}: its Lov\'asz optimum has rank 157 and a
+positive diagonal on all 200 vertices, so by (\ref{eq:compl}) every
+Lov\'asz-optimal wrapper has a top eigenvalue of multiplicity at least 157,
+though its four maximum cliques span only 3 dimensions. The optimal face of
+(\ref{eq:thetadual}) contains ``vector cliques'' that are not cliques. When
+$\vartheta>\omega$ the top multiplicities are large and unrelated to the
+cliques; on the largest graphs the top of the spectrum decays gradually and
+the multiplicity is only defined up to the solver's accuracy.
+
+\begin{table}[ht]
+\begin{center}
+\small
+\begin{tabular}{|l|r|r|r|r|r|}
+\hline
+graph & $\omega$ & $\vartheta(\bar G)$ & $\dim\spn\{z_Q\}$ & rank of $X^*$ & mult.\ of $\lmax(H)$ \\
+\hline
+\gr{c-fat200-1}     & 12  & 12.000000  & 14 & 14  & 14 \\
+\gr{c-fat500-1}     & 14  & 14.000000  & 19 & 19  & 19 \\
+\gr{c-fat500-2}     & 26  & 26.000000  & 19 & 19  & 19 \\
+\gr{c-fat500-5}     & 64  & 64.000001  & 3  & 3   & 3 \\
+\gr{c-fat500-10}    & 126 & 126.000000 & 3  & 3   & 3 \\
+\gr{gen200_p0.9_55} & 55  & 55.000000  & 3  & 3   & 3 \\
+\gr{gen200_p0.9_44} & 44  & 44.000000  & 3  & 157 & 157 \\
+\gr{san200_0.7_2}   & 18  & 18.000000  & 2  & 2   & 2 \\
+\hline
+\gr{brock200_1}     & 21  & 27.456641  & 2  & 63  & 63 \\
+\gr{c-fat200-5}     & 58  & 60.345275  & 3  & 5   & 5 \\
+\gr{p_hat300-3}     & 36  & 41.169930  & 6  & 101 & 101 \\
+\gr{sanr400_0.5}    & 13  & 20.317656  & 4  & $\approx200$ & $\approx200$ \\
+\gr{p_hat500-2}     & 36  & 38.974658  & 6  & $\sim150$ & $\sim150$ \\
+\gr{p_hat700-1}     & 11  & 15.119858  & 2  & $\sim450$ & $\sim450$ \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:theta} The Lov\'asz number of the complement (CSDP,
+relative duality gaps below $10^{-8}$), the dimension spanned by the maximum
+cliques, the rank of the Lov\'asz optimum $X^*$ and the multiplicity of the
+top eigenvalue of the optimal wrapper, both read at the largest relative
+gap in the spectrum. For \gr{sanr400_0.5} that gap lies between 199 and 201.
+For the last two graphs there is no clear gap: counting eigenvalues within
+relative distances $10^{-6}$ to $10^{-4}$ gives 74 to 165 (\gr{p_hat500-2})
+and 428 to 486 (\gr{p_hat700-1}). The largest problems had 61800
+constraints and took 42 and 47 minutes.}
+\end{table}
+
+\subsection{Relaxed bounds of the standard and the optimal wrapper}
+
+Table~\ref{tab:bounds} compares the bound $1/v(H)$ of
+Theorem~\ref{thm:theta} for the standard wrapper and for the optimal
+wrapper found by CSDP; $v(H)$ was computed from the secular equation as the
+stationary point with the largest multiplier (Lemma~\ref{lem:global}),
+including the hard case. For the optimal wrappers $1/v(H)=\vartheta$ to the
+accuracy of the solver (relative error below $3\cdot10^{-6}$); on the three
+regular graphs $1/v(H_0)$ equals Hoffman's bound, as
+Corollary~\ref{cor:hoffman} states; elsewhere the standard wrapper's bound
+can be very weak (\gr{san200_0.7_2}: 115.8 against $\vartheta=18$).
+
+\begin{table}[ht]
+\begin{center}
+\small
+\begin{tabular}{|l|r|r|r|r|}
+\hline
+graph & $\omega$ & $\vartheta(\bar G)$ & $1/v(H_0)$ & Hoffman \\
+\hline
+\gr{hamming6-2}     & 32 & 32.000 & 32.000  & 32.000 \\
+\gr{johnson8-4-4}   & 14 & 14.000 & 14.000  & 14.000 \\
+\gr{hamming6-4}     & 4  & 5.333  & 13.538  & 13.538 \\
+\gr{MANN_a9}        & 16 & 17.475 & 19.707  & \\
+\gr{c-fat200-1}     & 12 & 12.000 & 17.430  & \\
+\gr{gen200_p0.9_55} & 55 & 55.000 & 75.624  & \\
+\gr{gen200_p0.9_44} & 44 & 44.000 & 72.547  & \\
+\gr{san200_0.7_2}   & 18 & 18.000 & 115.759 & \\
+\gr{brock200_1}     & 21 & 27.457 & 43.287  & \\
+\gr{c-fat200-5}     & 58 & 60.345 & 72.905  & \\
+\gr{p_hat300-3}     & 36 & 41.170 & 88.374  & \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:bounds} The relaxed bound $1/v(H)$ for the standard
+wrapper against $\vartheta$, which the optimal wrapper attains
+(Theorem~\ref{thm:theta}), and Hoffman's bound for the regular graphs.}
+\end{table}
+
+\section{Conclusions and open questions}
+
+For one clique, anchoring is always possible and puts the clique on the
+secular curve; its effect is local, with ascent towards heavier cliques in
+proportion to the gain per exchanged weight. Used on the solver's own best
+clique it is a reliable improvement step, used on a poor clique it is
+harmful. For several cliques, the free entries are far fewer in effect than
+in number: the levels are forced by the level identity, cliques of equal
+weight collide into the degenerate case, and the remaining system may force
+non-edges to be invisible or the level to vanish. Anchoring all maximum
+cliques at the top of the spectrum is possible exactly when
+$\vartheta=\omega$, and then it is what every Lov\'asz-optimal wrapper does;
+this explains the degeneracy of the Lov\'asz-optimal wrappers observed in
+QUALEX-MS, even though by Theorem~\ref{thm:theta} they are the best
+wrappers for the relaxed program. On odd holes and odd antiholes no
+nontrivial wrapper anchors all maximum cliques, and this
+characterizes perfect graphs through the strong perfect graph theorem.
+
+Questions left open:
+\begin{enumerate}
+\item Characterize the graphs whose maximum cliques can all be anchored at a
+nonzero level; the condition is not hereditary, and Theorem~\ref{thm:two}
+settles only pairs.
+\item Given that $\vartheta>\omega$, how few eigenvalues can lie above the
+common level of an anchoring? This is an eigenvalue optimization over the
+affine family of anchoring wrappers.
+\item Is there a weighted analogue of Theorem~\ref{thm:perfect}, i.e. which
+weighted graphs have, hereditarily, anchorings of all maximum weight
+cliques?
+\item What structure makes the Lov\'asz optimum of \gr{gen200_p0.9_44} full
+support and rank 157, and is it typical of generated instances with a
+planted clique?
+\item Can the hard case be used rather than avoided? When QUALEX-MS finds a
+cluster with $c=0$, cliques anchored together sit on a sphere in
+$x^0+\hx_p+E$; with $\dim E=1$ (\gr{hamming6-2}) the eigenvector itself
+leads to them, but for larger $E$ a search inside $E$ (for instance over
+the vertices of $\{x\geq0\}\cap(x^0+\hx_p+E)$) would be needed.
+\end{enumerate}
+
+\begin{thebibliography}{CRST06}
+
+\bibitem[Ba95]{Ba95}
+  A.I. Barvinok,
+  Problems of distance geometry and convex properties of quadratic maps,
+  {\em Discrete \& Computational Geometry\/} 13 (1995) 189--202.
+
+\bibitem[Bo99]{Bo99}
+  B. Borchers,
+  CSDP, a C library for semidefinite programming,
+  {\em Optimization Methods and Software\/} 11 (1999) 613--623.
+
+\bibitem[Bu06]{B02}
+  S. Busygin,
+  A new trust region technique for the maximum weight clique problem,
+  {\em Discrete Applied Mathematics\/} 154(15) (2006) 2080--2096.
+
+\bibitem[CW]{CW}
+  S. Busygin,
+  A least squares framework for the maximum weight clique problem,
+  note, 2007, updated 2010 (\texttt{CliqueWrapper.tex}).
+
+\bibitem[CRST06]{CRST06}
+  M. Chudnovsky, N. Robertson, P. Seymour and R. Thomas,
+  The strong perfect graph theorem,
+  {\em Annals of Mathematics\/} 164 (2006) 51--229.
+
+\bibitem[Ga57]{G57}
+  D. Gale,
+  A theorem on flows in networks,
+  {\em Pacific Journal of Mathematics\/} 7 (1957) 1073--1082.
+
+\bibitem[GLS88]{GLS88}
+  M. Gr\"otschel, L. Lov\'asz and A. Schrijver,
+  {\em Geometric Algorithms and Combinatorial Optimization\/},
+  Springer, 1988.
+
+\bibitem[Ho70]{Ho70}
+  A.J. Hoffman,
+  On eigenvalues and colorings of graphs,
+  in: B. Harris, ed., {\em Graph Theory and its Applications\/},
+  Academic Press, 1970, 79--91.
+
+\bibitem[Kn94]{K94}
+  D.E. Knuth,
+  The sandwich theorem,
+  {\em Electronic Journal of Combinatorics\/} 1 (1994) \#A1.
+
+\bibitem[Lo79]{L79}
+  L. Lov\'asz,
+  On the Shannon capacity of a graph,
+  {\em IEEE Transactions on Information Theory\/} 25 (1979) 1--7.
+
+\bibitem[MS83]{MS83}
+  J.J. Mor\'e and D.C. Sorensen,
+  Computing a trust region step,
+  {\em SIAM Journal on Scientific and Statistical Computing\/} 4 (1983)
+  553--572.
+
+\bibitem[N\"O03]{NO03}
+  S. Niskanen and P.R.J. \"Osterg\aa rd,
+  {\em Cliquer User's Guide, Version 1.0\/},
+  Technical Report T48, Communications Laboratory,
+  Helsinki University of Technology, 2003.
+
+\bibitem[Ov92]{O92}
+  M.L. Overton,
+  Large-scale optimization of eigenvalues,
+  {\em SIAM Journal on Optimization\/} 2 (1992) 88--120.
+
+\bibitem[Pa98]{P98}
+  G. Pataki,
+  On the rank of extreme matrices in semidefinite programs and the
+  multiplicity of optimal eigenvalues,
+  {\em Mathematics of Operations Research\/} 23 (1998) 339--358.
+
+\end{thebibliography}
+
+\end{document}
