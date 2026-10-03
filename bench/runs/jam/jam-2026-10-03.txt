@@ -1,0 +1,97 @@
+Maximum cliques in the jammed top of a Lovasz-optimal wrapper (theta = omega), 2026-10-03
+bench/jam.py; rows in jam.tsv, logs search-qwh.log, search-sat01.log, decode.log, search-qwh-hard.log;
+rerun with run-2026-10-03.sh (from the repository root, CSDP=~/Csdp/solver/csdp-mkl, 12 threads).
+
+Setting: R is the range of the Lovasz optimum CSDP saved (theta.py, sat01.py, qwh.py runs, or computed
+here for the new QWH instances), cut at the largest spectral gap if it exceeds 1e3, else at 1e-7 of the
+largest eigenvalue.  Rank-one points of the optimal face are the maximum cliques; R restricted to the
+common closed neighbourhood U of a clique C (R_U) keeps every maximum clique through C.
+
+1. Direct decoders (decode): subspace decimation (depth first by leverage in R_U, 3000 nodes), the
+   projections P_R e_i of the 50 highest-leverage vertices grown into greedy cliques, an l4 power
+   iteration in R from 20 random starts followed by greedy, greedy in 50 random orders.
+
+   source                     n target  rank | decimation     projections l4     random greedy
+   sat01:f143:light         180    132     2 | yes, 2 nodes   34/50       20/20  0/50
+   sat01:f14471             511    367     1 | yes, 1 nodes   50/50       20/20  0/50
+   sat01:f32399             636    441     2 | yes, 3 nodes   32/50       6/20   0/50
+   sat01:f60491             740    514   215 | no (3001)      0/50        0/20   0/50
+   sat01:cubic16_1           57     30    12 | yes, 2 nodes   46/50       20/20  41/50
+   sat01:cubic20_1          195     38   152 | no (3001)      4/50        4/20   3/50
+   sat01:cubic24_1          403     46   335 | no (3001)      0/50        0/20   0/50
+   sat01:dodecahedron       263     38   213 | no (3001)      0/50        0/20   0/50
+   sat01:gp13_2             481     50   411 | no (3001)      0/50        0/20   0/50
+   theta:san200_0.7_2       200     18     2 | yes, 2 nodes   28/50       3/20   0/50
+   theta:gen200_p0.9_55     200     55     3 | yes, 3 nodes   50/50       0/20   0/50
+   theta:gen200_p0.9_44     200     44   157 | no (3001)      0/50        0/20   0/50
+
+2. Exact cover search to the first solution (search): Algorithm X over the equations (SAT01 equations,
+   QWH cells and row/column-symbol lines), the equation with fewest candidates first, conflicting
+   vertices removed; plain = candidates in index order, order = by leverage in R, prune = only the
+   candidates that keep mass in R_U (recomputed from the full basis), ordered by it.  Nodes; "no (N)"
+   = not found within N nodes (200000 for plain and order, 5000 for prune unless marked).
+
+   SAT01 instances (after full propagation; 143 after light):
+   source                     n target  rank | plain    order    prune
+   sat01:f143:light         180    132     2 | 111      111      51
+   sat01:f14471             511    367     1 | 1002     135      135
+   sat01:f14631             514    370     1 | 2208     117      117
+   sat01:f15591             501    359     1 | 3960     126      126
+   sat01:f16041             506    362     1 | 1015     128      128
+   sat01:f32399             636    441     2 | 3840     151      151
+   sat01:f60491             740    514   215 | 23214    1355     309
+   sat01:cubic16_1           57     30    12 | 13       12       12
+   sat01:cubic20_1          195     38   152 | 41       22       39
+   sat01:cubic24_1          403     46   335 | 386      565      32
+   sat01:dodecahedron       263     38   213 | 37       20       20
+   sat01:gp13_2             481     50   411 | 3587     503      257
+
+   The 77 saved QWH instances of runs/qwh (orders 8-20, easy for search): every mode found a completion
+   on all of them.  Backtrack-free (h+1 nodes) and extra nodes beyond h+1:
+     plain  backtrack-free on 58 | extra nodes median 0, mean 294, max 20693 | 1 s in all
+     order  backtrack-free on 62 | extra nodes median 0, mean 68, max 3337 | 0 s in all
+     prune  backtrack-free on 71 | extra nodes median 0, mean 8, max 352 | 140 s in all
+     prune needed more nodes than plain on n15_p45_0 (137 against 102), n15_p45_2 (118 against 102), n20_p50_2 (370 against 239).
+
+   New QWH instances near the transition (qwhnew, qwh.py's generator and seeds), theta = h on all;
+   theta computed only because plain search needed more than 10000 nodes:
+   instance             |V|    h  rank   CSDP | plain       order       prune        prune, 50000 budget
+   25,0.40,1           1203  250   445    19s | 88204       8185        no (5001)    no (50001)
+   25,0.40,2           1214  250   487    19s | no (200001) no (200001) 2250         -
+   25,0.42,0           1328  262   588    23s | 46479       60849       no (5001)    26230
+   25,0.42,2           1319  262   567    23s | 86894       305         818          -
+   30,0.40,0           2095  360  1035   129s | no (200001) no (200001) 532          -
+   30,0.40,1           2056  360  1046   105s | no (200001) no (200001) no (5001)    crashed (LAPACK)
+   30,0.42,0           2249  378  1185   147s | no (200001) 566         413          -
+   30,0.42,1           2339  378  1247   182s | no (200001) no (200001) 1090         -
+   30,0.42,2           2299  378  1203   166s | no (200001) 399         568          -
+   30,0.45,2           2789  405  1655   332s | 49684       8593        3764         -
+   (order 25 = n25, order 30 = n30, holes 40/42/45%; times: plain and order about 50 us per node,
+   prune 15-40 ms per node here, e.g. 23.6 s for 532 nodes at order 30, 718 s for 50000 at order 25;
+   the CSDP time of 25,0.40,1 is that of its first run, before a crash in the search; the relaunch
+   reused its solution.)
+
+3. Findings.
+ - Clean optima (rank = span of the solutions: san200_0.7_2, gen200_p0.9_55, 143, 14471, 179*181,
+   cubic16): a maximum clique is read off R by linear algebra (decimation in 1-3 steps), projections
+   and l4 often work too, and ordering by leverage alone makes the search backtrack-free.
+ - Jammed optima (rank far above the span): no direct decoder works.  Along a known solution R_U does
+   collapse to its line after 5-9 choices (cubic20, dodecahedron) and 23 on gen200_p0.9_44, but on
+   gen200_p0.9_44 wrong paths kept junk directions for 22-28 levels.
+ - As pruning inside exact cover search, R cuts the nodes on most SAT01 and QWH instances (241*251:
+   23214 -> 309; GP(13,2): 3587 -> 257; saved QWH: 71 of 77 backtrack-free against 58), and on three
+   hard QWH instances it found a completion in 532-2250 nodes where plain and leverage-ordered search
+   failed within 200000.  But it is erratic in the heavy tail (25,0.40,1: not found in 50000 nodes
+   where ordered search needed 8185), each pruned node costs 300-800 plain nodes, and the SDP itself
+   takes 20 s to 5.5 min at these sizes.  In wall time it does not beat plain search; verdict
+   (Stas): not very impressive.
+ - Dense planted clique gen200_p0.9_44 (rank 157, 4 maximum cliques): no gain; only 7 of the 44
+   highest-leverage vertices lie in a maximum clique.
+ - Numerics: a 1e-5 cut loses the solutions of 241*251 (no spectral gap); restricting the previous
+   basis instead of the full one accumulates error and pruned true solutions; the system OpenBLAS
+   LAPACK failed to converge once in dgesdd and once in dsyevd on restricted Gram matrices (the second
+   ended the 50000-node rerun of 30,0.40,1, which was not repeated).
+ - Side finding for the report: the optimum of 179*181 has rank 2, its two solutions; the eigenvalues
+   beyond the second (4.9e-5 of the largest and below, decaying smoothly) are the sqrt(mu) tail of
+   non-strict complementarity, so Table 8's rank 5 (and wrapper multiplicity 18) are artifacts of the
+   1e-5 count.

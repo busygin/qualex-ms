@@ -1,0 +1,12 @@
+theta:san200_0.7_2       n=200   target 18     rank 2    | decimate yes 2 | projections yes 28/50 | l4 yes 3/20 | random-greedy no 0/50
+theta:gen200_p0.9_55     n=200   target 55     rank 3    | decimate yes 3 | projections yes 50/50 | l4 no 0/20 | random-greedy no 0/50
+theta:gen200_p0.9_44     n=200   target 44     rank 157  | decimate no 3001 | projections no 0/50 | l4 no 0/20 | random-greedy no 0/50
+sat01:f143:light         n=180   target 132    rank 2    | decimate yes 2 | projections yes 34/50 | l4 yes 20/20 | random-greedy no 0/50
+sat01:f14471             n=511   target 367    rank 1    | decimate yes 1 | projections yes 50/50 | l4 yes 20/20 | random-greedy no 0/50
+sat01:f32399             n=636   target 441    rank 2    | decimate yes 3 | projections yes 32/50 | l4 yes 6/20 | random-greedy no 0/50
+sat01:f60491             n=740   target 514    rank 215  | decimate no 3001 | projections no 0/50 | l4 no 0/20 | random-greedy no 0/50
+sat01:cubic16_1          n=57    target 30     rank 12   | decimate yes 2 | projections yes 46/50 | l4 yes 20/20 | random-greedy yes 41/50
+sat01:cubic20_1          n=195   target 38     rank 152  | decimate no 3001 | projections yes 4/50 | l4 yes 4/20 | random-greedy yes 3/50
+sat01:cubic24_1          n=403   target 46     rank 335  | decimate no 3001 | projections no 0/50 | l4 no 0/20 | random-greedy no 0/50
+sat01:dodecahedron       n=263   target 38     rank 213  | decimate no 3001 | projections no 0/50 | l4 no 0/20 | random-greedy no 0/50
+sat01:gp13_2             n=481   target 50     rank 411  | decimate no 3001 | projections no 0/50 | l4 no 0/20 | random-greedy no 0/50

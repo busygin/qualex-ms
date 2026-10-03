@@ -163,3 +163,23 @@ The SAT01 tools are compiled from `$SAT01` (default `~/SAT01`) into the
 ignored `runs/sat01/bin`, and the solver runs in a directory of its own per
 instance, since it keeps its backtracking states in the current directory.
 Rows go to `runs/sat01/sat01.tsv` and `runs/sat01/span.tsv`.
+
+## Maximum cliques in a jammed top
+
+`jam.py` looks for a maximum weight clique inside the range R of a saved Lovasz
+optimum when theta = omega, where the rank-one points of the optimal face are
+exactly the maximum cliques, and R restricted to the common neighbourhood of a
+clique keeps every maximum clique through it. `decode` tries subspace
+decimation, projections grown into greedy cliques and an l4 power iteration;
+`search` runs Algorithm X over the equations of a SAT01 or QWH instance, plain,
+with candidates ordered by leverage in R, or pruned to the candidates that keep
+mass in R restricted to the vertices still allowed:
+
+    bench/jam.py decode theta:gen200_p0.9_44 sat01:f60491
+    bench/jam.py search qwh:n20_p45_2 sat01:cubic24_1
+    CSDP=~/Csdp/solver/csdp-mkl bench/jam.py search qwhnew:30,0.42,0
+
+`qwhnew:n,p,rep` generates a QWH instance with `qwh.py`'s seeds and computes
+theta only when plain search needs more than `--hard` nodes. Rows go to
+`runs/jam/jam.tsv`; `runs/jam/run-2026-10-03.sh` reruns the survey of that
+date.

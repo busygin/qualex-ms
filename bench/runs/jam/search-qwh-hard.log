@@ -1,0 +1,56 @@
+qwhnew:25,0.40,1         theta 250.000000 (target 250), CSDP 2s
+qwhnew:25,0.40,1         n=1203  target 250    rank 445  | plain found 88204 nodes 4.2s | order found 8185 nodes 0.4s | prune not found 5001 nodes 78.0s
+qwhnew:25,0.40,2         theta 250.000000 (target 250), CSDP 19s
+qwhnew:25,0.40,2         n=1214  target 250    rank 487  | plain not found 200001 nodes 8.8s | order not found 200001 nodes 10.1s | prune found 2250 nodes 29.8s
+qwhnew:25,0.42,0         theta 262.000000 (target 262), CSDP 23s
+qwhnew:25,0.42,0         n=1328  target 262    rank 588  | plain found 46479 nodes 2.3s | order found 60849 nodes 2.8s | prune not found 5001 nodes 79.2s
+qwhnew:25,0.42,2         theta 262.000000 (target 262), CSDP 23s
+qwhnew:25,0.42,2         n=1319  target 262    rank 567  | plain found 86894 nodes 4.5s | order found 305 nodes 0.0s | prune found 818 nodes 13.4s
+qwhnew:30,0.40,0         theta 360.000000 (target 360), CSDP 129s
+qwhnew:30,0.40,0         n=2095  target 360    rank 1035 | plain not found 200001 nodes 10.8s | order not found 200001 nodes 11.5s | prune found 532 nodes 23.6s
+qwhnew:30,0.40,1         theta 360.000000 (target 360), CSDP 105s
+qwhnew:30,0.40,1         n=2056  target 360    rank 1046 | plain not found 200001 nodes 9.8s | order not found 200001 nodes 11.1s | prune not found 5001 nodes 130.1s
+qwhnew:30,0.42,0         theta 378.000000 (target 378), CSDP 147s
+qwhnew:30,0.42,0         n=2249  target 378    rank 1185 | plain not found 200001 nodes 10.2s | order found 566 nodes 0.1s | prune found 413 nodes 26.3s
+qwhnew:30,0.42,1         theta 378.000000 (target 378), CSDP 182s
+qwhnew:30,0.42,1         n=2339  target 378    rank 1247 | plain not found 200001 nodes 8.8s | order not found 200001 nodes 9.2s | prune found 1090 nodes 42.7s
+qwhnew:30,0.42,2         theta 378.000000 (target 378), CSDP 166s
+qwhnew:30,0.42,2         n=2299  target 378    rank 1203 | plain not found 200001 nodes 10.6s | order found 399 nodes 0.1s | prune found 568 nodes 29.2s
+qwhnew:30,0.45,2         theta 405.000000 (target 405), CSDP 332s
+qwhnew:30,0.45,2         n=2789  target 405    rank 1655 | plain found 49684 nodes 1.9s | order found 8593 nodes 0.5s | prune found 3764 nodes 148.4s
+qwhnew:25,0.40,1         theta 250.000000 (target 250), CSDP 2s
+qwhnew:25,0.40,1         n=1203  target 250    rank 445  | prune-50k not found 50001 nodes 718.4s
+qwhnew:25,0.42,0         theta 262.000000 (target 262), CSDP 2s
+qwhnew:25,0.42,0         n=1328  target 262    rank 588  | prune-50k found 26230 nodes 398.5s
+qwhnew:30,0.40,1         theta 360.000000 (target 360), CSDP 4s
+Traceback (most recent call last):
+  File "/home/busygin/qualex-ms/bench/jam.py", line 402, in <module>
+    main()
+    ~~~~^^
+  File "/home/busygin/qualex-ms/bench/jam.py", line 389, in main
+    sol, nodes = search(adj, equ, Bm, mode, args.prune_budget if mode == "prune" else args.budget)
+                 ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/busygin/qualex-ms/bench/jam.py", line 329, in search
+    return rec(), nodes[0]
+           ~~~^^
+  File "/home/busygin/qualex-ms/bench/jam.py", line 315, in rec
+    r = rec() if ok else None
+        ~~~^^
+  File "/home/busygin/qualex-ms/bench/jam.py", line 315, in rec
+    r = rec() if ok else None
+        ~~~^^
+  File "/home/busygin/qualex-ms/bench/jam.py", line 315, in rec
+    r = rec() if ok else None
+        ~~~^^
+  [Previous line repeated 257 more times]
+  File "/home/busygin/qualex-ms/bench/jam.py", line 295, in rec
+    Bc = restrict(Bm, U, tol)
+  File "/home/busygin/qualex-ms/bench/jam.py", line 180, in restrict
+    ev, W = np.linalg.eigh(inside @ inside.T)
+            ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/numpy/linalg/_linalg.py", line 1677, in eigh
+    w, vt = gufunc(a, signature=signature)
+            ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/numpy/linalg/_linalg.py", line 169, in _raise_linalgerror_eigenvalues_nonconvergence
+    raise LinAlgError("Eigenvalues did not converge")
+numpy.linalg.LinAlgError: Eigenvalues did not converge

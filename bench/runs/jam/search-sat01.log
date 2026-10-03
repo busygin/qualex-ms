@@ -1,0 +1,12 @@
+sat01:f143:light         n=180   target 132    rank 2    | plain found 111 nodes 0.0s | order found 111 nodes 0.0s | prune found 51 nodes 0.0s
+sat01:f14471             n=511   target 367    rank 1    | plain found 1002 nodes 0.0s | order found 135 nodes 0.0s | prune found 135 nodes 0.1s
+sat01:f14631             n=514   target 370    rank 1    | plain found 2208 nodes 0.1s | order found 117 nodes 0.0s | prune found 117 nodes 0.1s
+sat01:f15591             n=501   target 359    rank 1    | plain found 3960 nodes 0.2s | order found 126 nodes 0.0s | prune found 126 nodes 0.1s
+sat01:f16041             n=506   target 362    rank 1    | plain found 1015 nodes 0.0s | order found 128 nodes 0.0s | prune found 128 nodes 0.1s
+sat01:f32399             n=636   target 441    rank 2    | plain found 3840 nodes 0.2s | order found 151 nodes 0.0s | prune found 151 nodes 0.1s
+sat01:f60491             n=740   target 514    rank 215  | plain found 23214 nodes 1.2s | order found 1355 nodes 0.1s | prune found 309 nodes 3.5s
+sat01:cubic16_1          n=57    target 30     rank 12   | plain found 13 nodes 0.0s | order found 12 nodes 0.0s | prune found 12 nodes 0.0s
+sat01:cubic20_1          n=195   target 38     rank 152  | plain found 41 nodes 0.0s | order found 22 nodes 0.0s | prune found 39 nodes 0.0s
+sat01:cubic24_1          n=403   target 46     rank 335  | plain found 386 nodes 0.0s | order found 565 nodes 0.0s | prune found 32 nodes 0.2s
+sat01:dodecahedron       n=263   target 38     rank 213  | plain found 37 nodes 0.0s | order found 20 nodes 0.0s | prune found 20 nodes 0.1s
+sat01:gp13_2             n=481   target 50     rank 411  | plain found 3587 nodes 0.1s | order found 503 nodes 0.0s | prune found 257 nodes 1.2s
