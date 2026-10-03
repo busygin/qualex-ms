@@ -46,7 +46,7 @@ Clique Problem''}}
 \author{Research notes prepared for Stanislav Busygin\\
 with Claude (Anthropic)}
 
-\date{September 26, 2026}
+\date{September 26, 2026; revised October 2, 2026}
 
 \maketitle
 
@@ -79,9 +79,16 @@ theorem characterizes perfect graphs. For the quasigroup completion graphs
 of Busygin and Pasechnik the standard wrapper is itself Lov\'asz-optimal on
 every completable instance, and the completions are exactly the nonnegative
 points of its degenerate sphere of global minimizers; this is why the hard
-case cannot be exploited. Computations with a maximal clique enumerator and
-with CSDP illustrate the results on the DIMACS graphs, on random graphs and
-on random quasigroups with holes.
+case cannot be exploited. Busygin's SAT01, which recasts many NP problems as
+recognizing $\alpha<\vartheta=m$ in a weighted graph, generalizes this: an
+equation wrapper is Lov\'asz-optimal exactly when $\vartheta=m$, which holds
+exactly when the instance has a vector solution, and it is blind to the
+contradictions outside the equations. Computations with a maximal clique
+enumerator and with CSDP illustrate the results on the DIMACS graphs, on
+random graphs, on random quasigroups with holes, and on SAT01 instances of
+factoring and of the Hamilton cycle problem, where $\vartheta$ refutes the
+smallest primes that propagation leaves open, with a vanishing margin, and
+none of the non-Hamiltonian graphs.
 \end{abstract}
 
 \tableofcontents
@@ -118,6 +125,9 @@ expects the Lov\'asz-optimal wrapper to anchor all maximum cliques at
 $\mu=\lmax$; for general graphs the conditions look overdetermined.
 \item How do these statements look on actual graphs?
 (Section~\ref{sec:comp}.)
+\item What do they say about SAT01 \cite{Bu07}, where deciding
+$\alpha=\vartheta$ in a weighted graph captures many NP problems?
+(Sections~\ref{sec:sat01} and~\ref{sec:sat01comp}.)
 \end{enumerate}
 
 The main findings, in the order of the text:
@@ -167,6 +177,20 @@ completions are exactly the nonnegative points of its sphere of global
 minimizers (Proposition~\ref{prop:qcp}); finding one is QCP. On random
 quasigroups with holes its degenerate eigenspace was up to 55 times the
 span of the completions (Section~\ref{sec:qwh}).
+\item For a SAT01 instance with $m$ equations the equation wrapper $H_A$
+generalizes that wrapper: it is Lov\'asz-optimal iff $\vartheta=m$, then
+anchors every solution at the top, and its nonnegative global minimizers are
+the exact covers of the equations, whatever the other contradictions
+(Proposition~\ref{prop:sat01}). $\vartheta=m$ iff the instance has a vector
+solution, and the Lov\'asz optima are the Gram matrices of the vector
+solutions (Theorem~\ref{thm:vector}). After SAT01 propagation $\vartheta$
+refutes four of the six primes below $2^{16}$ that propagation leaves open,
+with a margin falling from $0.064$ to $7\cdot10^{-5}$, none of them without
+the contradictions that propagation derives, and none of the non-Hamiltonian
+graphs that survive it. A satisfiable 14-bit factoring instance has its
+solution as its only Lov\'asz optimum, while the two solutions of
+$179\cdot181$ and of $241\cdot251$ sit in optima of rank 5 and 205
+(Section~\ref{sec:sat01comp}).
 \end{itemize}
 
 \section{Setting}
@@ -1163,6 +1187,170 @@ and that rank is at least the dimension spanned by the completions.
 Section~\ref{sec:qwh} measures where between that span and $\dim L$ the
 Lov\'asz optimum falls on random instances.
 
+\subsection{SAT01: exact covers with contradictions}
+\label{sec:sat01}
+
+Busygin's SAT01 \cite{Bu07} puts QCP into a general weighted setting. An
+instance SAT01$(A,\Gamma)$ is a $0$-$1$ matrix $A$ of size $m\times n$
+without zero columns and a graph $\Gamma$ on the $n$ variables, and it asks
+for $x\in\{0,1\}^n$ with $Ax=\one$ whose support is independent in $\Gamma$.
+We identify each equation with the set $e\subseteq V$ of its variables and
+write $\mathcal E$ for the $m$ equations. $\Gamma$ contains every pair of
+variables that share an equation and possibly further pairs; all its edges
+are called {\em contradictions}. With the weights $w=A^T\one$, the number of
+equations of each variable, an independent set of $\Gamma$ meets every
+equation at most once, so its weight is at most $m$, with equality iff it is
+the support of a solution \cite[Lemma~1]{Bu07}. The equations are $m$
+cliques of $\Gamma$ that cover every vertex $j$ exactly $w_j$ times, so
+$\vartheta(\Gamma,w)\leq m$ \cite[Theorem~1]{Bu07}. Many NP problems reduce to
+SAT01 in a natural way (CNF satisfiability, Hamilton cycles, graph and
+subgraph isomorphism, QCP, the 15-puzzle, the Hanoi tower, blocksworld
+planning, factoring). A satisfiable instance
+has $\alpha=\vartheta=m$, so $\vartheta<m$ refutes an instance in polynomial
+time, and only the unsatisfiable instances with $\alpha<\vartheta=m$ escape
+it.
+
+In the notation of this note $G=\bar\Gamma$: two variables are adjacent iff
+they do not contradict, the solutions are the cliques of weight $m$ (maximal
+cliques, \cite[Claim~1]{Bu07}), $\om=\alpha(\Gamma,w)$,
+$\vt=\vartheta(\Gamma,w)$, and the non-edges of $G$ are the contradictions.
+The QCP graph of Section~\ref{sec:qcp} is the instance with the cells,
+row--symbol lines and column--symbol lines as equations, all weights $3$,
+$m=3h$, and no contradictions besides the equations. Let
+$D=\operatorname{diag}(w)$, so that $z=D^{1/2}\one$, and $M=A^TA$: $M_{ij}$
+counts the equations shared by $i$ and $j$, and $M_{jj}=w_j$.
+
+\begin{prop}
+\label{prop:sat01}
+Let
+\[ H_A = zz^T + m\,\bigl(I - D^{-1/2}MD^{-1/2}\bigr). \]
+\begin{enumerate}
+\item[(a)] $H_A\in\Hc(G,w)$, with defect $\tau_{ij}=mM_{ij}/(w_iw_j)$ on
+every contradiction; in particular $\tau_{ij}=0$ on the contradictions that
+share no equation.
+\item[(b)] $mI-H_A=D^{-1/2}A^T(mI-\one\one^T)AD^{-1/2}\succeq0$, so
+$\lmax(H_A)\leq m$, and $\ker(mI-H_A)=L_A:=D^{1/2}\{u:\ Au\in\R\one\}$.
+\item[(c)] If $\vt=m$, $H_A$ is Lov\'asz-optimal; conversely, if $L_A\neq0$
+(e.g. when $n>m$) and $H_A$ is Lov\'asz-optimal, $\vt=m$. If the instance is
+satisfiable, $\vt=m$ and $H_A$ anchors every solution $S$ at level $m$
+($C=0$).
+\item[(d)] If $\vt=m$, the global minimizers of (\ref{eq:v}) for $H_A$ are
+the $x\in L_A$ with $z^Tx=1$ and $x^Tx=1/m$, and the nonnegative ones among
+them are exactly the indicators $x^S=z_S/m$ of the exact covers $S$ of $A$
+(the $0$-$1$ solutions of $Ax=\one$), whether or not they respect the
+contradictions outside the equations.
+\end{enumerate}
+\end{prop}
+\begin{proof}
+(a) As $A$ is $0$-$1$, $M_{jj}=w_j$ and the diagonal of $H_A$ is
+$w_j+m(1-1)=w_j$. Off the diagonal
+$(H_A)_{ij}=z_iz_j-mM_{ij}/(z_iz_j)=z_iz_j\bigl(1-mM_{ij}/(w_iw_j)\bigr)$.
+Adjacent vertices of $G$ share no equation, so there $(H_A)_{ij}=z_iz_j$.
+
+(b) As $D^{-1/2}A^T\one=D^{-1/2}w=z$,
+\[ mI-H_A=m\,D^{-1/2}MD^{-1/2}-zz^T
+   =D^{-1/2}A^T\bigl(mI-\one\one^T\bigr)AD^{-1/2}. \]
+Since $mI-\one\one^T$ is positive semidefinite with kernel $\R\one$, $y$ lies
+in $\ker(mI-H_A)$ iff $AD^{-1/2}y\in\R\one$.
+
+(c) By (\ref{eq:thetaprimal}) and (b), $\vt\leq\lmax(H_A)\leq m$, and
+$\lmax(H_A)=m$ when $L_A\neq0$; both implications follow. A solution $S$ is
+a clique of weight $m$, so
+$\vt\geq m$ by Lemma~\ref{lem:cliquevec}, and $AD^{-1/2}z_S=A\one_S=\one$,
+so $z_S\in L_A$ and $H_Az_S=mz_S$, which is the anchoring at level
+$m=W(S)$ by Lemma~\ref{lem:tau}(c).
+
+(d) $\lmax(H_A)=m=\vt$, so $v(H_A)=1/m$ by Theorem~\ref{thm:theta}, and a
+point of $\Wc^{H_A}$ has $1=x^TH_Ax\leq m\,x^Tx$, with equality iff
+$x\in L_A$; this gives the global minimizers. Write such an $x$ as
+$D^{1/2}u$ with $Au=t\one$. Then $z^Tx=w^Tu=\one^TAu=tm$, so $t=1/m$, and
+$p=mu$ satisfies $Ap=\one$. If $x\geq0$ then $p\geq0$, hence $p\leq\one$,
+since every variable lies in an equation on which $p$ sums to $1$, and
+\[ m^2\,x^Tx=\sum_j w_jp_j^2\ \leq\ \sum_j w_jp_j=\one^TAp=m, \]
+with equality iff $p\in\{0,1\}^n$. So $x^Tx=1/m$ iff $p=\one_S$ for an exact
+cover $S$, and then $x=D^{1/2}\one_S/m=x^S$.
+\end{proof}
+
+For QCP every pair shares at most one line, so $M=3I+A_\Gamma$ and
+$H_A=3J+3hI-h(3I+A_\Gamma)=3\bigl(J-\frac h3A_\Gamma\bigr)$, three times the
+wrapper of Proposition~\ref{prop:qcp} (whose weights are $1$), with
+$L_A=L$; that proposition is the case of (a)--(d) in which every exact cover
+is a solution. In general $H_A$ sees only the equations: it is blind to
+every contradiction that shares no equation, and the nonnegative points of
+its sphere of global minimizers include the exact covers that violate such
+contradictions. It is always one of the Lov\'asz-optimal wrappers when
+$\vartheta=m$, but on an unsatisfiable instance with $\vartheta<m$ it is
+not. Which instances these are is decided by the following relaxation of the
+solutions.
+
+\begin{thm}
+\label{thm:vector}
+$\vt=m$ iff SAT01$(A,\Gamma)$ has a {\em vector solution}: vectors
+$q_1,\ldots,q_n$ in some $\R^r$ and a unit vector $d$ with
+\[ q_i^Tq_j=0 \mbox{ for every contradiction } \{i,j\}, \qquad
+   \sum_{j\in e}q_j=d \mbox{ for every equation } e\in\mathcal E. \]
+The Lov\'asz optima are then exactly the matrices
+$X=\bigl(z_iz_j\,q_i^Tq_j/m\bigr)$ of the vector solutions, so
+$\rank X=\dim\spn\{q_j\}$, and the vector solutions of dimension one are the
+solutions, $q_j=x_jd$. Every vector solution gives a fractional exact cover
+$p_j=\|q_j\|^2=d^Tq_j$, with $Ap=\one$, $p\geq0$ and $\sum_{j\in K}p_j\leq1$
+for every clique $K$ of $\Gamma$.
+\end{thm}
+\begin{proof}
+Variables that share an equation contradict, so the vectors of one equation
+are pairwise orthogonal and $\sum_{j\in e}\|q_j\|^2=\|d\|^2=1$.
+
+Given a vector solution, let $v_j=z_jq_j/\sqrt m$ and let $X$ be their Gram
+matrix. It is positive semidefinite and vanishes on the contradictions, i.e.
+off $E$, and
+$\tr X=\frac1m\sum_jw_j\|q_j\|^2=\frac1m\sum_{e\in\mathcal E}\sum_{j\in e}
+\|q_j\|^2=1$. Moreover
+$\sum_jz_jv_j=\frac1{\sqrt m}\sum_jw_jq_j=\frac1{\sqrt
+m}\sum_{e\in\mathcal E}\sum_{j\in e}q_j=\sqrt m\,d$, so
+$\langle zz^T,X\rangle=\|\sum_jz_jv_j\|^2=m$. Hence $\vt\geq m$, and $\vt=m$
+by Proposition~\ref{prop:sat01}(b); $X$ is a Lov\'asz optimum.
+
+Conversely, let $\vt=m$ and let $X$ be a Lov\'asz optimum. $H_A$ is
+Lov\'asz-optimal (Proposition~\ref{prop:sat01}(c)), so by (\ref{eq:compl})
+the range of $X$ lies in $L_A$. Factor $X=VV^T$ with $V$ of full column rank
+and let $v_j$ be the rows of $V$. The columns of $V$ lie in the range of $X$,
+so every column of $D^{-1/2}V$ is a $u$ with $Au\in\R\one$, and the vectors
+$v_j/z_j$ have one and the same sum $t$ over every equation. Then
+$\sum_jz_jv_j=\sum_jw_j\,v_j/z_j=\sum_{e\in\mathcal E}\sum_{j\in e}v_j/z_j
+=mt$, and $m=\langle zz^T,X\rangle=\|mt\|^2$ gives $\|t\|=1/\sqrt m$. So
+$q_j=\sqrt m\,v_j/z_j$ and $d=\sqrt m\,t$ form a vector solution:
+$q_i^Tq_j=mX_{ij}/(z_iz_j)=0$ on the contradictions. The two constructions
+are inverse to each other up to an orthogonal transformation of $\R^r$.
+
+If the $q_j$ span a line, $q_j=\lambda_jd$, with $\lambda_i\lambda_j=0$ on the
+contradictions and $\sum_{j\in e}\lambda_j=1$; at most one $\lambda_j$ per
+equation is nonzero, so $\lambda\in\{0,1\}^n$ is a solution. Finally, for
+$j$ in an equation $e$, $d^Tq_j=\sum_{i\in e}q_i^Tq_j=\|q_j\|^2$, so
+$p_j=\|q_j\|^2=d^Tq_j\geq0$ does not depend on $e$ and sums to $\|d\|^2=1$
+over every equation. On a clique $K$ of $\Gamma$ the nonzero $q_j$ are
+pairwise orthogonal, and Bessel's inequality gives
+$\sum_{j\in K}p_j=\sum_{j\in K,\,q_j\neq0}(d^Tq_j/\|q_j\|)^2\leq\|d\|^2=1$.
+\end{proof}
+
+A vector solution is the semidefinite relaxation of the $0$-$1$ system: each
+$x_j$ becomes a vector $q_j$, $x_ix_j=0$ becomes orthogonality and
+$\sum_{j\in e}x_j=1$ becomes $\sum_{j\in e}q_j=d$. So the gap $\alpha<\vartheta=m$
+of \cite{Bu07} is the existence of vector solutions without solutions. By the
+last statement it implies that the fractional exact cover polytope
+$\{p\geq0:\ Ap=\one,\ p(K)\leq1$ for all cliques $K$ of $\Gamma\}$ is nonempty,
+i.e. $\kappa(\Gamma,w)=m$ in the notation of \cite{Bu07}.
+
+SAT01 propagation \cite[Section~3]{Bu07} reduces instances by unit
+propagation and clique analysis and adds edges to $\Gamma$ by contradiction
+analysis: $j$ and $k$ contradict if some equation consists of variables that
+contradict $j$ or $k$. Every solution survives, so $\alpha$ is unchanged, but
+a vector solution need not have $q_j^Tq_k=0$ for such a derived pair, so the
+new edges can destroy all vector solutions and push $\vartheta$ below $m$.
+Conversely, propagation can stop short of refuting an instance with
+$\vartheta<m$. Section~\ref{sec:sat01comp} shows that on
+factoring instances the two refute different primes, and that their
+combination refutes primes that neither refutes alone.
+
 \section{Computations}
 \label{sec:comp}
 
@@ -1482,6 +1670,165 @@ differs); $\dim L$: top multiplicity of the standard wrapper; $|V|-h+1$: top
 multiplicity of the colouring wrapper of the cells.}
 \end{table}
 
+\subsection{SAT01 instances}
+\label{sec:sat01comp}
+
+Two reductions of \cite{Bu07} supplied the instances, built with Busygin's
+converters. A factoring instance encodes the long multiplication of two
+factors with product $N$, with the bitwise sums of
+\cite[Section~4.9]{Bu07}; trivial factorizations are excluded, so a prime
+gives an unsatisfiable instance, and the products of two primes tried had
+one solution, or two when both factors have the same bit length. A Hamilton
+cycle instance of a graph with $n$ vertices has the variables $x_{ij}$ (``the
+$i$-th vertex of the cycle is vertex $j$''), $2n$ equations that make
+$(x_{ij})$ a permutation matrix, and a contradiction between $x_{ij}$ and
+$x_{i+1,k}$ whenever $j$ and $k$ are not adjacent \cite[Section~4.2]{Bu07};
+one variable is fixed to remove the rotations, and once it is eliminated
+every weight is $2$ and $m=2(n-1)$. The graphs were generalized Petersen
+graphs $GP(n,k)$, among them the Petersen graph $GP(5,2)$ and the
+dodecahedron $GP(10,2)$, the flower snarks $J_5$ and $J_7$, the Coxeter
+graph, and random cubic graphs; the solver confirmed that the Petersen
+graph, $GP(11,2)$, $J_5$, $J_7$ and the Coxeter graph have no Hamilton cycle.
+
+Each instance was converted after SAT01 propagation of two strengths: {\em
+light}, which only eliminates the variables that the encoding fixes, and
+{\em full}, unit propagation, clique analysis and contradiction analysis to a
+fixed point, as in Busygin's solver. Full propagation refutes all 1728 primes
+between $2^{10}$ and $2^{14}$ but 14887, four of the eight largest primes
+below $2^{15}$, and none of the eight largest below $2^{16}$ or below
+$2^{17}$. It solves the 2957 odd products of two primes in the same range or
+reduces them to one equation in two variables, except 14471, 14631, 15591
+and 16041. Bipartite graphs with sides of different sizes, which have no
+Hamilton cycle by parity, are refuted already by light propagation, whose
+clique analysis carries the parity of the positions from the fixed vertex.
+
+$\vartheta$ was computed with CSDP from (\ref{eq:thetadual}), one constraint
+per contradiction. A value below $m$ is certified by $\lmax$ of the wrapper
+recovered from the dual solution, which bounds $\vartheta$ from above by
+(\ref{eq:thetaprimal}) whatever the solver's accuracy. The rank of a
+Lov\'asz optimum counts its eigenvalues above $10^{-5}$ of the largest, the
+multiplicity of $\lmax(H)$ those within $10^{-5}\lmax(H)$ of it, and the
+solutions were listed by exact cover search. The script is
+\texttt{bench/sat01.py} of the QUALEX-MS repository (commits b51234b and
+33020d1), its output is in \texttt{bench/runs/sat01/}, and the largest
+problems, with 55000 constraints, took 27 minutes.
+
+\begin{table}[ht]
+\begin{center}
+\small
+\setlength\tabcolsep{3pt}
+\begin{tabular}{|l|r|r|r|l|r|r|r|r|l|r|}
+\hline
+ & & \multicolumn{3}{c|}{light propagation} & \multicolumn{6}{c|}{full propagation} \\
+instance & guesses & $n$ & $m$ & $m-\vartheta$ & $n$ & $m$ & contr. & blind & $m-\vartheta$ & rank $X^*$ \\
+\hline
+$101$   & 0 & 145 & 106 & $0.103^*$ & \multicolumn{6}{c|}{refuted by propagation} \\
+$1009$  & 0 & 316 & 217 & 0 & \multicolumn{6}{c|}{refuted by propagation} \\
+$14887$ & 1 & 716 & 478 & 0 & 510 & 365 & 22926 & 0.93 & $0.0638^*$ & 94 \\
+$32717$ & 1 & 868 & 575 & 0 & 568 & 404 & 29157 & 0.94 & $0.0345^*$ & 108 \\
+$32719$ & 1 & 866 & 575 & 0 & 615 & 425 & 30173 & 0.93 & $8.9\cdot10^{-4}\,{}^*$ & 101 \\
+$32687$ & 1 & 866 & 575 & 0 & 638 & 435 & 34862 & 0.94 & $7.0\cdot10^{-5}\,{}^*$ & 106 \\
+$32713$ & 1 & 871 & 575 & 0 & 612 & 419 & 29772 & 0.93 & 0 & 161 \\
+$65521$ & 1 & 955 & 631 & 0 & 713 & 482 & 41260 & 0.94 & 0 & 198 \\
+$32749,32707,32693,32653$ & 0 & 865--872 & 575 & 0 & \multicolumn{6}{c|}{refuted by propagation} \\
+\hline
+Petersen   & 0  & 63 & 18 & $0.235^*$ & \multicolumn{6}{c|}{refuted by propagation} \\
+$J_5$      & 2  &    &    &   & 265 & 38 & 14796 & 0.74 & 0 & 211 \\
+$GP(11,2)$ & 5  &    &    &   & 329 & 42 & 19316 & 0.73 & 0 & 269 \\
+Coxeter    & 83 &    &    &   & 585 & 54 & 50832 & 0.74 & 0 & 509 \\
+$J_7$      & 30 &    &    &   & 543 & 54 & 55123 & 0.79 & 0 & 465 \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:sat01unsat} Unsatisfiable SAT01 instances: primes
+(factoring) and graphs without a Hamilton cycle. guesses: made by the SAT01
+solver, 0 when propagation refutes the instance. After light and after full
+propagation: $n$ variables, $m$ equations, the contradictions, the share of
+them that share no equation (blind to $H_A$), $m-\vartheta$, and the rank of
+the Lov\'asz optimum $X^*$. A $0$ means $|m-\vartheta|\leq5\cdot10^{-6}$ with
+the dual wrapper's $\lmax$ above $m$; $^*$: certified by a dual wrapper with
+$\lmax<m$.}
+\end{table}
+
+\begin{table}[ht]
+\begin{center}
+\small
+\begin{tabular}{|l|r|r|r|r|r|r|r|}
+\hline
+instance & $n$ & $m$ & solutions & span & rank $X^*$ & mult.\ $\lmax(H)$ & $\dim L_A$ \\
+\hline
+$143=11\cdot13$ (light) & 180 & 132 & 2  & 2  & 2   & 2   & 49 \\
+$14471=29\cdot499$      & 511 & 367 & 1  & 1  & 1   & 1   & 149 \\
+$14631=3\cdot4877$      & 514 & 370 & 1  & 1  & 1   & 2   & 150 \\
+$15591=3\cdot5197$      & 501 & 359 & 1  & 1  & 1   & 1   & 145 \\
+$16041=3\cdot5347$      & 506 & 362 & 1  & 1  & 1   & 1   & 146 \\
+$32399=179\cdot181$     & 636 & 441 & 2  & 2  & 5   & 18  & 198 \\
+$60491=241\cdot251$     & 740 & 514 & 2  & 2  & 205 & 211 & 236 \\
+\hline
+cubic, 16 vertices      & 57  & 30  & 12 & 12 & 12  & 12  & 29 \\
+cubic, 20 vertices      & 195 & 38  & 30 & 30 & 152 & 152 & 160 \\
+cubic, 24 vertices      & 403 & 46  & 48 & 36 & 335 & 335 & 359 \\
+dodecahedron            & 263 & 38  & 60 & 60 & 213 & 213 & 227 \\
+$GP(13,2)$              & 481 & 50  & 26 & 26 & 409 & 409 & 433 \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:sat01sat} Satisfiable SAT01 instances after full
+propagation ($143$ after light propagation; full propagation leaves one
+equation in two variables). solutions: listed by exact cover search, the
+directed Hamilton cycles from the fixed vertex for the graphs; span: the
+dimension of their indicators; rank of the Lov\'asz optimum $X^*$;
+multiplicity of the top eigenvalue of the optimal wrapper; $\dim L_A$: that of
+$H_A$. Every solution is anchored at $C=0$ in the optimal wrapper to a
+relative $4\cdot10^{-5}$.}
+\end{table}
+
+Table~\ref{tab:sat01unsat} answers the question of \cite{Bu07} on these
+instances. After full propagation $\vartheta$ refutes four of the six primes
+that propagation leaves open, each certified by a wrapper with $\lmax<m$,
+but the margin $m-\vartheta$ falls from $0.064$ (14887) to $7\cdot10^{-5}$
+(32687). On 32713 and 65521 $\vartheta=m$: by Theorem~\ref{thm:vector} they
+have vector solutions, of dimension about 160 and 200, and they are
+unsatisfiable instances with $\alpha<\vartheta=m$. On the graphs of light
+propagation $\vartheta=m$ for all ten primes from 14887 up, while it still
+refutes 101, so each of the four refutations needs the contradictions that
+contradiction analysis derives. Conversely, propagation alone refutes 32749,
+32707, 32693 and 32653, whose light graphs have $\vartheta=m$. Neither method
+contains the other, and propagation followed by $\vartheta$ refutes more than
+either. The polyhedral shadow of Theorem~\ref{thm:vector}, a fractional
+exact cover with $p_i+p_j\leq1$ on the contradictions, was feasible on all
+seven instances tried, among them the three with $\vartheta<m$ (101 light,
+14887 full, Petersen light), so these refutations are semidefinite and not
+polyhedral. For perspective, the solver needs a single guess on each
+surviving prime: the instances are easy, and $\vartheta$ helps at the edge of
+what propagation does. The 17-bit primes keep 60000 to 63000 contradictions
+after propagation, beyond what CSDP solves on the machine used.
+
+On the Hamilton cycle instances $\vartheta$ refutes only the Petersen graph
+($17.765<18$ on its light graph), which propagation refutes anyway. The four
+non-Hamiltonian graphs that survive full propagation all have
+$\vartheta=m$: they have vector Hamilton cycles, of dimension 211 to 509.
+
+On the satisfiable instances (Table~\ref{tab:sat01sat}) the solutions are
+the vector solutions of dimension one, and the question is how many others
+the Lov\'asz optimum carries. The four 14-bit products of two primes have a
+unique solution and a Lov\'asz optimum of rank one: the solution is their
+only vector solution, and solving the semidefinite program factors them.
+This ends quickly. The two solutions of $179\cdot181$ lie in an optimum of
+rank 5 and those of $241\cdot251$ in one of rank 205. On the cubic graphs the
+optimum spans exactly the 12 solutions of the smallest one (6 cycles, each in
+two directions) and far more than the solutions elsewhere: 152 dimensions
+against 30, 335 against 36, 213 against 60 on the dodecahedron and 409
+against 26 on $GP(13,2)$, as on the QWH instances in the middle of the
+transition (Section~\ref{sec:qwh}). The optimal wrapper's top multiplicity
+equals the rank on all the graphs and exceeds it on three factoring
+instances (2 against 1, 18 against 5, 211 against 205), where
+complementarity is not strict at the solver's accuracy. $H_A$, which is
+Lov\'asz-optimal on all of them by Proposition~\ref{prop:sat01}(c), is far
+more degenerate on factoring, with $\dim L_A$ between 145 and 236 against
+ranks between 1 and 205, but exceeds the optimum by only 8 to 24 dimensions
+on the Hamilton cycle instances.
+
 \section{Conclusions and open questions}
 
 For one clique, anchoring is always possible and puts the clique on the
@@ -1511,6 +1858,19 @@ completions, and even the least degenerate Lov\'asz-optimal wrapper exceeds
 that span in the middle of the transition from one completion to many
 (Section~\ref{sec:qwh}).
 
+SAT01 \cite{Bu07} carries this over to every problem that reduces to it
+(Section~\ref{sec:sat01}). The equation wrapper $H_A$ is Lov\'asz-optimal
+exactly when $\vartheta=m$; then its degenerate top eigenspace holds every
+vector solution, and the nonnegative points of its sphere of global
+minimizers are the exact covers of the equations, blind to the other
+contradictions. $\vartheta<m$ refutes an instance exactly when it has no
+vector solution (Theorem~\ref{thm:vector}). On factoring and Hamilton cycle
+instances vector solutions appear early (Section~\ref{sec:sat01comp}).
+$\vartheta$ refutes small primes only on the graphs that SAT01 propagation
+has enriched with derived contradictions, with a margin that shrinks fast,
+and no non-Hamiltonian graph that survives propagation; propagation in turn
+refutes primes on whose unpropagated graphs $\vartheta=m$.
+
 Questions left open:
 \begin{enumerate}
 \item Characterize the graphs whose maximum cliques can all be anchored at a
@@ -1531,6 +1891,19 @@ between the regimes of few and of very many completions, and none of them
 was hard for search. (An earlier version of these notes asked whether the
 hard case could be exploited by a search inside the degenerate eigenspace;
 Section~\ref{sec:qcp} answers that it cannot in general, unless P = NP.)
+\item Which primes keep a vector solution after SAT01 propagation (32713 and
+65521 did, while 32687 lost it by a margin of $7\cdot10^{-5}$), and does every
+prime from some size on keep one?
+\item Contradiction analysis and $\vartheta$ are incomparable. Declaring $x_j$
+and $x_k$ contradictory when the instance with $x_j=x_k=1$, after
+propagation, has $\vartheta$ below its number of equations is a polynomial
+rule that subsumes contradiction analysis. How much does it add on the
+instances of Section~\ref{sec:sat01comp}, and does iterating it refute
+32713?
+\item The non-Hamiltonian cubic graphs tried all have vector Hamilton cycles,
+of dimension in the hundreds. Do they have an explicit description through the
+symmetries of the encoding, and which cubic graphs besides the Petersen graph
+have none?
 \end{enumerate}
 
 \begin{thebibliography}{AGKS00}
@@ -1562,6 +1935,11 @@ Section~\ref{sec:qcp} answers that it cannot in general, unless P = NP.)
   S. Busygin,
   A new trust region technique for the maximum weight clique problem,
   {\em Discrete Applied Mathematics\/} 154(15) (2006) 2080--2096.
+
+\bibitem[Bu07]{Bu07}
+  S. Busygin,
+  The SAT01 framework for NP problems,
+  note, 2003--2007 (\texttt{sat01theta.tex} in the SAT01 repository).
 
 \bibitem[CW]{CW}
   S. Busygin,
