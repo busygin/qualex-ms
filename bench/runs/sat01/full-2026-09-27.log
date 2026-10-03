@@ -42,3 +42,23 @@ flower7        full  n=543 m=54 pairs=55123 blind 0.793  theta 54.0000005  (wrap
 #   on the Hamiltonian ones the optimum's rank is far above the span of the cycles (span.tsv)
 #   the edge LP (A p = 1, p >= 0, p_i + p_j <= 1 on the contradiction pairs) is feasible on
 #   f101, f1009, f14887, petersen, flower5, gp11_2 and f143: the refutations are semidefinite
+#
+# light preprocessing (sat012clique -w), run on 2026-10-02 with CSDP=~/Csdp/solver/csdp-mkl at 12
+# threads; it printed to a terminal, so the lines below are rebuilt from sat01.tsv:
+f14887         light n=716 m=478 pairs=19177 blind 0.875  theta 478.0000000  (wrapper lambda_max 478.0000020)  m - theta 0.00e+00  rank 215  solver: unsat, 1 guesses
+f32717         light n=868 m=575 pairs=27132 blind 0.892  theta 575.0000000  (wrapper lambda_max 575.0000022)  m - theta 0.00e+00  rank 265  solver: unsat, 1 guesses
+f32713         light n=871 m=575 pairs=27289 blind 0.891  theta 574.9999950  (wrapper lambda_max 575.0000026)  m - theta 5.00e-06  rank 268  solver: unsat, 1 guesses
+f32719         light n=866 m=575 pairs=26987 blind 0.892  theta 575.0000000  (wrapper lambda_max 575.0000016)  m - theta 0.00e+00  rank 271  solver: unsat, 1 guesses
+f32687         light n=866 m=575 pairs=27053 blind 0.892  theta 575.0000000  (wrapper lambda_max 575.0000015)  m - theta 0.00e+00  rank 273  solver: unsat, 1 guesses
+f65521         light n=955 m=631 pairs=30648 blind 0.894  theta 631.0000000  (wrapper lambda_max 631.0000013)  m - theta 0.00e+00  rank 296  solver: unsat, 1 guesses
+f32749         light n=865 m=575 pairs=26846 blind 0.891  theta 574.9999950  (wrapper lambda_max 575.0000024)  m - theta 5.00e-06  rank 264  solver: unsat, 0 guesses
+f32707         light n=872 m=575 pairs=27332 blind 0.891  theta 575.0000000  (wrapper lambda_max 575.0000019)  m - theta 0.00e+00  rank 270  solver: unsat, 0 guesses
+f32693         light n=868 m=575 pairs=27156 blind 0.892  theta 575.0000000  (wrapper lambda_max 575.0000018)  m - theta 0.00e+00  rank 268  solver: unsat, 0 guesses
+f32653         light n=871 m=575 pairs=27490 blind 0.892  theta 575.0000000  (wrapper lambda_max 575.0000022)  m - theta 0.00e+00  rank 268  solver: unsat, 0 guesses
+# summary: theta = m on the light graph of all ten primes, none certified (every dual wrapper has
+#   lambda_max above m; the 5e-6 gaps are within CSDP's accuracy), rank 215-296.  theta alone
+#   refutes 101 (7 bits), but neither 1009 and 4093 (measured before the survey) nor any of these
+#   ten.  Contradiction analysis alone refutes 32749, 32707, 32693 and 32653, which theta on the
+#   light graph cannot.  theta on the fully preprocessed graph refutes 14887, 32717, 32719 and
+#   32687, which neither refutes alone: the derived contradictions are what makes the gap visible to
+#   theta.  The solver needs one guess on each.
