@@ -1,0 +1,10 @@
+sat01:cubic16_1          n=57    target 30     rank 29   starts 56  | jam 54 hits 0s | ap 56 hits, 12 reached 0s | dr 56 hits, 56 reached 0s
+sat01:cubic20_1          n=195   target 38     rank 160  starts 318 | jam 23 hits 0s | ap 5 hits, 0 reached 0s | dr 11 hits, 0 reached 1s
+sat01:cubic24_1          n=403   target 46     rank 359  starts 716 | jam 11 hits 0s | ap 0 hits, 0 reached 4s | dr 0 hits, 0 reached 4s
+sat01:dodecahedron       n=263   target 38     rank 227  starts 452 | jam 11 hits 0s | ap 0 hits, 0 reached 1s | dr 0 hits, 0 reached 1s
+sat01:gp13_2             n=481   target 50     rank 433  starts 864 | jam 0 hits 0s | ap 0 hits, 0 reached 6s | dr 0 hits, 0 reached 6s
+sat01:cubic16_1          n=57    target 30     rank 29   starts 56  | jam 54 hits 0s | ap 56 hits, 53 reached, 43 exact 0s | dr 56 hits, 56 reached, 48 exact 0s
+sat01:cubic20_1          n=195   target 38     rank 160  starts 318 | jam 23 hits 0s | ap 26 hits, 14 reached, 14 exact 6s | dr 190 hits, 175 reached, 187 exact 8s
+sat01:cubic24_1          n=403   target 46     rank 359  starts 716 | jam 11 hits 0s | ap 0 hits, 0 reached, 0 exact 39s | dr 28 hits, 0 reached, 0 exact 62s
+sat01:dodecahedron       n=263   target 38     rank 227  starts 452 | jam 11 hits 0s | ap 7 hits, 0 reached, 0 exact 12s | dr 94 hits, 80 reached, 87 exact 20s
+sat01:gp13_2             n=481   target 50     rank 433  starts 864 | jam 0 hits 0s | ap 0 hits, 0 reached, 0 exact 65s | dr 1 hits, 1 reached, 1 exact 96s

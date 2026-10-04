@@ -453,3 +453,33 @@ qwhnew:30,0.40,0	dr-allmin	2095	360	1035	True	13/2068 conv 0	101.9
 qwhnew:30,0.42,1	jam-allmin	2339	378	1247	False	0/2492 conv 0	19.7
 qwhnew:30,0.42,1	ap-allmin	2339	378	1247	False	0/2492 conv 0	88.0
 qwhnew:30,0.42,1	dr-allmin	2339	378	1247	False	0/2492 conv 0	149.8
+sat01:cubic16_1	jam-eq-orthant	57	30	29	True	54/56 conv 0	0.0
+sat01:cubic16_1	ap-eq-orthant	57	30	29	True	56/56 conv 12	0.0
+sat01:cubic16_1	dr-eq-orthant	57	30	29	True	56/56 conv 56	0.0
+sat01:cubic20_1	jam-eq-orthant	195	38	160	True	23/318 conv 0	0.0
+sat01:cubic20_1	ap-eq-orthant	195	38	160	True	5/318 conv 0	0.4
+sat01:cubic20_1	dr-eq-orthant	195	38	160	True	11/318 conv 0	0.7
+sat01:cubic24_1	jam-eq-orthant	403	46	359	True	11/716 conv 0	0.3
+sat01:cubic24_1	ap-eq-orthant	403	46	359	False	0/716 conv 0	4.3
+sat01:cubic24_1	dr-eq-orthant	403	46	359	False	0/716 conv 0	3.9
+sat01:dodecahedron	jam-eq-orthant	263	38	227	True	11/452 conv 0	0.1
+sat01:dodecahedron	ap-eq-orthant	263	38	227	False	0/452 conv 0	0.7
+sat01:dodecahedron	dr-eq-orthant	263	38	227	False	0/452 conv 0	1.2
+sat01:gp13_2	jam-eq-orthant	481	50	433	False	0/864 conv 0	0.4
+sat01:gp13_2	ap-eq-orthant	481	50	433	False	0/864 conv 0	6.5
+sat01:gp13_2	dr-eq-orthant	481	50	433	False	0/864 conv 0	6.3
+sat01:cubic16_1	jam-eq-clause	57	30	29	True	54/56 conv 0	0.0
+sat01:cubic16_1	ap-eq-clause	57	30	29	True	56/56 conv 53 exact 43	0.1
+sat01:cubic16_1	dr-eq-clause	57	30	29	True	56/56 conv 56 exact 48	0.1
+sat01:cubic20_1	jam-eq-clause	195	38	160	True	23/318 conv 0	0.1
+sat01:cubic20_1	ap-eq-clause	195	38	160	True	26/318 conv 14 exact 14	6.2
+sat01:cubic20_1	dr-eq-clause	195	38	160	True	190/318 conv 175 exact 187	8.4
+sat01:cubic24_1	jam-eq-clause	403	46	359	True	11/716 conv 0	0.3
+sat01:cubic24_1	ap-eq-clause	403	46	359	False	0/716 conv 0 exact 0	39.3
+sat01:cubic24_1	dr-eq-clause	403	46	359	True	28/716 conv 0 exact 0	62.1
+sat01:dodecahedron	jam-eq-clause	263	38	227	True	11/452 conv 0	0.1
+sat01:dodecahedron	ap-eq-clause	263	38	227	True	7/452 conv 0 exact 0	12.1
+sat01:dodecahedron	dr-eq-clause	263	38	227	True	94/452 conv 80 exact 87	20.4
+sat01:gp13_2	jam-eq-clause	481	50	433	False	0/864 conv 0	0.4
+sat01:gp13_2	ap-eq-clause	481	50	433	False	0/864 conv 0 exact 0	64.5
+sat01:gp13_2	dr-eq-clause	481	50	433	True	1/864 conv 1 exact 1	95.7

@@ -291,6 +291,48 @@ def jam_sphere(X, w, theta):
     return c, np.sqrt(max(1.0 / theta - c @ c, 0.0)), D, Bm
 
 
+def equation_jam(w, equ):
+    """the jam of the equation wrapper H_A of a SAT01 instance (no SDP): the sphere
+    {x in L_A: z^T x = 1, |x|^2 = 1/m}, L_A = D^1/2 {u: Au in R1}, which holds the
+    indicator z_S/m of every exact cover S; returned as jam_sphere() returns its sphere"""
+    n, m = len(w), len(equ)
+    z = np.sqrt(w)
+    A = np.zeros((m, n))
+    for e, vs in enumerate(equ):
+        A[e, vs] = 1
+    _, s, vt = np.linalg.svd(A - w[None, :] / m)          # (I - 1 1^T/m) A
+    r = int((s > 1e-10 * s[0]).sum())
+    Bm, _ = np.linalg.qr(z[:, None] * vt[r:].T)
+    a = Bm.T @ z
+    c = Bm @ a / (a @ a)
+    _, _, vt2 = np.linalg.svd(a[None, :])
+    return c, np.sqrt(max(1.0 / m - c @ c, 0.0)), Bm @ vt2[1:].T, Bm
+
+
+def clause_projector(adj, equ):
+    """the greedy projection onto the nonnegative vectors whose support has no 2-clause
+    conflict (a contradiction between variables sharing no equation): clip the
+    negatives, keep entries in decreasing order unless they 2-clash with a kept one"""
+    n = len(adj)
+    A = np.zeros((len(equ), n))
+    for e, vs in enumerate(equ):
+        A[e, vs] = 1
+    two = ~adj & ~np.eye(n, dtype=bool) & (A.T @ A == 0)
+    nbr = [np.flatnonzero(two[i]) for i in range(n)]
+
+    def project(y):
+        out = np.zeros(n)
+        blocked = np.zeros(n, bool)
+        for i in np.argsort(-y):
+            if y[i] <= 0:
+                break
+            if not blocked[i]:
+                out[i] = y[i]
+                blocked[nbr[i]] = True
+        return out
+    return project
+
+
 def project_sphere(Y, c, rho, D):
     """the nearest points of the sphere to the columns of Y"""
     U = D @ (D.T @ (Y - c[:, None]))
@@ -344,24 +386,49 @@ class MinRefiner:
             self.lib().qms_free(self.h)
 
 
-def nonneg_jam(adj, w, X, target, starts, iters, tol=1e-4):
+def nonneg_jam(adj, w, X, target, starts, iters, tol=1e-4, jam="lovasz", proj="orthant", equ=None):
     """MIN on the jam vectors c +- rho d_j, d_j an orthonormal basis of the directions
     of the sphere (QUALEX-MS's try_eigendir_points, which hands MIN the vector x o z),
     and on the same starts after alternating projections (AP: clip the negatives,
     project back onto the sphere) or Douglas-Rachford (DR: x += P+(2 P_S x - x) - P_S x,
     read at P_S x), all starts at once, each frozen when its negativity falls below tol
     (solutions computed from CSDP's optimum carry about 1e-6 of it).  starts = 0 takes
-    every direction.  Per method: starts whose MIN clique has weight target, starts that
-    reached a nonnegative point, and the seconds"""
+    every direction.  jam = "equation" takes the sphere of the equation wrapper H_A
+    (equation_jam(), no SDP) instead of the one in the range of the Lovasz optimum;
+    proj = "clause" replaces the clipping by the greedy projection onto nonnegative
+    vectors whose support has no 2-clause conflict (clause_projector()), each start
+    iterated on its own and stopped when that projection moves P_S x by less than tol.
+    Per method: starts whose MIN clique has weight target, starts that reached a point
+    of both sets, the seconds, and (clause only) starts whose projected point is itself
+    a solution"""
     z = np.sqrt(w)
-    c, rho, D, Bm = jam_sphere(X, w, target)
+    c, rho, D, Bm = equation_jam(w, equ) if jam == "equation" else jam_sphere(X, w, target)
     k = D.shape[1] if starts <= 0 else min(starts, D.shape[1])
     Y0 = np.hstack([c[:, None] + rho * D[:, :k], c[:, None] - rho * D[:, :k]]) if k else c[:, None]
     refine = MinRefiner(adj, w)
     hit = lambda Y: sum(abs(refine.weight(Y[:, j] * z) - target) < 1e-6 * max(1.0, target) for j in range(Y.shape[1]))
     out = {}
     t = time.time()
-    out["jam"] = (hit(Y0), 0, time.time() - t)
+    out["jam"] = (hit(Y0), 0, time.time() - t, None)
+    if proj == "clause":
+        P = clause_projector(adj, equ)
+        sphere = lambda y: project_sphere(y[:, None], c, rho, D)[:, 0]
+        for method in ("ap", "dr"):
+            t = time.time()
+            hits = conv = exact = 0
+            for j in range(Y0.shape[1]):
+                y = Y0[:, j].copy()
+                for _ in range(iters):
+                    e = sphere(y)
+                    pe = P(e)
+                    if np.linalg.norm(pe - e) < tol * np.linalg.norm(e):
+                        conv += 1
+                        break
+                    y = pe if method == "ap" else y + P(2 * e - y) - e
+                hits += abs(refine.weight(e * z) - target) < 1e-6 * max(1.0, target)
+                exact += is_target(np.flatnonzero(pe > 0), adj, w, target)
+            out[method] = (hits, conv, time.time() - t, exact)
+        return out, Y0.shape[1], Bm.shape[1]
     for method in ("ap", "dr"):
         t = time.time()
         Y = Y0.copy()
@@ -379,7 +446,7 @@ def nonneg_jam(adj, w, X, target, starts, iters, tol=1e-4):
                 Y[:, L] = Y[:, L] + np.maximum(2 * ps - Y[:, L], 0) - ps
                 est[:, L] = project_sphere(Y[:, L], c, rho, D)
             live[L[negativity(est[:, L]) < tol]] = False
-        out[method] = (hit(est), int((~live).sum()), time.time() - t)
+        out[method] = (hit(est), int((~live).sum()), time.time() - t, None)
     return out, Y0.shape[1], Bm.shape[1]
 
 
@@ -469,6 +536,10 @@ def main():
     ap.add_argument("-t", "--threads", type=int, default=12)
     ap.add_argument("--starts", type=int, default=0, help="project: jam directions, two starts each (0: all)")
     ap.add_argument("--iters", type=int, default=300, help="project: AP and DR iterations")
+    ap.add_argument("--jam", choices=("lovasz", "equation"), default="lovasz",
+                    help="project: the sphere in the range of the Lovasz optimum, or that of H_A")
+    ap.add_argument("--proj", choices=("orthant", "clause"), default="orthant",
+                    help="project: clip the negatives, or the greedy 2-clause projection")
     ap.add_argument("--modes", default="plain,order,prune", help="search modes to run")
     ap.add_argument("--tag", default="", help="appended to the method names in jam.tsv")
     args = ap.parse_args()
@@ -486,12 +557,15 @@ def main():
                 "%s %s %s" % (m, "yes" if f else "no", i) for m, f, i in out)), flush=True)
             continue
         if args.what == "project":
-            out, nstarts, rank = nonneg_jam(adj, w, X, target, args.starts, args.iters)
-            for method, (hits, conv, secs) in out.items():
-                record(source, method + args.tag, n, target, rank, hits > 0, "%d/%d conv %d" % (hits, nstarts, conv), secs)
+            out, nstarts, rank = nonneg_jam(adj, w, X, target, args.starts, args.iters,
+                                            jam=args.jam, proj=args.proj, equ=equ)
+            for method, (hits, conv, secs, exact) in out.items():
+                record(source, method + args.tag, n, target, rank, hits > 0,
+                       "%d/%d conv %d%s" % (hits, nstarts, conv, "" if exact is None else " exact %d" % exact), secs)
             print("%-24s n=%-5d target %-6g rank %-4d starts %-3d | %s" % (source, n, target, rank, nstarts, " | ".join(
-                "%s %d hits%s %.0fs" % (m, h, "" if m == "jam" else ", %d nonnegative" % cv, s)
-                for m, (h, cv, s) in out.items())), flush=True)
+                "%s %d hits%s%s %.0fs" % (m, h, "" if m == "jam" else ", %d reached" % cv,
+                                          "" if ex is None else ", %d exact" % ex, s)
+                for m, (h, cv, s, ex) in out.items())), flush=True)
             continue
         if equ is None:
             raise SystemExit("%s has no equations to search over" % source)

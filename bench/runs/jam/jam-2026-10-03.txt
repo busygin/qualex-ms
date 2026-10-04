@@ -192,3 +192,32 @@ common closed neighbourhood U of a clique C (R_U) keeps every maximum clique thr
    where the 1000-iteration run of section 4 had 2 of 40 by AP.
  - Cost of the block iteration: up to 102 s (DR) for the 2068 starts of 30,0.40,0 and 150 s for the
    2492 of 30,0.42,1; MIN takes about 8 ms per call at n = 2100-2300.
+
+
+6. The equation wrapper's jam on the Hamilton cycle instances, with the greedy 2-clause projection
+   (project --jam equation --proj orthant|clause; project-clause.log).  The sphere is
+   {x in L_A: z^T x = 1, |x|^2 = 1/m}, L_A = D^1/2 {u: Au in R1} the top eigenspace of H_A, computed
+   from A alone (no SDP); every exact cover lies on it (checked to 2e-16 on cubic20 and the
+   dodecahedron), but H_A is blind to the 2-clause contradictions, so its nonnegative points include
+   exact covers that violate them.  The clause projection clips the negatives and keeps the entries in
+   decreasing order unless they 2-clash with a kept one; it leaves every solution unchanged, and a
+   point of the sphere that it leaves unchanged is a solution.  Starts: all 2(r - 1) corners; at most
+   300 iterations; MIN extracts the clique.  Starts that gave a solution (reached: the iterate lies on
+   both sets; exact: the projected point is itself a solution, before MIN):
+
+   source                 n   dim starts | jam    DR orthant | AP clause DR clause (reached, exact)
+   sat01:cubic16_1       57    29     56 | 54     56         | 56        56 (56, 48)
+   sat01:cubic20_1      195   160    318 | 23     11         | 26        190 (175, 187)
+   sat01:cubic24_1      403   359    716 | 11     0          | 0         28 (0, 0)
+   sat01:dodecahedron   263   227    452 | 11     0          | 7         94 (80, 87)
+   sat01:gp13_2         481   433    864 | 0      0          | 0         1 (1, 1)
+
+ - Clipping alone fails on the equation jam: DR reaches no nonnegative point on the three larger
+   instances and finds fewer solutions than MIN on the corners (11 against 23 on cubic20, 0 against 11
+   on cubic24 and the dodecahedron), as H_A's blindness to the 2-clauses predicts.
+ - With the 2-clause projection DR beats the corners on every instance: 190 against 23 starts on
+   cubic20, 94 against 11 on the dodecahedron, 28 against 11 on cubic24, 1 against 0 on GP(13,2), and
+   where it converges the projected point is itself the solution.  AP with the same projection is far
+   weaker.
+ - Python iterates each start on its own here (62 s on cubic24, 96 s on GP(13,2)); in C with the
+   block products of try_dr_points() the projection onto the sphere would be the cheap part.

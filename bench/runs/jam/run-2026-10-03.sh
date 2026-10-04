@@ -11,3 +11,7 @@ python3 -u bench/jam.py search --modes prune --prune-budget 50000 --tag=-50k qwh
 python3 -u bench/jam.py project sat01:f14471 sat01:f32399 sat01:cubic16_1 theta:san200_0.7_2 theta:gen200_p0.9_55 sat01:f60491 sat01:cubic20_1 sat01:cubic24_1 sat01:dodecahedron sat01:gp13_2 theta:gen200_p0.9_44 qwh:n15_p45_0 qwh:n15_p45_1 qwh:n20_p45_2 qwh:n20_p50_0 qwhnew:25,0.40,2 qwhnew:30,0.40,0 qwhnew:30,0.42,1 > bench/runs/jam/project.log 2>&1
 # the same with every direction of the jam (2 starts each), 300 iterations, and QUALEX-MS's MIN refinement
 python3 -u bench/jam.py project --starts 0 --iters 300 --tag=-allmin sat01:f14471 sat01:f32399 sat01:cubic16_1 theta:san200_0.7_2 theta:gen200_p0.9_55 sat01:f60491 sat01:cubic20_1 sat01:cubic24_1 sat01:dodecahedron sat01:gp13_2 theta:gen200_p0.9_44 qwh:n15_p45_0 qwh:n15_p45_1 qwh:n20_p45_2 qwh:n20_p50_0 qwhnew:25,0.40,2 qwhnew:30,0.40,0 qwhnew:30,0.42,1 > bench/runs/jam/project-allmin.log 2>&1
+# the equation wrapper's jam (no SDP) on the Hamilton cycle instances, clipping against the greedy 2-clause projection
+for p in orthant clause; do
+  python3 -u bench/jam.py project --jam equation --proj $p --tag=-eq-$p sat01:cubic16_1 sat01:cubic20_1 sat01:cubic24_1 sat01:dodecahedron sat01:gp13_2 >> bench/runs/jam/project-clause.log 2>&1
+done
