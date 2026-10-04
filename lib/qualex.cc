@@ -497,15 +497,20 @@ bool try_eigendir_points (
 // cliques anchored at mu.  try_eigendir_points() hands MIN the 2k corners of a
 // trust region sphere around the same centre; here the corners
 // x0 + xhat_p +- rho q_j of this sphere are driven towards nonnegativity by
-// douglas_rachford() with the projection clip_negative(),
+// douglas_rachford() with the projection project_c, by default clip_negative(),
 //   v <- v + max(2 P_S v - v, 0) - P_S v
 // (P_S the projection onto the sphere), read at P_S v, for at most iters steps
 // or until the negative part of P_S v falls below tol of its norm, and the
 // result is handed to MIN as try_eigendir_points() does.  A cluster whose W_mu
-// does not exceed the incumbent cannot improve it and is skipped.
+// does not exceed the incumbent cannot improve it and is skipped.  A wrapper
+// that is not proper -- the equation wrapper of SAT01 ignores the
+// contradictions between variables of no common equation -- has nonnegative
+// points on the sphere that are not cliques, and its caller can pass a
+// projection that takes those contradictions into account instead.
 bool try_dr_points (
   MaxCliqueInfo& graph_info, QualexInfo& solver_info,
-  double* x, double* y, int iters, int max_starts, double tol
+  double* x, double* y, int iters, int max_starts, double tol,
+  const Projection& project_c
 ) {
   int n = graph_info.g.n;
   double w_min = graph_info.w_min, W = graph_info.W;
@@ -544,7 +549,7 @@ bool try_dr_points (
     int block = n_starts<256 ? n_starts : 256;
     vector<double> v((size_t)n*block), est((size_t)n*block);
     vector<bool> done;
-    int converged = 0, improved = 0;
+    int converged = 0, improved = 0, hits = 0;  // hits: MIN cliques of weight W_mu
     for(int b0=0;b0<n_starts;b0+=block) {
       int nb = n_starts-b0<block ? n_starts-b0 : block;
       for(int t=0;t<nb;++t) {  // start b0+t is the corner on eigenvector (b0+t)/2
@@ -552,18 +557,20 @@ bool try_dr_points (
         double sign = (b0+t)%2==0 ? sphere.radius : -sphere.radius;
         for(int i=0;i<n;++i) v[(size_t)t*n+i] = center[i]+sign*qj[i];
       }
-      converged += douglas_rachford(sphere,clip_negative,nb,v.data(),est.data(),
+      converged += douglas_rachford(sphere,project_c,nb,v.data(),est.data(),
                                     done,iters,tol);
       for(int t=0;t<nb;++t) {
         const double* et = &est[(size_t)t*n];
         for(int i=0;i<n;++i) x[i] = et[i]*graph_info.sqrtw[i];
-        if(refine_clique_MIN(graph_info,x)) { result = true; ++improved; }
+        double weight;
+        if(refine_clique_MIN_w(graph_info,x,weight)) { result = true; ++improved; }
+        if(weight>=w_mu*(1.0-1e-9)) ++hits;
       }
     }
     if(stats)
       fprintf(stderr, "DR mu=%.6g k=%d rho2=%.3g W_mu=%.6g starts=%d converged=%d "
-              "improved=%d lb=%g\n", mu, kc, rho2, w_mu, n_starts, converged,
-              improved, graph_info.lower_clique_bound);
+              "hits=%d improved=%d lb=%g\n", mu, kc, rho2, w_mu, n_starts, converged,
+              hits, improved, graph_info.lower_clique_bound);
   }
   return result;
 }
@@ -770,7 +777,8 @@ void check_theorem8_point (
     graph_info.w_min/wq);
 }
 
-bool qualex_ms(MaxCliqueInfo& graph_info, double* a, double target) {
+bool qualex_ms(MaxCliqueInfo& graph_info, double* a, double target,
+               const Projection* dr_projection) {
   QualexInfo solver_info;
   // experimental: read before init_projected_formulation() overwrites a
   double att_lo = 0.0, att_hi = 0.0;
@@ -849,11 +857,14 @@ bool qualex_ms(MaxCliqueInfo& graph_info, double* a, double target) {
 
   // experimental: Douglas-Rachford on the degenerate clusters, QMS_DR the number
   // of iterations (unset or 0 switches it off), QMS_DR_STARTS at most that many
-  // of the 2k corners of a cluster
+  // of the 2k corners of a cluster, toward the nonnegative orthant unless the
+  // caller passes another projection
   int dr_iters = getenv("QMS_DR")?atoi(getenv("QMS_DR")):0;
+  Projection orthant(clip_negative);
   if(dr_iters>0 &&
      try_dr_points(graph_info,solver_info,x,y,dr_iters,
-                   getenv("QMS_DR_STARTS")?atoi(getenv("QMS_DR_STARTS")):0,1e-9))
+                   getenv("QMS_DR_STARTS")?atoi(getenv("QMS_DR_STARTS")):0,1e-9,
+                   dr_projection!=nullptr ? *dr_projection : orthant))
     result = true;
 
   // Finally spend Meta-NBIW on the multipliers the scans ranked highest.

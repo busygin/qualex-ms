@@ -60,7 +60,10 @@ configuration: on the equation wrapper H_A or on the standard clique wrapper
 ("equation", "standard"), and each with its stationary points around the radius of a
 clique one w_min heavier than the incumbent, as QUALEX-MS has them, or at the radius of
 a clique of weight m with the method of QUALEX-MS 1.2 ("-m"), and that with the Meta-NBIW
-stage on the two best multipliers ("-m-meta", QMS_META_N=2); runs/sat01/qms.tsv gets
+stage on the two best multipliers ("-m-meta", QMS_META_N=2); and on H_A with QUALEX-MS's
+Douglas-Rachford stage (QMS_DR=300) using the greedy 2-clause projection ("equation-dr",
+sat01qms -D) or, as the control, the orthant ("equation-dr-orthant"), whose DR lines
+(QMS_STATS) go to the configuration's qms.log; runs/sat01/qms.tsv gets
   inst answer guesses config n m preselected left greedy weight solution verified prop qms
 the size propagation leaves (n = 0 when it decides the instance), the vertices QUALEX-MS's
 preprocessing preselects and leaves, the weight of the clique Meta-NBIW and then
@@ -93,6 +96,8 @@ CONFIGS = {
     "standard-m": (["-s", "-m"], {}),
     "equation-m-meta": (["-m"], {"QMS_META_N": "2"}),
     "standard-m-meta": (["-s", "-m"], {"QMS_META_N": "2"}),
+    "equation-dr": (["-D"], {"QMS_DR": "300", "QMS_STATS": "1"}),
+    "equation-dr-orthant": ([], {"QMS_DR": "300", "QMS_STATS": "1"}),
 }
 
 
@@ -361,10 +366,11 @@ def qms(work, inst, config, threads):
     flags, settings = CONFIGS[config]
     env = {k: v for k, v in os.environ.items() if not k.startswith("QMS_")}
     env.update(settings, OPENBLAS_NUM_THREADS=str(threads), MKL_NUM_THREADS=str(threads))
-    out = subprocess.run([tool("sat01qms"), *flags, inst + ".sat01"], cwd=d, env=env,
-                         capture_output=True, text=True, check=True).stdout
+    p = subprocess.run([tool("sat01qms"), *flags, inst + ".sat01"], cwd=d, env=env,
+                       capture_output=True, text=True, check=True)
+    out = p.stdout
     with open(os.path.join(d, "qms.log"), "w") as f:
-        f.write(out)
+        f.write(out + p.stderr)
     line = [l for l in out.splitlines() if l.startswith("RESULT ")][-1]
     return dict(kv.split("=", 1) for kv in line.split()[2:])
 
