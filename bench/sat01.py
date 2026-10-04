@@ -32,6 +32,8 @@ HCP graphs (hcp2sat01 fixes vertex 1 at position 0, so every weight is 2, m = 2(
                 not Hamiltonian by parity
 
 Usage: bench/sat01.py [-f] [--prep light|full] [--timeout 600] [--max-pairs 50000] [-t 12] INSTANCE ...
+       bench/sat01.py --span [--cap 20000] INSTANCE ...
+       bench/sat01.py --qms [-f] [-t 12] INSTANCE ...
 
 Rows are appended to runs/sat01/sat01.tsv, one per instance and preprocessing:
   inst answer guesses prep n m pairs blind theta lmax gap rank seconds
@@ -51,6 +53,19 @@ the number of solutions (+ at the cap), the dimension they span, the rank of the
 optimum, the top multiplicity of CSDP's optimal wrapper (within 1e-5 lambda_max), that of H_A (dim null A + 1),
 the largest residual of H (z o 1_K) = m (z o 1_K) over the solutions K (Lovasz optimality
 anchors every solution at the top), and the search nodes.
+
+With --qms, QUALEX-MS runs on each instance instead, after the solver's full propagation
+and without search (SAT01's sat01qms), every QMS_* switch unset but those of the
+configuration: on the equation wrapper H_A or on the standard clique wrapper
+("equation", "standard"), and each with its stationary points around the radius of a
+clique one w_min heavier than the incumbent, as QUALEX-MS has them, or at the radius of
+a clique of weight m with the method of QUALEX-MS 1.2 ("-m"), and that with the Meta-NBIW
+stage on the two best multipliers ("-m-meta", QMS_META_N=2); runs/sat01/qms.tsv gets
+  inst answer guesses config n m preselected left greedy weight solution verified prop qms
+the size propagation leaves (n = 0 when it decides the instance), the vertices QUALEX-MS's
+preprocessing preselects and leaves, the weight of the clique Meta-NBIW and then
+QUALEX-MS find (m is a solution, which sat01qms checks against the instance), and the
+seconds of propagation and of QUALEX-MS.
 """
 import argparse
 import filecmp
@@ -69,6 +84,16 @@ from wrapper import read_dimacs_bin
 SAT01 = os.environ.get("SAT01", os.path.expanduser("~/SAT01"))
 RUNS = os.path.join(T.BENCH, "runs", "sat01")
 TSV = os.path.join(RUNS, "sat01.tsv")
+QMS_TSV = os.path.join(RUNS, "qms.tsv")
+# configuration -> the flags of sat01qms and the QMS_* settings
+CONFIGS = {
+    "equation": ([], {}),
+    "standard": (["-s"], {}),
+    "equation-m": (["-m"], {}),
+    "standard-m": (["-s", "-m"], {}),
+    "equation-m-meta": (["-m"], {"QMS_META_N": "2"}),
+    "standard-m-meta": (["-s", "-m"], {"QMS_META_N": "2"}),
+}
 
 
 @functools.lru_cache(maxsize=None)
@@ -328,6 +353,22 @@ def span(inst, prep, cap):
             "%.0f" % (time.time() - t0)]
 
 
+def qms(work, inst, config, threads):
+    """sat01qms on the instance in one of CONFIGS: the fields of its RESULT line"""
+    d = os.path.join(work, "qms-" + config)
+    os.makedirs(d, exist_ok=True)
+    shutil.copy(os.path.join(work, inst + ".sat01"), d)
+    flags, settings = CONFIGS[config]
+    env = {k: v for k, v in os.environ.items() if not k.startswith("QMS_")}
+    env.update(settings, OPENBLAS_NUM_THREADS=str(threads), MKL_NUM_THREADS=str(threads))
+    out = subprocess.run([tool("sat01qms"), *flags, inst + ".sat01"], cwd=d, env=env,
+                         capture_output=True, text=True, check=True).stdout
+    with open(os.path.join(d, "qms.log"), "w") as f:
+        f.write(out)
+    line = [l for l in out.splitlines() if l.startswith("RESULT ")][-1]
+    return dict(kv.split("=", 1) for kv in line.split()[2:])
+
+
 def main():
     ap = argparse.ArgumentParser(description="weighted theta of SAT01 instances with CSDP")
     ap.add_argument("instances", nargs="+")
@@ -338,8 +379,35 @@ def main():
     ap.add_argument("--prep", choices=("light", "full"), help="only this preprocessing, instead of both")
     ap.add_argument("--span", action="store_true", help="the solution span pass instead (satisfiable instances)")
     ap.add_argument("--cap", type=int, default=20000, help="the most solutions --span lists")
+    ap.add_argument("--qms", action="store_true", help="QUALEX-MS on the propagated instances instead")
     args = ap.parse_args()
     os.makedirs(RUNS, exist_ok=True)
+    if args.qms:
+        done = set()
+        if os.path.exists(QMS_TSV):
+            done = {tuple(l.split("\t")[0:4:3]) for l in open(QMS_TSV).read().splitlines()}
+        for inst in args.instances:
+            work = build(inst)
+            ans, guesses = answer(work, inst, args.timeout)
+            for config in CONFIGS:
+                if (inst, config) in done and not args.force:
+                    print("%-14s %-15s already in qms.tsv" % (inst, config))
+                    continue
+                r = qms(work, inst, config, args.threads)
+                if "decided" in r:
+                    row = [inst, ans, guesses, config, 0] + ["-"] * 7 + [r["propagation"].rstrip("s"), "-"]
+                    print("%-14s %-15s decided by propagation (%s)" % (inst, config, r["decided"]), flush=True)
+                else:
+                    row = [inst, ans, guesses, config] + [r[k] for k in (
+                        "n", "m", "preselected", "left", "greedy", "weight", "solution", "verified")] + [
+                        r["propagation"].rstrip("s"), r["qms"].rstrip("s")]
+                    print("%-14s %-15s n=%s m=%s left %s: Meta-NBIW %s, QUALEX-MS %s%s  (%ss; solver: %s, %s guesses)"
+                          % (inst, config, r["n"], r["m"], r["left"], r["greedy"], r["weight"],
+                             "  SOLUTION (verified %s)" % r["verified"] if r["solution"] == "1" else "",
+                             r["qms"].rstrip("s"), ans, guesses), flush=True)
+                with open(QMS_TSV, "a") as f:
+                    f.write("\t".join(map(str, row)) + "\n")
+        return
     if args.span:
         for inst in args.instances:
             for prep in [args.prep] if args.prep else ("light", "full"):

@@ -338,9 +338,12 @@ double outer_mu (
   return root(lam_max+solver_info.lambda_tol,lam_max+cnorm/sqrt(r2),e);
 }
 
+// try_nondeg_points() takes the global maximiser at the radius of equ and, in
+// each interval between the eigenvalues above lowest, the minimum of the secular
+// function and, when the minimum lies below that radius, its two roots there
 bool try_nondeg_points (
   MaxCliqueInfo& graph_info, QualexInfo& solver_info, Equation& equ,
-  double* x, double* y, MuRank& rank
+  double* x, double* y, MuRank& rank, double lowest
 ) {
   double mu_max = solver_info.active_clusters.back().lambda;
   double mu_min = mu_max+solver_info.lambda_tol;
@@ -360,7 +363,7 @@ bool try_nondeg_points (
   // band (0, w_min/2), and lifting it changes no result on either benchmark.
   double mu_floor = mu_positive_floor(solver_info);
   for(ri=solver_info.active_clusters.rbegin();ri<solver_info.active_clusters.rend();++ri) {
-    if(ri->lambda<=mu_floor) break;
+    if(ri->lambda<=lowest) break;
     mu_max = ri->lambda-solver_info.lambda_tol;
     vector<EigenCluster>::reverse_iterator ri1 = ri+1;
     if(ri1==solver_info.active_clusters.rend()) mu_min = mu_floor;
@@ -432,9 +435,11 @@ void all_clusters(QualexInfo& solver_info, vector<EigenCluster>& out) {
 // program can still rank the right vertices highest.  Measurably it does:
 // MANN_a27 reaches 126 from a cluster of negative eigenvalue, and applying the
 // positive-mu floor here costs exactly that.
+// active_too takes the active clusters as well as the degenerate ones, and the
+// scan stops at the clusters below lowest (-HUGE_VAL for the whole spectrum)
 bool try_eigendir_points (
   MaxCliqueInfo& graph_info, QualexInfo& solver_info, Equation& equ,
-  double* x, double* y, bool active_too
+  double* x, double* y, bool active_too, double lowest
 ) {
   bool result = false;
   int& n = graph_info.g.n;
@@ -445,6 +450,7 @@ bool try_eigendir_points (
   vector<EigenCluster>::reverse_iterator ri;
   for(ri=clusters.rbegin();ri<clusters.rend();++ri) {
     double mu = ri->lambda;
+    if(mu<lowest) break;
     double r2 = equ.rhs;
     vector<EigenCluster>::iterator ii;
     int i;
@@ -764,16 +770,19 @@ void check_theorem8_point (
     graph_info.w_min/wq);
 }
 
-bool qualex_ms(MaxCliqueInfo& graph_info, double* a) {
+bool qualex_ms(MaxCliqueInfo& graph_info, double* a, double target) {
   QualexInfo solver_info;
   // experimental: read before init_projected_formulation() overwrites a
   double att_lo = 0.0, att_hi = 0.0;
   bool check_thm8 = getenv("QMS_STATS")!=NULL && !graph_info.clique.empty() &&
     theorem8_attachments(graph_info,a,att_lo,att_hi);
   if(!init_projected_formulation(graph_info,a,solver_info)) return false;
-  Equation equ (
-    solver_info.active_clusters,
-    1.0/(graph_info.lower_clique_bound+graph_info.w_min)-1.0/graph_info.W );
+  // the radius is the one Proposition 7 assigns to a clique of weight aim: one
+  // minimum weight vertex heavier than the incumbent, unless the weight sought
+  // is known
+  bool targeted = target>0.0;
+  double aim = targeted ? target : graph_info.lower_clique_bound+graph_info.w_min;
+  Equation equ (solver_info.active_clusters, 1.0/aim-1.0/graph_info.W);
   double* x = new double[graph_info.g.n];
   double* y = new double[solver_info.k];
   memset(y,0,sizeof(double)*solver_info.k);
@@ -783,18 +792,38 @@ bool qualex_ms(MaxCliqueInfo& graph_info, double* a) {
   // Knobs for reproducing the ablations of the multiplier selection; the
   // defaults are the shipped behaviour.  QMS_NO_LADDER and QMS_NO_THM8 switch
   // off the two added families of multipliers, QMS_META_N is how many of the
-  // ranked multipliers reach the Meta-NBIW stage (0 switches that stage off),
-  // and QMS_META_STARTS restricts Meta-NBIW to that percentage of the vertices.
+  // ranked multipliers reach the Meta-NBIW stage (0 switches that stage off;
+  // the default is 2, and 0 with a target, as in version 1.2), and
+  // QMS_META_STARTS restricts Meta-NBIW to that percentage of the vertices.
   bool use_ladder = getenv("QMS_NO_LADDER")==NULL;
   bool use_thm8   = getenv("QMS_NO_THM8")==NULL;
-  int  n_meta     = getenv("QMS_META_N")?atoi(getenv("QMS_META_N")):2;
+  int  n_meta     = getenv("QMS_META_N")?atoi(getenv("QMS_META_N")):(targeted?0:2);
   int  start_pct  = getenv("QMS_META_STARTS")?atoi(getenv("QMS_META_STARTS")):0;
   int  n_starts   = start_pct>0 ? 1+(graph_info.g.n*start_pct)/100 : 0;
 
   MuRank rank(n_meta,solver_info.lambda_tol);
   bool result = false;
 
-  if(!solver_info.active_clusters.empty()) {
+  if(targeted) {
+    // With the weight sought known (SAT01 knows that a solution is a clique of
+    // weight m), this is the method of version 1.2 at the radius of that
+    // weight: the global maximiser and, in the intervals between the
+    // eigenvalues, the minimum of the secular function and its roots at the
+    // radius (try_nondeg_points()), then the corners of the degenerate
+    // clusters (try_eigendir_points()), both while the multiplier is positive;
+    // version 1.2 stopped at w_min/2, which has no justification.  None of the
+    // ladder, the Theorem 8 multipliers or the corners of the active clusters,
+    // and the Meta-NBIW stage only if QMS_META_N asks for it, on the multipliers
+    // of try_nondeg_points().  No clique weighs W or more, so a target that
+    // high leaves nothing to look for.
+    if(equ.rhs>0.0) {
+      double lowest = mu_positive_floor(solver_info);
+      if(!solver_info.active_clusters.empty() &&
+         try_nondeg_points(graph_info,solver_info,equ,x,y,rank,lowest))
+        result = true;
+      result |= try_eigendir_points(graph_info,solver_info,equ,x,y,false,lowest);
+    }
+  } else if(!solver_info.active_clusters.empty()) {
     if(use_ladder) {
       // Rescan the homotopy until the anchor stops moving: whenever the scan
       // improves the incumbent clique, the weight Proposition 7 is applied to
@@ -808,13 +837,15 @@ bool qualex_ms(MaxCliqueInfo& graph_info, double* a) {
         r2 = r2_new;
       }
     }
-    if(try_nondeg_points(graph_info, solver_info, equ, x, y, rank))
+    if(try_nondeg_points(graph_info, solver_info, equ, x, y, rank,
+                         mu_positive_floor(solver_info)))
       result = true;
     if(use_thm8 && try_theorem8_points(graph_info, solver_info, x, y, rank))
       result = true;
   }
-  result |= try_eigendir_points(graph_info, solver_info, equ, x, y,
-                                getenv("QMS_NO_EIGDIR")==NULL);
+  if(!targeted)
+    result |= try_eigendir_points(graph_info, solver_info, equ, x, y,
+                                  getenv("QMS_NO_EIGDIR")==NULL, -HUGE_VAL);
 
   // experimental: Douglas-Rachford on the degenerate clusters, QMS_DR the number
   // of iterations (unset or 0 switches it off), QMS_DR_STARTS at most that many

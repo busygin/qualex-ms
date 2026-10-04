@@ -158,9 +158,9 @@ QMS_STATS            print the eigenvalue cluster census to stderr, which is
 QMS_NO_EIGDIR        take eigenvector directions only from the clusters whose
                      linear form vanishes, as before, instead of from all of them
 QMS_META_N=<k>       hand the k best scoring multipliers to Meta-NBIW
-                     (default 2; 0 switches the stage off, which restores the
-                     original running time but keeps only a small part of the
-                     gain -- see benchmarks.md)
+                     (default 2, and 0 with QMS_TARGET; 0 switches the stage
+                     off, which restores the original running time but keeps
+                     only a small part of the gain -- see benchmarks.md)
 QMS_META_STARTS=<p>  restrict Meta-NBIW to the p percent of vertices the
                      stationary point rates highest (default 0, meaning all)
 QMS_NO_LADDER        use only the single Proposition 7 radius, as before
@@ -171,6 +171,14 @@ QMS_DR=<iters>       experimental: drive the corners of each degenerate
                      before MIN (see try_dr_points in lib/qualex.cc and
                      lib/dr.cc).  Off by default
 QMS_DR_STARTS=<k>    at most k of a cluster's corners for QMS_DR
+QMS_TARGET=<w>       experimental: the weight of the clique sought, when it is
+                     known; the stationary points are then taken at the radius
+                     Proposition 7 assigns to a clique of weight w, with the
+                     method of version 1.2 (the global maximiser, the interval
+                     minima and roots, the corners of the degenerate clusters,
+                     all with positive multipliers rather than down to w_min/2)
+                     and none of the scans added since; QMS_META_N adds the
+                     Meta-NBIW stage on the best of those multipliers
 
 See benchmarks.md for the resulting DIMACS, weighted-instance and uniform random
 graph figures; tools/random_graphs.py generates the random graphs, and

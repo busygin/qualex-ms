@@ -125,6 +125,12 @@ int main(int argc,char** argv) {
       // with rather than the one the greedy stage found.  It defers
       // QMS_PERTURB and QMS_ICE in the same way, so with QMS_PERTURB alone it
       // runs the matching control: a second pass on a random wrapper.
+      // experimental: QMS_TARGET=<weight> is the weight of the clique sought,
+      // when it is known, and qualex_ms() takes its stationary points at the
+      // radius of that weight (the preselected vertices count towards it)
+      double target = getenv("QMS_TARGET")!=NULL ?
+        atof(getenv("QMS_TARGET"))-preselected_weight : 0.0;
+
       const char* anchor = getenv("QMS_ANCHOR");
       const char* perturb = getenv("QMS_PERTURB");
       const char* ice = getenv("QMS_ICE");
@@ -157,7 +163,7 @@ int main(int argc,char** argv) {
         if(ice!=NULL && modify && (anchored || anchor==NULL))
           ice_step(g,info,a,anchor!=NULL ? atof(anchor) : 1.0,ice,anchored);
         double start = info.lower_clique_bound;
-        qualex_ms(info,a);
+        qualex_ms(info,a,target);
         if(getenv("QMS_STATS")!=NULL)
           fprintf(stderr,"PASS %d anchored=%d %g -> %g\n",
                   pass, (int)anchored, start, info.lower_clique_bound);
