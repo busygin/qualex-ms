@@ -1,13 +1,14 @@
 # Makefile of QUALEX-MS solver for GNU make
 
-# Requires: CUDA toolkit (cuSOLVER, cuBLAS, cudart)
+# Requires: CUDA toolkit (cuSOLVER, cuBLAS, cudart) and OpenBLAS (CPU products of the
+# Douglas-Rachford stage, QMS_DR)
 
 CFLAGS = -DNDEBUG -Ofast -funroll-all-loops -s -Wall
 LINKFLAGS = -s
 
 CC = gcc
 CXX = g++
-LIBS = -lcudart -lcusolver -lcublas
+LIBS = -lcudart -lcusolver -lcublas -lopenblas
 
 .SUFFIXES: .o .cc .c
 

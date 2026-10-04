@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <functional>
 
+#include <cblas.h>
+
 #include "1d_math.h"
 #include "qualex.h"
 #include "refiner.h"
@@ -90,7 +92,9 @@ double Equation::operator()(const double x) {
   return lhs-rhs;
 }
 
-void init_projected_matrices (
+// init_projected_matrices() replaces a by hatA = P A P and fills hatb; it
+// returns z^T A z, which try_dr_points() needs for s = 1 - x0^T H x0
+double init_projected_matrices (
   MaxCliqueInfo& graph_info, double* a, double* hatb
 ) {
   int& n = graph_info.g.n;
@@ -106,6 +110,7 @@ void init_projected_matrices (
     hatb[j] = (delta[j]-graph_info.shift[j]*D)/graph_info.W;
   }
   delete[] delta;
+  return D;
 }
 
 struct QualexInfo {
@@ -120,9 +125,10 @@ struct QualexInfo {
   double norm;        // ||hatA||_2, the scale of the spectrum
   double lambda_tol;  // eigenvalues within this distance are indistinguishable
   double c2_tol;      // cluster linear forms at or below this are zero
+  double zAz;         // z^T A z of the wrapper before projection
 
   QualexInfo(): k(0), lambda(NULL), q(NULL), c(NULL),
-    norm(0.0), lambda_tol(0.0), c2_tol(0.0) {}
+    norm(0.0), lambda_tol(0.0), c2_tol(0.0), zAz(0.0) {}
   ~QualexInfo() {
     if(lambda!=NULL) delete[] lambda;
     if(q!=NULL) delete[] q;
@@ -219,7 +225,7 @@ bool init_projected_formulation (
 ) {
   int& n = graph_info.g.n;
   double* hatb = new double[n];
-  init_projected_matrices(graph_info,a,hatb);
+  solver_info.zAz = init_projected_matrices(graph_info,a,hatb);
 
   // Eigendecomposition: keep eigenvectors on GPU, only copy eigenvalues to CPU
   double* lambda1 = new double[n];
@@ -477,6 +483,137 @@ bool try_eigendir_points (
   return result;
 }
 
+// try_dr_points() looks for the nonnegative points of the stationary points of
+// each degenerate cluster by Douglas-Rachford (proposed by S. Busygin).
+//
+// At a cluster whose linear form vanishes, mu = lambda is the multiplier of a
+// stationary point x0 + xhat_p + e of the relaxed program for every e in the
+// cluster's eigenspace E, xhat_p being the point (21) built from the other
+// clusters.  On the wrapper surface x^T H x = 1 the quadric of the relaxed
+// program reads q(xhat_p) + lambda_H |e|^2 = s, s = 1 - x0^T H x0, with
+// lambda_H = lambda + w_min the eigenvalue of hatH (hatA = hatH - w_min on z's
+// complement), so these stationary points form one sphere of radius
+//   rho^2 = (s - q(xhat_p))/lambda_H,
+// and every clique anchored at this level lies on it, with the one weight
+//   W_mu = 1/(|x0|^2 + |xhat_p|^2 + rho^2).
+// For a proper wrapper, a nonnegative point of the wrapper surface is
+// supported on a clique, and a nonnegative stationary point is the indicator
+// of the clique, so the nonnegative points of the sphere are exactly the
+// cliques anchored at mu.  try_eigendir_points() hands MIN the 2k corners of a
+// trust region sphere around the same centre; here the corners
+// x0 + xhat_p +- rho q_j of this sphere are driven towards nonnegativity by
+//   v <- v + max(2 P_S v - v, 0) - P_S v
+// (P_S the projection onto the sphere), read at P_S v, for at most iters steps
+// or until the negative part of P_S v falls below tol of its norm, and the
+// result is handed to MIN as try_eigendir_points() does.  All starts of a
+// cluster iterate as one block, so that the projections onto E are two matrix
+// products with the cluster's eigenvectors.  A cluster whose W_mu does not
+// exceed the incumbent cannot improve it and is skipped.
+bool try_dr_points (
+  MaxCliqueInfo& graph_info, QualexInfo& solver_info,
+  double* x, double* y, int iters, int max_starts, double tol
+) {
+  int n = graph_info.g.n;
+  double w_min = graph_info.w_min, W = graph_info.W;
+  double s = 1.0 - solver_info.zAz/(W*W) - w_min/W;
+  bool stats = getenv("QMS_STATS")!=NULL;
+  bool result = false;
+  double* center = new double[n];
+  vector<EigenCluster>& deg = solver_info.degenerative_clusters;
+  vector<EigenCluster>::reverse_iterator ri;
+  for(ri=deg.rbegin();ri<deg.rend();ri++) {
+    int first = ri->first, kc = ri->last-ri->first;
+    if(kc<2) continue;  // the sphere is the two corners try_eigendir_points() tried
+    double mu = ri->lambda;
+    double yy = 0.0, q = 0.0;
+    vector<EigenCluster>::iterator ii;
+    int i;
+    for(ii=solver_info.active_clusters.begin();ii<solver_info.active_clusters.end();ii++)
+      for(i=ii->first;i<ii->last;i++) {
+        double yi = y[i] = solver_info.c[i]/(mu-solver_info.lambda[i]);
+        yy += yi*yi;
+        q += (solver_info.lambda[i]+w_min)*yi*yi + 2.0*solver_info.c[i]*yi;
+      }
+    double lam_h = mu+w_min;
+    double rho2 = lam_h!=0.0 ? (s-q)/lam_h : -1.0;
+    double w_mu = rho2>0.0 ? 1.0/(1.0/W+yy+rho2) : 0.0;
+    if(!(rho2>0.0) || w_mu<=graph_info.lower_clique_bound*(1.0+1e-9)) {
+      if(stats)
+        fprintf(stderr, "DR mu=%.6g k=%d rho2=%.3g W_mu=%.6g lb=%g skipped\n",
+                mu, kc, rho2, w_mu, graph_info.lower_clique_bound);
+      continue;
+    }
+    double rho = sqrt(rho2);
+    matrix_dot_vector_q(n,solver_info.k,'N',y,center);
+    for(i=0;i<n;i++) center[i] += graph_info.shift[i];
+    const double* qc = solver_info.q+(size_t)first*n;  // n x kc, by columns
+
+    int n_starts = 2*kc;
+    if(max_starts>0 && max_starts<n_starts) n_starts = max_starts;
+    int block = n_starts<256 ? n_starts : 256;
+    double* v = new double[(size_t)n*block];
+    double* d = new double[(size_t)n*block];  // v - center, then the projection
+    double* p = new double[(size_t)kc*block];
+    double* est = new double[(size_t)n*block];
+    vector<bool> done(block);
+    int converged = 0, improved = 0;
+    for(int b0=0;b0<n_starts;b0+=block) {
+      int nb = n_starts-b0<block ? n_starts-b0 : block;
+      for(int t=0;t<nb;t++) {  // start b0+t is the corner on eigenvector (b0+t)/2
+        const double* qj = qc+(size_t)((b0+t)/2)*n;
+        double sign = (b0+t)%2==0 ? rho : -rho;
+        for(i=0;i<n;i++) v[(size_t)t*n+i] = center[i]+sign*qj[i];
+        done[t] = false;
+      }
+      for(int it=0;it<iters;it++) {
+        for(int t=0;t<nb;t++)
+          for(i=0;i<n;i++) d[(size_t)t*n+i] = v[(size_t)t*n+i]-center[i];
+        cblas_dgemm(CblasColMajor,CblasTrans,CblasNoTrans,kc,nb,n,
+                    1.0,qc,n,d,n,0.0,p,kc);
+        cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n,nb,kc,
+                    1.0,qc,n,p,kc,0.0,d,n);
+        int live = 0;
+        for(int t=0;t<nb;t++) {
+          if(done[t]) continue;
+          double* dt = d+(size_t)t*n;
+          double* et = est+(size_t)t*n;
+          double* vt = v+(size_t)t*n;
+          double nu = 0.0;
+          for(i=0;i<n;i++) nu += dt[i]*dt[i];
+          if(!(nu>0.0)) { memcpy(et,center,sizeof(double)*n); done[t] = true; continue; }
+          nu = rho/sqrt(nu);
+          double neg = 0.0, all = 0.0;
+          for(i=0;i<n;i++) {
+            double e = et[i] = center[i]+nu*dt[i];
+            all += e*e;
+            if(e<0.0) neg += e*e;
+          }
+          if(neg<=tol*tol*all) { done[t] = true; continue; }
+          for(i=0;i<n;i++) {
+            double r = 2.0*et[i]-vt[i];
+            vt[i] += (r>0.0 ? r : 0.0)-et[i];
+          }
+          live++;
+        }
+        if(!live) break;
+      }
+      for(int t=0;t<nb;t++) {
+        if(done[t]) converged++;
+        double* et = est+(size_t)t*n;
+        for(i=0;i<n;i++) x[i] = et[i]*graph_info.sqrtw[i];
+        if(refine_clique_MIN(graph_info,x)) { result = true; improved++; }
+      }
+    }
+    if(stats)
+      fprintf(stderr, "DR mu=%.6g k=%d rho2=%.3g W_mu=%.6g starts=%d converged=%d "
+              "improved=%d lb=%g\n", mu, kc, rho2, w_mu, n_starts, converged,
+              improved, graph_info.lower_clique_bound);
+    delete[] v; delete[] d; delete[] p; delete[] est;
+  }
+  delete[] center;
+  return result;
+}
+
 // ---------------------------------------------------------------------
 // Selection of the ball constraint multiplier mu
 // ---------------------------------------------------------------------
@@ -730,6 +867,15 @@ bool qualex_ms(MaxCliqueInfo& graph_info, double* a) {
   }
   result |= try_eigendir_points(graph_info, solver_info, equ, x, y,
                                 getenv("QMS_NO_EIGDIR")==NULL);
+
+  // experimental: Douglas-Rachford on the degenerate clusters, QMS_DR the number
+  // of iterations (unset or 0 switches it off), QMS_DR_STARTS at most that many
+  // of the 2k corners of a cluster
+  int dr_iters = getenv("QMS_DR")?atoi(getenv("QMS_DR")):0;
+  if(dr_iters>0 &&
+     try_dr_points(graph_info,solver_info,x,y,dr_iters,
+                   getenv("QMS_DR_STARTS")?atoi(getenv("QMS_DR_STARTS")):0,1e-9))
+    result = true;
 
   // Finally spend Meta-NBIW on the multipliers the scans ranked highest.
   if(!rank.mu.empty() &&
