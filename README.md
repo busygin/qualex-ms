@@ -27,16 +27,17 @@ This software is distributed under GNU General Public License, ver. 3.
 
 2. USAGE
 
-QUALEX-MS uses linear algebraic routines from BLAS and LAPACK, which
-it takes from OpenBLAS, and by default the CUDA toolkit (cuSOLVER,
-cuBLAS) for the eigendecomposition. In the GNU environment type
+QUALEX-MS uses linear algebraic routines from BLAS and LAPACK. In the
+GNU environment type
 
-make          for the solver on the GPU (cuSOLVER and cuBLAS), or
-make GPU=0    for the solver on the CPU alone (LAPACK and CBLAS).
+make            for the solver on the CPU with OpenBLAS (the default),
+make BLAS=mkl   for the same with Intel MKL (from MKLROOT, see Makefile),
+make GPU=1      for the solver on the GPU (cuSOLVER and cuBLAS; needs the
+                CUDA toolkit), which takes a CBLAS from BLAS as well.
 
 The solver is a command line front end (main.cc) to a library, lib/,
-which make builds as libqms.a in build/gpu or build/cpu; other programs
-can link it (see lib/Makefile).
+which make builds as libqms.a in build/<cpu|gpu>-<openblas|mkl>; other
+programs can link it (see lib/Makefile).
 
 To use the solver, issue the command:
 
@@ -197,8 +198,9 @@ version 1.2:
 - Windows executable is recompiled with newest MinGW gcc and LAPACK 3.1.1.
 
 unreleased:
-- eigendecomposition and the dense linear algebra moved to cuSOLVER/cuBLAS,
-with a LAPACK/CBLAS backend kept for machines without a GPU (make GPU=0);
+- the dense linear algebra has two backends: LAPACK and CBLAS on the CPU, the
+default (OpenBLAS, or Intel MKL with make BLAS=mkl), and cuSOLVER/cuBLAS on
+the GPU (make GPU=1);
 - the solver is split into a library (lib/) and a command line front end, so
 that other programs, such as the SAT01 solver, can use MIN and the spectral
 stages;

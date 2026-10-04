@@ -1,7 +1,7 @@
 #!/bin/bash
 # bench/run.sh -- run solver variants over benchmark suites, resumably.
 #
-# Usage: bench/run.sh [-j WORKERS] [-g GPUS] [-n REGEX] SUITES VARIANTS
+# Usage: bench/run.sh [-j WORKERS] [-t THREADS] [-g GPUS] [-n REGEX] SUITES VARIANTS
 #
 #   SUITES    comma-separated, from: dimacs (the 70 DIMACS graphs outside the
 #             ten big ones), dimacs-big (those ten), ru and rw (the 120 uniform
@@ -9,8 +9,14 @@
 #             and rw2000 (the 12 with n = 2000)
 #   VARIANTS  comma-separated names from bench/variants
 #   -j        parallel workers (default 6)
-#   -g        comma-separated GPU ids the workers take turns on (default all)
+#   -t        BLAS threads per run (default: the physical cores shared out
+#             among the workers, at least one)
+#   -g        comma-separated GPU ids the workers of a GPU build take turns on
+#             (default all)
 #   -n        only the graphs whose names match this extended regex
+#
+# The solver is built by make, so GPU=1 or BLAS=mkl in the environment selects
+# that build (see ../Makefile); each build gets its own directory below.
 #
 # Results go to bench/runs/bin-<sha1 of the solver binary>/ (QMS_BENCH_RUNS
 # overrides bench/runs), so the results of one build stay together:
@@ -23,7 +29,8 @@
 #
 # A recorded run is skipped, so after a reboot the same command picks up where
 # it stopped; a run without a result (a crash, or cut off) is done again.  Every
-# QMS_* variable the variant does not set is unset.  DIMACS graphs are read
+# QMS_* variable the variant does not set is unset, and OPENBLAS_NUM_THREADS
+# and MKL_NUM_THREADS are set to the -t threads.  DIMACS graphs are read
 # from $QMS_DIMACS (default ~/DIMACS); the random graphs are generated into
 # bench/graphs/rnd on first use, identically each time.  Do not run two
 # invocations with the same suite and variant at once.
@@ -34,17 +41,26 @@ RUNS=${QMS_BENCH_RUNS:-$BENCH/runs}
 DIMACS=${QMS_DIMACS:-$HOME/DIMACS}
 RND=$BENCH/graphs/rnd
 
-usage() { sed -n '4,14p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+usage() { sed -n '4,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
-WORKERS=6 GPUS="" FILTER=""
-while getopts "j:g:n:h" opt; do
+WORKERS=6 THREADS="" GPUS="" FILTER=""
+while getopts "j:t:g:n:h" opt; do
   case $opt in
     j) WORKERS=$OPTARG ;;
+    t) THREADS=$OPTARG ;;
     g) GPUS=$OPTARG ;;
     n) FILTER=$OPTARG ;;
     *) usage ;;
   esac
 done
+# BLAS threads beyond the physical cores only slow the factorizations down,
+# whatever ~/.bashrc exports for interactive use
+if [ -z "$THREADS" ]; then
+  cores=$(lscpu -b -p=Core,Socket 2>/dev/null | grep -v '^#' | sort -u | wc -l)
+  [ "$cores" -gt 0 ] || cores=$(nproc)
+  THREADS=$((cores / WORKERS))
+  [ "$THREADS" -ge 1 ] || THREADS=1
+fi
 shift $((OPTIND-1))
 [ $# -eq 2 ] || usage
 IFS=, read -ra SUITES <<< "$1"
@@ -95,6 +111,7 @@ run_one() {  # SUITE VARIANT GRAPH GPU WORKER
   mkdir -p "$work" "$RUN/log/$suite/$v" "$RUN/res/$suite"
   ln -sf "$graph" "$work/$name.clq.b"
   for var in $(compgen -e | grep '^QMS_'); do env_args+=(-u "$var"); done
+  env_args+=("OPENBLAS_NUM_THREADS=$THREADS" "MKL_NUM_THREADS=$THREADS")
   [ -n "$gpu" ] && env_args+=("CUDA_VISIBLE_DEVICES=$gpu")
   t0=$(date +%s.%N)
   env "${env_args[@]}" $(settings_of "$v") "$RUN/bin/qms" "$work/$name.clq.b" \
@@ -148,7 +165,8 @@ if [ -z "$GPUS" ]; then
 fi
 IFS=, read -ra GPU_IDS <<< "$GPUS"
 
-echo "$RUN: $(wc -l < "$JOBS") graphs, variants ${VARIANTS[*]}, $WORKERS workers" >&2
+echo "$RUN: $(wc -l < "$JOBS") graphs, variants ${VARIANTS[*]}, $WORKERS workers," \
+  "$THREADS BLAS threads each" >&2
 for ((k = 0; k < WORKERS; k++)); do
   awk -v k=$k -v m="$WORKERS" 'NR % m == k' "$JOBS" > "$JOBS.$k"
   gpu=""

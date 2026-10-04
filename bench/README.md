@@ -23,10 +23,12 @@ use, and come out identical every time with numpy 2.3.5.
     bench/run.sh -j 6 dimacs,ru,rw head,ancw
 
 builds the solver and runs every listed variant on every graph of the listed
-suites, with 6 workers taking turns on the GPUs, skipping what is already
-recorded.  `GPU=0 bench/run.sh ...` builds and runs the solver on the CPU
-backend instead (`make GPU=0`), whose binary gets a directory of its own.  A
-long run survives a closed terminal with
+suites with 6 workers, skipping what is already recorded.  Each run gets the
+physical cores shared out among the workers as BLAS threads (2 here), whatever
+the shell exports; `-t` sets another number.  `BLAS=mkl bench/run.sh ...` or
+`GPU=1 bench/run.sh ...` builds and runs the MKL or the GPU build instead (the
+workers of a GPU build take turns on the GPUs), whose binary gets a directory
+of its own.  A long run survives a closed terminal with
 
     nohup bench/run.sh dimacs,ru,rw head,lzw > bench/runs/nohup.log 2>&1 &
 

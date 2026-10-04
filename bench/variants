@@ -35,7 +35,6 @@ lzw       QMS_STATS=1 QMS_ICE=lovasz QMS_ANCHOR_WARM=1    # plain wrapper, secon
 lzws      QMS_STATS=1 QMS_ICE=lovasz QMS_ANCHOR_WARM=1 QMS_ICE_SHUFFLE=1
 
 # Douglas-Rachford toward the nonnegative points of each degenerate cluster's
-# sphere of stationary points, see try_dr_points() in lib/qualex.cc.  It runs its
-# products on OpenBLAS: with run.sh -j > 1 set OPENBLAS_NUM_THREADS so that the
-# jobs do not oversubscribe the cores.
+# sphere of stationary points, see try_dr_points() in lib/qualex.cc.  Its
+# products run on the CBLAS of the build, with run.sh's -t threads.
 dr        QMS_STATS=1 QMS_DR=300

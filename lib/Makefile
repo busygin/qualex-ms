@@ -1,19 +1,17 @@
 # Makefile of the QUALEX-MS library, libqms.a, for GNU make
 #
-#   make [GPU=1|0] [BUILD=<dir>]       libqms.a, the whole library
+#   make [GPU=0|1] [BUILD=<dir>]       libqms.a, the whole library
 #   make core [BUILD=<dir>]            libqms_core.a, the combinatorial core
 #
-# GPU=1 (the default) builds the linear algebra backend on cuSOLVER and cuBLAS,
-# GPU=0 the one on LAPACK and CBLAS.  Objects and the libraries go to BUILD
-# (default build/gpu or build/cpu in this directory).  A program linking
-# libqms.a needs
-#   -lopenblas -lcudart -lcusolver -lcublas   with GPU=1
-#   -lopenblas                                with GPU=0
-# (OpenBLAS supplies CBLAS, which the Douglas-Rachford stage uses on either
-# backend, and LAPACK).  libqms_core.a (bit vectors, graphs, the greedy
+# GPU=0 (the default) builds the linear algebra backend on LAPACK and CBLAS,
+# GPU=1 the one on cuSOLVER and cuBLAS.  Objects and the libraries go to BUILD
+# (default build/cpu or build/gpu in this directory).  A program linking
+# libqms.a needs a LAPACK and a CBLAS, which the Douglas-Rachford stage uses on
+# either backend: -lopenblas, or Intel MKL (see ../Makefile); with GPU=1 also
+# -lcudart -lcusolver -lcublas.  libqms_core.a (bit vectors, graphs, the greedy
 # heuristics with MIN, preprocessing) needs nothing beyond the C++ library.
 
-GPU ?= 1
+GPU ?= 0
 BACKEND := $(if $(filter 1,$(GPU)),gpu,cpu)
 BUILD ?= build/$(BACKEND)
 

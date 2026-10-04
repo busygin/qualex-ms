@@ -11,17 +11,20 @@ The solver is a command line front end (`main.cc`) to a library in `lib/` (`libq
 ## Build Commands
 
 ```bash
-# Build the solver on the GPU backend (CUDA toolkit: cuSOLVER, cuBLAS; and OpenBLAS)
+# Build the solver on the CPU backend with OpenBLAS (LAPACK and CBLAS), the default
 make
 
-# Build the solver on the CPU backend (OpenBLAS only: LAPACK and CBLAS)
-make GPU=0
+# The same with Intel MKL (from MKLROOT, default ~/opt/intel-mkl-2026.1)
+make BLAS=mkl
+
+# Build the solver on the GPU backend (CUDA toolkit: cuSOLVER, cuBLAS; plus a CBLAS)
+make GPU=1
 
 # Clean build artifacts
 make clean
 ```
 
-Objects, `libqms.a` and the binary go to `build/gpu` or `build/cpu`; `./qualex-ms` is a copy of the binary of the backend last asked for. The code is C++20 (`-std=gnu++20`) and depends on nothing but the standard library and the BLAS/LAPACK/CUDA backends; do not add third-party libraries.
+Objects, `libqms.a` and the binary go to `build/<cpu|gpu>-<openblas|mkl>`; `./qualex-ms` is a copy of the binary of the configuration last asked for. The code is C++20 (`-std=gnu++20`) and depends on nothing but the standard library and the BLAS/LAPACK/CUDA backends; do not add third-party libraries.
 
 ## Usage
 
@@ -54,7 +57,7 @@ The solver pipeline consists of three stages:
 The library has three layers:
 
 - **Combinatorial core**, no BLAS: `bool_vector`, `graph`, `greedy_clique`, `refiner` (VO and MIN), `preproc_clique`.
-- **Linear algebra** (`lib/linalg.h`): one interface, two backends chosen at build time: `linalg_gpu.c` (cuSOLVER/cuBLAS, eigenvectors kept on the GPU) and `linalg_cpu.c` (LAPACK DSYEVR and CBLAS).
+- **Linear algebra** (`lib/linalg.h`): one interface, two backends chosen at build time: `linalg_cpu.c` (LAPACK DSYEVR and CBLAS, from OpenBLAS or MKL; the default) and `linalg_gpu.c` (cuSOLVER/cuBLAS, eigenvectors kept on the GPU).
 - **Spectral stages**: `wrapper.h/.cc` (the clique wrapper and its experimental modifications: perturbation, Theorem 8 anchoring, the lambda_max step), `qualex.h/.cc` (the trust region core), `dr.h/.cc` (generic Douglas-Rachford between a sphere and a set given by its projection, used by `try_dr_points()`; it calls CBLAS on either backend).
 
 **Key Data Structures**:
