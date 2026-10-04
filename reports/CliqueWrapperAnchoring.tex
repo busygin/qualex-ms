@@ -46,7 +46,7 @@ Clique Problem''}}
 \author{Research notes prepared for Stanislav Busygin\\
 with Claude (Anthropic)}
 
-\date{September 26, 2026; revised October 2, 2026}
+\date{September 26, 2026; revised October 3, 2026}
 
 \maketitle
 
@@ -187,10 +187,10 @@ solutions (Theorem~\ref{thm:vector}). After SAT01 propagation $\vartheta$
 refutes four of the six primes below $2^{16}$ that propagation leaves open,
 with a margin falling from $0.064$ to $7\cdot10^{-5}$, none of them without
 the contradictions that propagation derives, and none of the non-Hamiltonian
-graphs that survive it. A satisfiable 14-bit factoring instance has its
-solution as its only Lov\'asz optimum, while the two solutions of
-$179\cdot181$ and of $241\cdot251$ sit in optima of rank 5 and 205
-(Section~\ref{sec:sat01comp}).
+graphs that survive it. Up to 15 bits the Lov\'asz optimum of a satisfiable
+factoring instance is spanned by its solutions, a unique solution being the
+only optimum, while the two solutions of $241\cdot251$ sit in an optimum of
+rank 205 (Section~\ref{sec:sat01comp}).
 \end{itemize}
 
 \section{Setting}
@@ -1706,9 +1706,11 @@ $\vartheta$ was computed with CSDP from (\ref{eq:thetadual}), one constraint
 per contradiction. A value below $m$ is certified by $\lmax$ of the wrapper
 recovered from the dual solution, which bounds $\vartheta$ from above by
 (\ref{eq:thetaprimal}) whatever the solver's accuracy. The rank of a
-Lov\'asz optimum counts its eigenvalues above $10^{-5}$ of the largest, the
-multiplicity of $\lmax(H)$ those within $10^{-5}\lmax(H)$ of it, and the
-solutions were listed by exact cover search. The script is
+Lov\'asz optimum counts its eigenvalues above $10^{-5}$ of the largest, or
+those before a drop by more than three orders of magnitude where there is one
+(only $179\cdot181$ has one above $10^{-5}$), the multiplicity of $\lmax(H)$
+counts the eigenvalues within $10^{-5}\lmax(H)$ of it, and the solutions were
+listed by exact cover search. The script is
 \texttt{bench/sat01.py} of the QUALEX-MS repository (commits b51234b and
 33020d1), its output is in \texttt{bench/runs/sat01/}, and the largest
 problems, with 55000 constraints, took 27 minutes.
@@ -1762,7 +1764,7 @@ $14471=29\cdot499$      & 511 & 367 & 1  & 1  & 1   & 1   & 149 \\
 $14631=3\cdot4877$      & 514 & 370 & 1  & 1  & 1   & 2   & 150 \\
 $15591=3\cdot5197$      & 501 & 359 & 1  & 1  & 1   & 1   & 145 \\
 $16041=3\cdot5347$      & 506 & 362 & 1  & 1  & 1   & 1   & 146 \\
-$32399=179\cdot181$     & 636 & 441 & 2  & 2  & 5   & 18  & 198 \\
+$32399=179\cdot181$     & 636 & 441 & 2  & 2  & 2   & 18  & 198 \\
 $60491=241\cdot251$     & 740 & 514 & 2  & 2  & 205 & 211 & 236 \\
 \hline
 cubic, 16 vertices      & 57  & 30  & 12 & 12 & 12  & 12  & 29 \\
@@ -1780,7 +1782,10 @@ directed Hamilton cycles from the fixed vertex for the graphs; span: the
 dimension of their indicators; rank of the Lov\'asz optimum $X^*$;
 multiplicity of the top eigenvalue of the optimal wrapper; $\dim L_A$: that of
 $H_A$. Every solution is anchored at $C=0$ in the optimal wrapper to a
-relative $4\cdot10^{-5}$.}
+relative $4\cdot10^{-5}$. For $179\cdot181$ the eigenvalues of $X^*$ fall by a
+factor 5000 after the second and then decay smoothly from $5\cdot10^{-5}$ of the
+largest, the $\sqrt\mu$ tail of a solution that is not strictly
+complementary; counted above $10^{-5}$ they would give rank 5.}
 \end{table}
 
 Table~\ref{tab:sat01unsat} answers the question of \cite{Bu07} on these
@@ -1814,15 +1819,15 @@ the vector solutions of dimension one, and the question is how many others
 the Lov\'asz optimum carries. The four 14-bit products of two primes have a
 unique solution and a Lov\'asz optimum of rank one: the solution is their
 only vector solution, and solving the semidefinite program factors them.
-This ends quickly. The two solutions of $179\cdot181$ lie in an optimum of
-rank 5 and those of $241\cdot251$ in one of rank 205. On the cubic graphs the
+The optimum of $179\cdot181$ is still spanned by its two solutions, but those
+of $241\cdot251$ lie in an optimum of rank 205. On the cubic graphs the
 optimum spans exactly the 12 solutions of the smallest one (6 cycles, each in
 two directions) and far more than the solutions elsewhere: 152 dimensions
 against 30, 335 against 36, 213 against 60 on the dodecahedron and 409
 against 26 on $GP(13,2)$, as on the QWH instances in the middle of the
 transition (Section~\ref{sec:qwh}). The optimal wrapper's top multiplicity
 equals the rank on all the graphs and exceeds it on three factoring
-instances (2 against 1, 18 against 5, 211 against 205), where
+instances (2 against 1, 18 against 2, 211 against 205), where
 complementarity is not strict at the solver's accuracy. $H_A$, which is
 Lov\'asz-optimal on all of them by Proposition~\ref{prop:sat01}(c), is far
 more degenerate on factoring, with $\dim L_A$ between 145 and 236 against
