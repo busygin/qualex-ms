@@ -6,4 +6,8 @@ python3 -u bench/jam.py search sat01:f143:light sat01:f14471 sat01:f14631 sat01:
 python3 -u bench/jam.py decode theta:san200_0.7_2 theta:gen200_p0.9_55 theta:gen200_p0.9_44 sat01:f143:light sat01:f14471 sat01:f32399 sat01:f60491 sat01:cubic16_1 sat01:cubic20_1 sat01:cubic24_1 sat01:dodecahedron sat01:gp13_2 > bench/runs/jam/decode.log 2>&1
 python3 -u bench/jam.py search qwhnew:25,0.40,1 qwhnew:25,0.40,2 qwhnew:25,0.42,0 qwhnew:25,0.42,2 qwhnew:30,0.40,0 qwhnew:30,0.40,1 qwhnew:30,0.42,0 qwhnew:30,0.42,1 qwhnew:30,0.42,2 qwhnew:30,0.45,2 > bench/runs/jam/search-qwh-hard.log 2>&1
 # prune with ten times the budget where it ran out
-python3 -u bench/jam.py search --modes prune --prune-budget 50000 --tag -50k qwhnew:25,0.40,1 qwhnew:25,0.42,0 qwhnew:30,0.40,1 >> bench/runs/jam/search-qwh-hard.log 2>&1
+python3 -u bench/jam.py search --modes prune --prune-budget 50000 --tag=-50k qwhnew:25,0.40,1 qwhnew:25,0.42,0 qwhnew:30,0.40,1 >> bench/runs/jam/search-qwh-hard.log 2>&1
+# nonnegative points of the jam: alternating projections and Douglas-Rachford (2026-10-03)
+python3 -u bench/jam.py project sat01:f14471 sat01:f32399 sat01:cubic16_1 theta:san200_0.7_2 theta:gen200_p0.9_55 sat01:f60491 sat01:cubic20_1 sat01:cubic24_1 sat01:dodecahedron sat01:gp13_2 theta:gen200_p0.9_44 qwh:n15_p45_0 qwh:n15_p45_1 qwh:n20_p45_2 qwh:n20_p50_0 qwhnew:25,0.40,2 qwhnew:30,0.40,0 qwhnew:30,0.42,1 > bench/runs/jam/project.log 2>&1
+# the same with every direction of the jam (2 starts each), 300 iterations, and QUALEX-MS's MIN refinement
+python3 -u bench/jam.py project --starts 0 --iters 300 --tag=-allmin sat01:f14471 sat01:f32399 sat01:cubic16_1 theta:san200_0.7_2 theta:gen200_p0.9_55 sat01:f60491 sat01:cubic20_1 sat01:cubic24_1 sat01:dodecahedron sat01:gp13_2 theta:gen200_p0.9_44 qwh:n15_p45_0 qwh:n15_p45_1 qwh:n20_p45_2 qwh:n20_p50_0 qwhnew:25,0.40,2 qwhnew:30,0.40,0 qwhnew:30,0.42,1 > bench/runs/jam/project-allmin.log 2>&1

@@ -95,3 +95,100 @@ common closed neighbourhood U of a clique C (R_U) keeps every maximum clique thr
    beyond the second (4.9e-5 of the largest and below, decaying smoothly) are the sqrt(mu) tail of
    non-strict complementarity, so Table 8's rank 5 (and wrapper multiplicity 18) are artifacts of the
    1e-5 count.
+
+
+4. Nonnegative points of the jam (project, added after the above on Stas's proposal).  The global
+   minimizers inside R form the sphere S = {x in R: z^T x = 1, |x|^2 = 1/theta}, centre c (the
+   least-norm point of R with z^T x = 1), radius rho; every maximum clique indicator lies on it
+   (checked to 4e-6), and for a proper Lovasz-optimal wrapper its nonnegative points are exactly the
+   maximum cliques.  Starts: the jam vectors c +- rho d_j, d_j the 20 leading eigenvectors of the
+   optimum projected into the sphere's directions (as QUALEX-MS takes k vectors from a cluster).
+   jam = greedy (by x_i/z_i) on the start itself, which is what QUALEX-MS does now; ap = alternating
+   projections (clip the negatives, project back onto S); dr = Douglas-Rachford
+   (x += P+(2 P_S x - x) - P_S x, read at P_S x); at most 1000 iterations, stopped at negativity
+   below 1e-4 of the norm.  Starts giving a clique of weight theta (and, for ap and dr, starts that
+   reached a nonnegative point), out of the starts:
+
+   source                   n  rank starts | jam    ap (nonneg)    dr (nonneg)
+   sat01:f14471           511     1      1 | 1      1 (1)          1 (1)
+   sat01:f32399           636     2      4 | 4      4 (4)          4 (4)
+   sat01:cubic16_1         57    12     24 | 21     24 (24)        24 (24)
+   theta:san200_0.7_2     200     2      4 | 4      4 (4)          4 (4)
+   theta:gen200_p0.9_55   200     3      6 | 6      6 (6)          6 (6)
+   sat01:f60491           740   215     40 | 0      0 (0)          0 (0)
+   sat01:cubic20_1        195   152     40 | 0      2 (18)         3 (0)
+   sat01:cubic24_1        403   335     40 | 0      0 (0)          0 (0)
+   sat01:dodecahedron     263   213     40 | 0      0 (4)          0 (0)
+   sat01:gp13_2           481   411     40 | 0      0 (0)          0 (0)
+   theta:gen200_p0.9_44   200   157     40 | 1      1 (0)          0 (21)
+   qwh:n15_p45_0          369    75     40 | 0      13 (11)        40 (40)
+   qwh:n15_p45_1          381   105     40 | 0      18 (17)        40 (40)
+   qwh:n20_p45_2          860   359     40 | 0      5 (4)          26 (24)
+   qwh:n20_p50_0         1140   573     40 | 0      12 (4)         9 (8)
+   qwhnew:25,0.40,2      1214   487     40 | 0      4 (2)          40 (40)
+   qwhnew:30,0.40,0      2095  1035     40 | 0      0 (0)          6 (3)
+   qwhnew:30,0.42,1      2339  1247     40 | 0      2 (0)          0 (0)
+
+ - Clean optima: ap and dr succeed from every start, and so does greedy on the jam vectors but for 3
+   of 24 starts on cubic16 (with rank 1 or 2 the jam vectors are the solutions themselves).
+ - Jammed optima: greedy on the jam vectors finds a solution on none of them but gen200_p0.9_44 (1 of
+   40).  Douglas-Rachford finds completions on 6 of the 7 jammed QWH instances, from 40 of 40 starts
+   on n15_p45_0, n15_p45_1 and the hard 25,0.40,2 (where plain and leverage-ordered Algorithm X failed
+   within 200000 nodes), 26 of 40 on n20_p45_2, 6 of 40 on the hard 30,0.40,0 (same), not on
+   30,0.42,1 (rank 1247).  Alternating projections are weaker (0-18 of 40) but find completions on all
+   QWH instances but 30,0.40,0, among them 30,0.42,1, so the two together solve all seven.  A start
+   costs at most about 1 s at order 30.
+ - SAT01 instances with contradictions outside the equations (Hamilton cycle, factoring) and the
+   dense planted clique: the iterations often reach nonnegative points of S that are not solutions
+   (ap 18 of 40 on cubic20 with 2 solutions; dr 21 of 40 on gen200_p0.9_44 with 0), and solutions
+   are found only on cubic20 (2-3 of 40).  As predicted, the nonnegative points of the jam are the
+   maximum cliques only for a proper wrapper; the Lovasz-optimal jam of these instances is not that
+   of a proper wrapper (blind or negative defects; on SAT01, H_A is blind to the 2-clause
+   contradictions), while on QCP every contradiction lies in an equation.
+
+
+5. The same with every direction of the jam and QUALEX-MS's MIN refinement (project --starts 0
+   --iters 300 --tag=-allmin; project-allmin.log).  As QUALEX-MS's try_eigendir_points steps onto
+   each eigenvector of a cluster, the starts are c +- rho d_j over an orthonormal basis d_j of all
+   r - 1 directions of the sphere (2(r - 1) starts, r the rank of R); every vector is handed to
+   refine_clique_MIN_w() of refiner.cc, called through bench/qmsmin.cc, as x o z (the vector QUALEX-MS
+   passes); AP and DR run all starts as one block, at most 300 iterations.  Section 4 instead took
+   the 20 leading directions only, a plain greedy and 1000 iterations.  Starts whose MIN clique has
+   weight theta (and starts that reached a nonnegative point):
+
+   source                   n  rank starts | jam    ap (nonneg)  dr (nonneg)
+   sat01:f14471           511     1      1 | 1      1 (1)        1 (1)
+   sat01:f32399           636     2      2 | 2      2 (2)        2 (2)
+   sat01:cubic16_1         57    12     22 | 22     22 (22)      22 (22)
+   theta:san200_0.7_2     200     2      2 | 2      2 (2)        2 (2)
+   theta:gen200_p0.9_55   200     3      4 | 4      4 (4)        4 (4)
+   sat01:f60491           740   215    428 | 0      0 (0)        0 (0)
+   sat01:cubic20_1        195   152    302 | 7      8 (2)        3 (0)
+   sat01:cubic24_1        403   335    668 | 4      2 (0)        2 (0)
+   sat01:dodecahedron     263   213    424 | 1      5 (0)        1 (0)
+   sat01:gp13_2           481   411    820 | 2      0 (0)        1 (0)
+   theta:gen200_p0.9_44   200   157    312 | 1      1 (0)        1 (106)
+   qwh:n15_p45_0          369    75    148 | 1      27 (12)      148 (144)
+   qwh:n15_p45_1          381   105    208 | 0      40 (9)       208 (197)
+   qwh:n20_p45_2          860   359    716 | 0      5 (0)        139 (31)
+   qwh:n20_p50_0         1140   573   1144 | 0      5 (0)        51 (9)
+   qwhnew:25,0.40,2      1214   487    972 | 0      2 (0)        772 (55)
+   qwhnew:30,0.40,0      2095  1035   2068 | 0      0 (0)        13 (0)
+   qwhnew:30,0.42,1      2339  1247   2492 | 0      0 (0)        0 (0)
+
+ - QUALEX-MS's own treatment of a cluster (MIN on all its 2k corner vectors) is not helpless: it
+   finds solutions on 6 of the 13 jammed instances (the four Hamilton cycle ones, 1-7 starts each;
+   gen200_p0.9_44, 1 of 312; QWH n15_p45_0, 1 of 148), but on none of the other six QWH instances
+   and not on 241*251.
+ - Douglas-Rachford solves 11 of the 13.  On QWH it reaches completions from most starts where the
+   jam vectors give none: 148 of 148, 208 of 208, 139 of 716, 51 of 1144, 772 of 972 on the hard
+   25,0.40,2 and 13 of 2068 on the hard 30,0.40,0; MIN often recovers the completion before the
+   iterate is nonnegative (772 hits against 55 nonnegative points on 25,0.40,2).  On the Hamilton
+   cycle instances and gen200_p0.9_44 it does no better than the jam vectors (1-3 starts each; on
+   gen200_p0.9_44 106 starts end at nonnegative points that are not cliques, the wrapper not being
+   proper), and it fails on 241*251 and on 30,0.42,1.
+ - Alternating projections lie in between (27 and 40 hits on the small QWH instances, 0-5 elsewhere
+   on QWH, 0-8 on the Hamilton cycle ones).  With 300 iterations neither method solves 30,0.42,1,
+   where the 1000-iteration run of section 4 had 2 of 40 by AP.
+ - Cost of the block iteration: up to 102 s (DR) for the 2068 starts of 30,0.40,0 and 150 s for the
+   2492 of 30,0.42,1; MIN takes about 8 ms per call at n = 2100-2300.

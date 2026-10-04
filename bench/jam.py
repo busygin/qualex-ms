@@ -20,6 +20,13 @@ those above 1e-7 of the largest eigenvalue (jammed optima decay without a gap). 
            of fewest candidates first and the conflicting vertices removed, in three modes,
            plain (candidates in index order), order (by leverage in R) and prune
            (candidates must keep mass in R_U, ordered by it)
+  project  nonnegative points of the jam: the global minimizers inside R form the sphere
+           {x in R: z^T x = 1, |x|^2 = 1/theta}, whose nonnegative points are the maximum
+           cliques for a proper Lovasz-optimal wrapper.  From the jam vectors c +- rho d_j
+           over an orthonormal basis d_j of the sphere's directions (as QUALEX-MS steps
+           onto each eigenvector of a cluster), QUALEX-MS's own MIN refinement (refiner.cc,
+           called through qmsmin.cc) on the start itself, after alternating projections
+           (clip the negatives, project back) and after Douglas-Rachford
 
 R_U is always computed from the full basis: restricting the previous basis accumulates
 error and was seen to prune true solutions.
@@ -33,8 +40,8 @@ Sources:
                              first, and theta with CSDP into runs/jam/work/<name> only
                              when plain search needs more than --hard nodes
 
-Usage: bench/jam.py decode|search [--budget 200000] [--prune-budget 5000]
-       [--decode-budget 3000] [--hard 10000] [-t 12] SOURCE ...
+Usage: bench/jam.py decode|search|project [--budget 200000] [--prune-budget 5000]
+       [--decode-budget 3000] [--hard 10000] [--starts 0] [--iters 300] [-t 12] SOURCE ...
 
 --budget bounds the plain and order searches, --prune-budget the prune search (each of
 its nodes decomposes the restricted basis), --decode-budget subspace decimation.
@@ -132,7 +139,9 @@ def load(source, args):
         n, p, rep = name.split(",")
         name, conflict, equ = qwh_instance(int(n), float(p), int(rep))
         adj = ~conflict & ~np.eye(len(conflict), dtype=bool)
-        return adj, np.ones(len(adj)), None, len(equ) // 3, equ
+        work = os.path.join(RUNS, "work", name)
+        X = from_sdpa(work)[2] if os.path.exists(os.path.join(work, "prob.sol")) else None
+        return adj, np.ones(len(adj)), X, len(equ) // 3, equ
     raise SystemExit("unknown source " + source)
 
 
@@ -265,6 +274,115 @@ def decode(adj, w, X, target, budget):
     return out, Bm.shape[1]
 
 
+# ---------------------------------------------------------------- nonnegative points of the jam
+
+
+def jam_sphere(X, w, theta):
+    """the global minimizers of the relaxed program inside R: the sphere
+    {x in R: z^T x = 1, |x|^2 = 1/theta}, as its centre c (the least-norm point of
+    R with z^T x = 1), radius and an orthonormal basis of its directions; also the
+    eigenvectors of X spanning R, in decreasing order of their eigenvalues"""
+    Bm = basis(X)
+    z = np.sqrt(w)
+    a = Bm.T @ z
+    c = Bm @ a / (a @ a)
+    _, _, vt = np.linalg.svd(a[None, :])
+    D = Bm @ vt[1:].T
+    return c, np.sqrt(max(1.0 / theta - c @ c, 0.0)), D, Bm
+
+
+def project_sphere(Y, c, rho, D):
+    """the nearest points of the sphere to the columns of Y"""
+    U = D @ (D.T @ (Y - c[:, None]))
+    nu = np.linalg.norm(U, axis=0)
+    nu[nu == 0] = 1.0
+    return c[:, None] + rho * U / nu
+
+
+def negativity(Y):
+    return np.linalg.norm(np.minimum(Y, 0), axis=0) / np.maximum(np.linalg.norm(Y, axis=0), 1e-300)
+
+
+class MinRefiner:
+    """QUALEX-MS's MIN refinement, refine_clique_MIN_w() of refiner.cc, through ctypes:
+    weight(a) is the weight of the clique it builds from the appealing vector a"""
+    _lib = None
+
+    @classmethod
+    def lib(cls):
+        if cls._lib is None:
+            import ctypes
+            root = os.path.dirname(T.BENCH)
+            so = os.path.join(RUNS, "bin", "libqmsmin.so")
+            srcs = [os.path.join(T.BENCH, "qmsmin.cc")] + [
+                os.path.join(root, f) for f in ("refiner.cc", "greedy_clique.cc", "graph.cc", "bool_vector.cc")]
+            deps = srcs + [os.path.join(root, f) for f in ("refiner.h", "greedy_clique.h", "graph.h", "bool_vector.h")]
+            if not os.path.exists(so) or os.path.getmtime(so) < max(os.path.getmtime(d) for d in deps):
+                os.makedirs(os.path.dirname(so), exist_ok=True)
+                import subprocess
+                subprocess.run(["g++", "-O3", "-fPIC", "-shared", "-w", *srcs, "-o", so], check=True)
+            lib = ctypes.CDLL(so)
+            lib.qms_new.restype = ctypes.c_void_p
+            lib.qms_new.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p]
+            lib.qms_min.restype = ctypes.c_double
+            lib.qms_min.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+            lib.qms_free.argtypes = [ctypes.c_void_p]
+            cls._lib = lib
+        return cls._lib
+
+    def __init__(self, adj, w):
+        self.adj = np.ascontiguousarray(adj, dtype=np.uint8)
+        self.w = np.ascontiguousarray(w, dtype=float)
+        self.h = self.lib().qms_new(len(adj), self.adj.ctypes.data, self.w.ctypes.data)
+
+    def weight(self, a):
+        a = np.ascontiguousarray(a, dtype=float)
+        return self.lib().qms_min(self.h, a.ctypes.data)
+
+    def __del__(self):
+        if getattr(self, "h", None):
+            self.lib().qms_free(self.h)
+
+
+def nonneg_jam(adj, w, X, target, starts, iters, tol=1e-4):
+    """MIN on the jam vectors c +- rho d_j, d_j an orthonormal basis of the directions
+    of the sphere (QUALEX-MS's try_eigendir_points, which hands MIN the vector x o z),
+    and on the same starts after alternating projections (AP: clip the negatives,
+    project back onto the sphere) or Douglas-Rachford (DR: x += P+(2 P_S x - x) - P_S x,
+    read at P_S x), all starts at once, each frozen when its negativity falls below tol
+    (solutions computed from CSDP's optimum carry about 1e-6 of it).  starts = 0 takes
+    every direction.  Per method: starts whose MIN clique has weight target, starts that
+    reached a nonnegative point, and the seconds"""
+    z = np.sqrt(w)
+    c, rho, D, Bm = jam_sphere(X, w, target)
+    k = D.shape[1] if starts <= 0 else min(starts, D.shape[1])
+    Y0 = np.hstack([c[:, None] + rho * D[:, :k], c[:, None] - rho * D[:, :k]]) if k else c[:, None]
+    refine = MinRefiner(adj, w)
+    hit = lambda Y: sum(abs(refine.weight(Y[:, j] * z) - target) < 1e-6 * max(1.0, target) for j in range(Y.shape[1]))
+    out = {}
+    t = time.time()
+    out["jam"] = (hit(Y0), 0, time.time() - t)
+    for method in ("ap", "dr"):
+        t = time.time()
+        Y = Y0.copy()
+        est = Y0.copy()
+        live = np.ones(Y.shape[1], bool)
+        for _ in range(iters):
+            L = np.flatnonzero(live)
+            if not len(L):
+                break
+            if method == "ap":
+                Y[:, L] = project_sphere(np.maximum(Y[:, L], 0), c, rho, D)
+                est[:, L] = Y[:, L]
+            else:
+                ps = project_sphere(Y[:, L], c, rho, D)
+                Y[:, L] = Y[:, L] + np.maximum(2 * ps - Y[:, L], 0) - ps
+                est[:, L] = project_sphere(Y[:, L], c, rho, D)
+            live[L[negativity(est[:, L]) < tol]] = False
+        out[method] = (hit(est), int((~live).sum()), time.time() - t)
+    return out, Y0.shape[1], Bm.shape[1]
+
+
 # ---------------------------------------------------------------- search
 
 
@@ -341,7 +459,7 @@ def record(source, method, n, target, rank, found, nodes, secs):
 
 def main():
     ap = argparse.ArgumentParser(description="maximum cliques in the jammed top of a Lovasz-optimal wrapper")
-    ap.add_argument("what", choices=("decode", "search"))
+    ap.add_argument("what", choices=("decode", "search", "project"))
     ap.add_argument("sources", nargs="+")
     ap.add_argument("--budget", type=int, default=200000, help="nodes of the plain and order searches")
     ap.add_argument("--prune-budget", type=int, default=5000, help="nodes of the prune search")
@@ -349,6 +467,8 @@ def main():
     ap.add_argument("--hard", type=int, default=10000,
                     help="qwhnew: compute theta only when plain search needs more nodes")
     ap.add_argument("-t", "--threads", type=int, default=12)
+    ap.add_argument("--starts", type=int, default=0, help="project: jam directions, two starts each (0: all)")
+    ap.add_argument("--iters", type=int, default=300, help="project: AP and DR iterations")
     ap.add_argument("--modes", default="plain,order,prune", help="search modes to run")
     ap.add_argument("--tag", default="", help="appended to the method names in jam.tsv")
     args = ap.parse_args()
@@ -364,6 +484,14 @@ def main():
                 record(source, method, n, target, rank, found, info, time.time() - t)
             print("%-24s n=%-5d target %-6g rank %-4d | %s" % (source, n, target, rank, " | ".join(
                 "%s %s %s" % (m, "yes" if f else "no", i) for m, f, i in out)), flush=True)
+            continue
+        if args.what == "project":
+            out, nstarts, rank = nonneg_jam(adj, w, X, target, args.starts, args.iters)
+            for method, (hits, conv, secs) in out.items():
+                record(source, method + args.tag, n, target, rank, hits > 0, "%d/%d conv %d" % (hits, nstarts, conv), secs)
+            print("%-24s n=%-5d target %-6g rank %-4d starts %-3d | %s" % (source, n, target, rank, nstarts, " | ".join(
+                "%s %d hits%s %.0fs" % (m, h, "" if m == "jam" else ", %d nonnegative" % cv, s)
+                for m, (h, cv, s) in out.items())), flush=True)
             continue
         if equ is None:
             raise SystemExit("%s has no equations to search over" % source)

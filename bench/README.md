@@ -180,6 +180,11 @@ mass in R restricted to the vertices still allowed:
     CSDP=~/Csdp/solver/csdp-mkl bench/jam.py search qwhnew:30,0.42,0
 
 `qwhnew:n,p,rep` generates a QWH instance with `qwh.py`'s seeds and computes
-theta only when plain search needs more than `--hard` nodes. Rows go to
+theta only when plain search needs more than `--hard` nodes. `project` looks for
+nonnegative points of the jam (the sphere of global minimizers inside R) by
+alternating projections and Douglas-Rachford from the jam vectors QUALEX-MS
+tries, and extracts cliques with QUALEX-MS's own MIN refinement: `qmsmin.cc`
+wraps `refine_clique_MIN_w()` for ctypes, and `jam.py` compiles it with the
+solver's sources into the ignored `runs/jam/bin`. Rows go to
 `runs/jam/jam.tsv`; `runs/jam/run-2026-10-03.sh` reruns the survey of that
-date.
+date, and `runs/jam/jam-2026-10-03.txt` has the results.
