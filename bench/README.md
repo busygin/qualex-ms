@@ -1,7 +1,7 @@
 # Benchmark tooling
 
 The means to rerun the experiments behind `benchmarks.md` and the experimental
-switches in `main.cc`.  It lives in the repository because the machine the
+switches of the solver (the `QMS_*` variables of `main.cc` and `lib/`).  It lives in the repository because the machine the
 experiments run on reboots and clears `/tmp`; every step here picks up where it
 stopped when the same command is run again.
 
@@ -24,7 +24,9 @@ use, and come out identical every time with numpy 2.3.5.
 
 builds the solver and runs every listed variant on every graph of the listed
 suites, with 6 workers taking turns on the GPUs, skipping what is already
-recorded.  A long run survives a closed terminal with
+recorded.  `GPU=0 bench/run.sh ...` builds and runs the solver on the CPU
+backend instead (`make GPU=0`), whose binary gets a directory of its own.  A
+long run survives a closed terminal with
 
     nohup bench/run.sh dimacs,ru,rw head,lzw > bench/runs/nohup.log 2>&1 &
 
@@ -68,7 +70,7 @@ them 47 minutes -- and `-a` also tries the rest, none of which was proved then.
 
 ## Checking an idea in numpy
 
-`wrapper.py` has dense numpy versions of the wrapper constructions in `main.cc`
+`wrapper.py` has dense numpy versions of the wrapper constructions in `lib/wrapper.cc`
 (anchoring, the literal Lovasz step, the projection and the gauge-invariant
 spread) to import, and as a script summarizes them for one graph:
 
@@ -159,9 +161,9 @@ multiplicities of the optimal wrapper and of H_A:
     bench/sat01.py --prep full --max-pairs 60000 f14887 flower5 coxeter
     bench/sat01.py --span f143 dodecahedron
 
-The SAT01 tools are compiled from `$SAT01` (default `~/SAT01`) into the
-ignored `runs/sat01/bin`, and the solver runs in a directory of its own per
-instance, since it keeps its backtracking states in the current directory.
+The SAT01 tools are built by the Makefile of `$SAT01` (default `~/SAT01`)
+against this repository's `lib/`, and copied into the ignored
+`runs/sat01/bin`; the solver runs in a directory of its own per instance.
 Rows go to `runs/sat01/sat01.tsv` and `runs/sat01/span.tsv`.
 
 ## Maximum cliques in a jammed top
@@ -185,6 +187,7 @@ nonnegative points of the jam (the sphere of global minimizers inside R) by
 alternating projections and Douglas-Rachford from the jam vectors QUALEX-MS
 tries, and extracts cliques with QUALEX-MS's own MIN refinement: `qmsmin.cc`
 wraps `refine_clique_MIN_w()` for ctypes, and `jam.py` compiles it with the
-solver's sources into the ignored `runs/jam/bin`. Rows go to
+library's combinatorial core (`lib/`, which needs no BLAS) into the ignored
+`runs/jam/bin`. Rows go to
 `runs/jam/jam.tsv`; `runs/jam/run-2026-10-03.sh` reruns the survey of that
 date, and `runs/jam/jam-2026-10-03.txt` has the results.

@@ -24,7 +24,7 @@ those above 1e-7 of the largest eigenvalue (jammed optima decay without a gap). 
            {x in R: z^T x = 1, |x|^2 = 1/theta}, whose nonnegative points are the maximum
            cliques for a proper Lovasz-optimal wrapper.  From the jam vectors c +- rho d_j
            over an orthonormal basis d_j of the sphere's directions (as QUALEX-MS steps
-           onto each eigenvector of a cluster), QUALEX-MS's own MIN refinement (refiner.cc,
+           onto each eigenvector of a cluster), QUALEX-MS's own MIN refinement (lib/refiner.cc,
            called through qmsmin.cc) on the start itself, after alternating projections
            (clip the negatives, project back) and after Douglas-Rachford
 
@@ -346,7 +346,7 @@ def negativity(Y):
 
 
 class MinRefiner:
-    """QUALEX-MS's MIN refinement, refine_clique_MIN_w() of refiner.cc, through ctypes:
+    """QUALEX-MS's MIN refinement, refine_clique_MIN_w() of lib/refiner.cc, through ctypes:
     weight(a) is the weight of the clique it builds from the appealing vector a"""
     _lib = None
 
@@ -354,15 +354,17 @@ class MinRefiner:
     def lib(cls):
         if cls._lib is None:
             import ctypes
-            root = os.path.dirname(T.BENCH)
+            lib_dir = os.path.join(os.path.dirname(T.BENCH), "lib")
             so = os.path.join(RUNS, "bin", "libqmsmin.so")
+            # MIN is in the library's combinatorial core, which needs no BLAS
             srcs = [os.path.join(T.BENCH, "qmsmin.cc")] + [
-                os.path.join(root, f) for f in ("refiner.cc", "greedy_clique.cc", "graph.cc", "bool_vector.cc")]
-            deps = srcs + [os.path.join(root, f) for f in ("refiner.h", "greedy_clique.h", "graph.h", "bool_vector.h")]
+                os.path.join(lib_dir, f) for f in ("refiner.cc", "greedy_clique.cc", "graph.cc", "bool_vector.cc")]
+            deps = srcs + [os.path.join(lib_dir, f) for f in ("refiner.h", "greedy_clique.h", "graph.h", "bool_vector.h")]
             if not os.path.exists(so) or os.path.getmtime(so) < max(os.path.getmtime(d) for d in deps):
                 os.makedirs(os.path.dirname(so), exist_ok=True)
                 import subprocess
-                subprocess.run(["g++", "-O3", "-fPIC", "-shared", "-w", *srcs, "-o", so], check=True)
+                subprocess.run(["g++", "-std=gnu++20", "-O3", "-fPIC", "-shared", "-w", "-I" + lib_dir,
+                                *srcs, "-o", so], check=True)
             lib = ctypes.CDLL(so)
             lib.qms_new.restype = ctypes.c_void_p
             lib.qms_new.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p]

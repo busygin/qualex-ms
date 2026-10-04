@@ -1,5 +1,6 @@
 *.o
 qualex-ms
+build/
 *.sol
 __pycache__/
 bench/graphs/

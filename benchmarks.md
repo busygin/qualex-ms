@@ -5,7 +5,7 @@ QUALEX-MS performance on 80 DIMACS maximum clique benchmark instances.
 `before` is the method as published: one trust region radius, taken from
 Proposition 7 applied to the clique the greedy stage found, and eigenvector
 directions only where the linear form vanishes.  `after` adds the multiplier
-selection described in `qualex.cc` -- a geometric scan of radii around that
+selection described in `lib/qualex.cc` -- a geometric scan of radii around that
 anchor, a Meta-NBIW pass at the two multipliers the scan ranked highest, and
 the eigenvector directions of every cluster rather than only the degenerate
 ones.

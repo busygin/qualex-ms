@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dense numpy versions of the wrapper constructions in main.cc.
+"""Dense numpy versions of the wrapper constructions in lib/wrapper.cc.
 
 For checking an idea on a graph or two before touching the C++; slow, but easy
 to take apart.  The matrix A is the solver's A^(w) = H - w_min I, the wrapper H

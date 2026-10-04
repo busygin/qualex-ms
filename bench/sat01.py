@@ -40,8 +40,9 @@ pairs, blind is the share of them sharing no equation (invisible to the wrapper
 H_A = z z^T + m (I - D^-1/2 A^T A D^-1/2), D = diag(w)), lmax is lambda_max of the
 wrapper CSDP's dual gives, a certified upper bound on theta, gap = m - theta, and rank
 that of the Lovasz optimum (eigenvalues above 1e-5 of the largest).  A pair already there is skipped unless -f.  The tools are
-compiled from $SAT01 (default ~/SAT01) into runs/sat01/bin; instances, solver runs and
-CSDP files go to runs/sat01/work/<inst>/, both ignored.
+built by the Makefile of $SAT01 (default ~/SAT01) against this repository's lib/ and
+copied into runs/sat01/bin; instances, solver runs and CSDP files go to
+runs/sat01/work/<inst>/, both ignored.
 
 With --span, satisfiable instances already solved get a second pass: their solutions
 are listed (exact cover search, up to --cap), and runs/sat01/span.tsv gets
@@ -52,7 +53,8 @@ the largest residual of H (z o 1_K) = m (z o 1_K) over the solutions K (Lovasz o
 anchors every solution at the top), and the search nodes.
 """
 import argparse
-import glob
+import filecmp
+import functools
 import os
 import re
 import shutil
@@ -67,23 +69,18 @@ from wrapper import read_dimacs_bin
 SAT01 = os.environ.get("SAT01", os.path.expanduser("~/SAT01"))
 RUNS = os.path.join(T.BENCH, "runs", "sat01")
 TSV = os.path.join(RUNS, "sat01.tsv")
-TOOLS = {
-    "sat01": ("main.cpp", "sat01.cpp", "bool_vector.cpp"),
-    "factor2sat01": ("factor2sat01.cpp", "bool_vector.cpp"),
-    "sat012clique": ("sat012clique.cpp", "sat01.cpp", "bool_vector.cpp"),
-    "hcp2sat01": ("hcp2sat01.cpp", "bool_vector.cpp"),
-}
-HEADERS = ("sat01.h", "bool_vector.h", "bin_store.h")
 
 
+@functools.lru_cache(maxsize=None)
 def tool(name):
-    """a SAT01 tool, compiled from $SAT01 when missing or older than its sources"""
-    exe = os.path.join(RUNS, "bin", name)
-    srcs = [os.path.join(SAT01, s) for s in TOOLS[name]]
-    newest = max(os.path.getmtime(p) for p in srcs + [os.path.join(SAT01, h) for h in HEADERS])
-    if not os.path.exists(exe) or os.path.getmtime(exe) < newest:
+    """a SAT01 tool (sat01, sat012clique, factor2sat01, hcp2sat01), built by $SAT01's
+    Makefile against this repository's lib/ and copied into runs/sat01/bin when it changed"""
+    subprocess.run(["make", "-s", "-C", SAT01, "QMS=" + os.path.dirname(T.BENCH), name],
+                   check=True, stdout=subprocess.DEVNULL)
+    src, exe = os.path.join(SAT01, name), os.path.join(RUNS, "bin", name)
+    if not os.path.exists(exe) or not filecmp.cmp(src, exe, shallow=False):
         os.makedirs(os.path.dirname(exe), exist_ok=True)
-        subprocess.run(["g++", "-DNDEBUG", "-Ofast", "-w", *srcs, "-o", exe], check=True)
+        shutil.copy2(src, exe)
     return exe
 
 
@@ -162,9 +159,8 @@ def build(inst):
 
 
 def answer(work, inst, timeout):
-    """the SAT01 solver's verdict (sat, unsat or timeout) and its number of guesses; the
-    solver keeps its backtracking states as $$$<depth>.sat01 in its directory, so every
-    instance gets its own"""
+    """the SAT01 solver's verdict (sat, unsat or timeout) and its number of guesses, run
+    in a directory of the instance's own"""
     d = os.path.join(work, "solve")
     rec = os.path.join(d, "answer")
     if os.path.exists(rec):
@@ -176,8 +172,6 @@ def answer(work, inst, timeout):
             subprocess.run([tool("sat01"), inst + ".sat01"], cwd=d, stdout=f, stderr=subprocess.STDOUT,
                            timeout=timeout)
     except subprocess.TimeoutExpired:
-        for p in glob.glob(os.path.join(d, "$$$*.sat01")):
-            os.remove(p)
         return ["timeout", "-"]
     out = open(os.path.join(d, inst + ".out")).read()
     m = re.search(r"(\d+) heuristic guesses", out)

@@ -8,7 +8,7 @@
 # the solver as shipped
 head
 
-# random perturbation of the wrapper, see perturb_wrapper() in main.cc
+# random perturbation of the wrapper, see perturb_wrapper() in lib/wrapper.cc
 pert1     QMS_PERTURB=0.01 QMS_SEED=1
 pert2     QMS_PERTURB=0.01 QMS_SEED=2
 pert3     QMS_PERTURB=0.01 QMS_SEED=3
@@ -17,7 +17,7 @@ pw1       QMS_STATS=1 QMS_PERTURB=0.01 QMS_SEED=1 QMS_ANCHOR_WARM=1
 pw2       QMS_STATS=1 QMS_PERTURB=0.01 QMS_SEED=2 QMS_ANCHOR_WARM=1
 pw3       QMS_STATS=1 QMS_PERTURB=0.01 QMS_SEED=3 QMS_ANCHOR_WARM=1
 
-# Theorem 8 anchoring, see anchor_wrapper() in main.cc
+# Theorem 8 anchoring, see anchor_wrapper() in lib/wrapper.cc
 anc       QMS_STATS=1 QMS_ANCHOR=1                        # on the greedy clique
 anc05     QMS_STATS=1 QMS_ANCHOR=0.5                      # half the correction
 ancs      QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_SHUFFLE=1   # control: wrong vertices
@@ -26,7 +26,7 @@ ancw      QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1      # on the standard pass
 ancws     QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1 QMS_ANCHOR_SHUFFLE=1
 ancwp     QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1 QMS_ANCHOR_PASSES=4
 
-# one line-searched lambda_max step, see ice_step() in main.cc
+# one line-searched lambda_max step, see ice_step() in lib/wrapper.cc
 icel      QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1 QMS_ICE=lovasz
 icels     QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1 QMS_ICE=lovasz QMS_ICE_SHUFFLE=1
 ices      QMS_STATS=1 QMS_ANCHOR=1 QMS_ANCHOR_WARM=1 QMS_ICE=spread
@@ -35,7 +35,7 @@ lzw       QMS_STATS=1 QMS_ICE=lovasz QMS_ANCHOR_WARM=1    # plain wrapper, secon
 lzws      QMS_STATS=1 QMS_ICE=lovasz QMS_ANCHOR_WARM=1 QMS_ICE_SHUFFLE=1
 
 # Douglas-Rachford toward the nonnegative points of each degenerate cluster's
-# sphere of stationary points, see try_dr_points() in qualex.cc.  It runs its
+# sphere of stationary points, see try_dr_points() in lib/qualex.cc.  It runs its
 # products on OpenBLAS: with run.sh -j > 1 set OPENBLAS_NUM_THREADS so that the
 # jobs do not oversubscribe the cores.
 dr        QMS_STATS=1 QMS_DR=300

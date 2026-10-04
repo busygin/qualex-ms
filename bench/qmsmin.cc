@@ -1,5 +1,6 @@
-// qmsmin.cc: QUALEX-MS's MIN refinement, refine_clique_MIN_w() of refiner.cc, callable
-// from Python through ctypes (bench/jam.py builds it into runs/jam/bin/libqmsmin.so).
+// qmsmin.cc: QUALEX-MS's MIN refinement, refine_clique_MIN_w() of lib/refiner.cc,
+// callable from Python through ctypes (bench/jam.py builds it into
+// runs/jam/bin/libqmsmin.so with the library's combinatorial core).
 //
 // qms_new() builds the solver's own Graph and MaxCliqueInfo from a dense 0/1 adjacency
 // matrix and the vertex weights; qms_min() hands an "appealing" vector to the unchanged
@@ -10,25 +11,17 @@
 #include <string.h>
 #include <vector>
 
-#include "../graph.h"
-#include "../refiner.h"
+#include "graph.h"
+#include "refiner.h"
 
 struct Handle {
   Graph g;
   MaxCliqueInfo* info;
   std::vector<double> x;
-  Handle(int n) : g(n), info(NULL), x(n) {}
+  Handle(int n) : g(n), info(nullptr), x(n) {}
 };
 
 extern "C" {
-
-// greedy_clique.cc refers to mdv.c's dot_product(), which on this branch runs on the GPU
-// through cuBLAS; MIN never calls it, and this CPU definition keeps CUDA out of the library
-double dot_product(int n, double* x, double* y) {
-  double s = 0.0;
-  for (int i = 0; i < n; ++i) s += x[i] * y[i];
-  return s;
-}
 
 void* qms_new(int n, const unsigned char* adj, const double* weights) {
   Handle* h = new Handle(n);

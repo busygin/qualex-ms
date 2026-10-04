@@ -6,17 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 QUALEX-MS (QUick ALmost EXact maximum weight clique solver based on Motzkin-Straus formulation) is a C/C++ solver for the maximum weight clique/independent set problem. It uses a trust region technique with a generalized Motzkin-Straus formulation and has O(n³) complexity.
 
+The solver is a command line front end (`main.cc`) to a library in `lib/` (`libqms.a`), which other programs (the SAT01 solver) link for MIN and the spectral stages.
+
 ## Build Commands
 
 ```bash
-# Build the solver (requires BLAS and LAPACK)
+# Build the solver on the GPU backend (CUDA toolkit: cuSOLVER, cuBLAS; and OpenBLAS)
 make
+
+# Build the solver on the CPU backend (OpenBLAS only: LAPACK and CBLAS)
+make GPU=0
 
 # Clean build artifacts
 make clean
 ```
 
-**Dependencies**: BLAS and LAPACK libraries. The Makefile is configured for CUDA-accelerated BLAS (`cublas`) with static LAPACK. Adjust `BLASLIB` and `LAPACKLIB` in the Makefile for your environment.
+Objects, `libqms.a` and the binary go to `build/gpu` or `build/cpu`; `./qualex-ms` is a copy of the binary of the backend last asked for. The code is C++20 (`-std=gnu++20`) and depends on nothing but the standard library and the BLAS/LAPACK/CUDA backends; do not add third-party libraries.
 
 ## Usage
 
@@ -40,21 +45,28 @@ Output is written to a `.sol` file with the same base name as the input.
 
 The solver pipeline consists of three stages:
 
-1. **Preprocessing** (`preproc_clique.h/.cc`): Reduces the graph by preselecting vertices that must be in any maximum clique and removing vertices that cannot contribute.
+1. **Preprocessing** (`lib/preproc_clique.h/.cc`): Reduces the graph by preselecting vertices that must be in any maximum clique and removing vertices that cannot contribute.
 
-2. **Greedy Heuristic** (`greedy_clique.h/.cc`): MIN heuristic starting from each vertex to find an initial lower bound.
+2. **Greedy Heuristic** (`lib/greedy_clique.h/.cc`): MIN heuristic starting from each vertex to find an initial lower bound.
 
-3. **QUALEX-MS Core** (`qualex.h/.cc`): Trust region optimization on the Motzkin-Straus quadratic formulation with refinement to extract cliques.
+3. **QUALEX-MS Core** (`lib/qualex.h/.cc`): Trust region optimization on the Motzkin-Straus quadratic formulation with refinement to extract cliques.
+
+The library has three layers:
+
+- **Combinatorial core**, no BLAS: `bool_vector`, `graph`, `greedy_clique`, `refiner` (VO and MIN), `preproc_clique`.
+- **Linear algebra** (`lib/linalg.h`): one interface, two backends chosen at build time: `linalg_gpu.c` (cuSOLVER/cuBLAS, eigenvectors kept on the GPU) and `linalg_cpu.c` (LAPACK DSYEVR and CBLAS).
+- **Spectral stages**: `wrapper.h/.cc` (the clique wrapper and its experimental modifications: perturbation, Theorem 8 anchoring, the lambda_max step), `qualex.h/.cc` (the trust region core), `dr.h/.cc` (generic Douglas-Rachford between a sphere and a set given by its projection, used by `try_dr_points()`; it calls CBLAS on either backend).
 
 **Key Data Structures**:
-- `Graph` (`graph.h`): Undirected graph with weighted vertices, adjacency stored as `bool_vector` bit matrices
-- `MaxCliqueInfo` (`graph.h`): Tracks solver state including current best clique, bounds, and weight scaling factors
-- `bool_vector` (`bool_vector.h`): Bit-packed boolean vector with efficient iteration via `bit_iterator`
+- `Graph` (`lib/graph.h`): Undirected graph with weighted vertices, adjacency stored as `bool_vector` bit matrices
+- `MaxCliqueInfo` (`lib/graph.h`): Tracks solver state including current best clique, bounds, and weight scaling factors; `verbose` turns the progress line off for library use
+- `bool_vector` (`lib/bool_vector.h`): Bit string in 64-bit words; `for(int j : v.ones())` visits the true entries, skipping zero words and finding each entry with `std::countr_zero`
 
-**Numerical Core**:
-- `eigen.c`: LAPACK interface for eigendecomposition (DSYEVR)
-- `mdv.c`: Sparse matrix-diagonal-vector products
-- `refiner.h/.cc`: VO (Vertex Order) and MIN procedures to extract maximal cliques from continuous solutions
+**Experimental switches** are `QMS_*` environment variables (listed in `README.md`); `bench/variants` names the combinations the bench runs.
+
+## Code Style
+
+Prefix increments (`++i`, `--i`) wherever the value is not used. Keep the existing comment density: the long comments record what each experiment measured.
 
 ## Input Format
 
