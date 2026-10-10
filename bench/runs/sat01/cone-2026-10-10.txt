@@ -1,0 +1,40 @@
+f14471: n=511 m=367, the sphere has 148 directions, rho=0.04304; F has a root in 145 of 147 gaps
+  vertex nearest the centre: sigma=21.2255, |v|/rho=5.5768, 15 directions above sigma, 133 below; 0 roots with the vertex inside the ball
+  random generators meeting the sphere: 0 of 100000
+  a solution (134 variables): |u|/rho=1.000000000, x^T H_0 x=1.000000000, on the cone: 0.297377679 = 0.297377679
+  its generator meets the sphere at the solution (distance 2.8e-15) and 0.1915 rho from it
+  generators perturbed by 1e-03: 978 of 1000 meet the sphere, largest error 3.1e-14, median negative share of the l1 mass 0.041
+  generators perturbed by 1e-02: 94 of 1000 meet the sphere, largest error 2.3e-14, median negative share of the l1 mass 0.097
+  generators perturbed by 1e-01: none of 1000 meets the sphere
+f32399: n=636 m=441, the sphere has 197 directions, rho=0.03967; F has a root in 188 of 196 gaps
+  vertex nearest the centre: sigma=22.528, |v|/rho=7.0147, 18 directions above sigma, 179 below; 0 roots with the vertex inside the ball
+  random generators meeting the sphere: 0 of 100000
+  a solution (153 variables): |u|/rho=1.000000000, x^T H_0 x=1.000000000, on the cone: 0.345052359 = 0.345052359
+  its generator meets the sphere at the solution (distance 9.1e-13) and 0.001537 rho from it
+  generators perturbed by 1e-03: 435 of 1000 meet the sphere, largest error 6.0e-14, median negative share of the l1 mass 0.029
+  generators perturbed by 1e-02: 6 of 1000 meet the sphere, largest error 4.3e-14, median negative share of the l1 mass 0.122
+  generators perturbed by 1e-01: none of 1000 meets the sphere
+f60491: n=740 m=514, the sphere has 235 directions, rho=0.03681; F has a root in 219 of 234 gaps
+  vertex nearest the centre: sigma=-12.3897, |v|/rho=7.3506, 230 directions above sigma, 5 below; 0 roots with the vertex inside the ball
+  random generators meeting the sphere: 0 of 100000
+  a solution (174 variables): |u|/rho=1.000000000, x^T H_0 x=1.000000000, on the cone: 0.404763338 = 0.404763338
+  its generator meets the sphere at the solution (distance 1.8e-15) and 0.191 rho from it
+  generators perturbed by 1e-03: 920 of 1000 meet the sphere, largest error 1.5e-13, median negative share of the l1 mass 0.050
+  generators perturbed by 1e-02: none of 1000 meets the sphere
+  generators perturbed by 1e-01: none of 1000 meets the sphere
+dodecahedron: n=263 m=38, the sphere has 226 directions, rho=0.1535; F has a root in 19 of 147 gaps
+  vertex nearest the centre: sigma=15.4431, |v|/rho=4.2936, 28 directions above sigma, 198 below; 0 roots with the vertex inside the ball
+  random generators meeting the sphere: 0 of 100000
+  a solution (19 variables): |u|/rho=1.000000000, x^T H_0 x=1.000000000, on the cone: 0.397061926 = 0.397061926
+  its generator meets the sphere at the solution (distance 7.6e-16) and 0.6375 rho from it
+  generators perturbed by 1e-03: 1000 of 1000 meet the sphere, largest error 2.1e-14, median negative share of the l1 mass 0.160
+  generators perturbed by 1e-02: 995 of 1000 meet the sphere, largest error 2.2e-14, median negative share of the l1 mass 0.233
+  generators perturbed by 1e-01: 11 of 1000 meet the sphere, largest error 1.2e-14, median negative share of the l1 mass 0.325
+gp13_2: n=481 m=50, the sphere has 432 directions, rho=0.1354; F has a root in 99 of 431 gaps
+  vertex nearest the centre: sigma=10.8641, |v|/rho=2.7908, 101 directions above sigma, 331 below; 0 roots with the vertex inside the ball
+  random generators meeting the sphere: 0 of 100000
+  a solution (25 variables): |u|/rho=1.000000000, x^T H_0 x=1.000000000, on the cone: 0.495631901 = 0.495631901
+  its generator meets the sphere at the solution (distance 4.6e-16) and 0.6367 rho from it
+  generators perturbed by 1e-03: 1000 of 1000 meet the sphere, largest error 1.9e-14, median negative share of the l1 mass 0.194
+  generators perturbed by 1e-02: 551 of 1000 meet the sphere, largest error 1.6e-14, median negative share of the l1 mass 0.289
+  generators perturbed by 1e-01: none of 1000 meets the sphere

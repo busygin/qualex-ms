@@ -46,7 +46,7 @@ Clique Problem''}}
 \author{Research notes prepared for Stanislav Busygin\\
 with Claude (Anthropic)}
 
-\date{September 26, 2026; revised October 9, 2026}
+\date{September 26, 2026; revised October 10, 2026}
 
 \maketitle
 
@@ -88,7 +88,11 @@ the nonnegative points of its sphere of global minimizers are exactly the
 maximum clique indicators, the vertices of largest norm of a polytope; the
 hardness of SAT01 lies in finding them and not in a lack of properness,
 since for exact cover the equation wrapper is proper and the nonnegative
-points of its sphere are the exact covers. Computations with a maximal clique
+points of its sphere are the exact covers. Every solution also lies on the
+surface of the standard wrapper, which meets that sphere and the orthant
+exactly in the solutions; the intersection of the sphere with a wrapper
+surface is its intersection with a cone, explicit in two unit vectors, so
+that of these conditions only nonnegativity is hard. Computations with a maximal clique
 enumerator and with CSDP illustrate the results on the DIMACS graphs, on
 random graphs, on random quasigroups with holes, and on SAT01 instances of
 factoring and of the Hamilton cycle problem, where $\vartheta$ refutes the
@@ -133,7 +137,7 @@ $\mu=\lmax$; for general graphs the conditions look overdetermined.
 \item What do they say about SAT01 \cite{Bu07}, where deciding
 $\alpha=\vartheta$ in a weighted graph captures many NP problems, and where
 does its hardness lie once $\vartheta$ and a Lov\'asz-optimal wrapper are
-known? (Sections~\ref{sec:sat01}, \ref{sec:hardness}
+known? (Sections~\ref{sec:sat01}, \ref{sec:hardness}, \ref{sec:surface}
 and~\ref{sec:sat01comp}.)
 \end{enumerate}
 
@@ -211,6 +215,15 @@ contradictions outside the equations a nonnegative non-clique point of the
 optimal face makes every Lov\'asz-optimal wrapper improper
 (Proposition~\ref{prop:improper}), and the Hamilton cycle instances have
 such points (Section~\ref{sec:hardness}).
+\item Every solution also lies on the surface $\Wc^{H_0}$ of the standard
+wrapper, and the sphere of $H_A$, the orthant and $\Wc^{H_0}$ meet exactly in
+the solutions (Proposition~\ref{prop:threesets}). The intersection of a
+sphere with any wrapper surface is its intersection with a cone, given in
+closed form by two unit vectors (Proposition~\ref{prop:cone}). Added to
+QUALEX-MS's Douglas--Rachford stage, the surface solves one more factoring
+instance with the orthant and adds nothing to the projection that respects
+the contradictions outside the equations; without nonnegativity it finds
+nothing at all (Section~\ref{sec:surface}).
 \end{itemize}
 
 \section{Setting}
@@ -1504,6 +1517,164 @@ on $1000001=101\cdot9901$ (dimension 471) and found nothing on the cubic
 graphs with 40 and 50 vertices (dimensions 1178 and 1828)
 (\texttt{bench/sat01.py --qms}, \texttt{bench/runs/sat01/qms.tsv}).
 
+\subsection{A second wrapper surface}
+\label{sec:surface}
+
+A solution of a SAT01 instance lies not only on $\Sigma_A$ but, being a
+clique indicator, on the surface $\Wc^H$ of every $H\in\Hc(G,w)$
+(Section~\ref{sec:setting}). A proper $H$ sees the contradictions that $H_A$
+does not:
+
+\begin{prop}
+\label{prop:threesets}
+For every SAT01 instance and every proper $H\in\Hc(G,w)$, the nonnegative
+points of $\Sigma_A\cap\Wc^H$ are exactly the indicators $x^S$ of the
+solutions $S$.
+\end{prop}
+\begin{proof}
+By Corollary~\ref{cor:exactcover} the nonnegative points of $\Sigma_A$ are
+the $x^S$ of the exact covers $S$. For $x\geq0$ with $z^Tx=1$,
+$x^THx=1-\sum\tau_{ij}z_iz_jx_ix_j$ over the ordered non-adjacent pairs, as
+in the proof of Proposition~\ref{prop:improper}, and with all defects
+positive this is $1$ iff the support of $x$ contains no non-adjacent pair.
+So $x^S\in\Wc^H$ iff $S$ contains no contradiction, i.e. iff $S$ is a
+solution.
+\end{proof}
+
+With the standard wrapper $H_0$, therefore, the sphere, the orthant and
+$\Wc^{H_0}$ meet exactly in the solutions, while the sphere and the orthant
+alone meet in the exact covers. (When every contradiction lies in an
+equation, every exact cover is a solution and the surface removes nothing.)
+Projecting onto a wrapper surface is the relaxed program with its origin
+moved:
+
+\begin{lem}
+\label{lem:surfproj}
+Let $H\in\Hc(G,w)$ and $y\in\R^n$, let $\hH=U{\rm diag}(\lambda_i)U^T$ and
+$c=U^T\hb$ as in Section~\ref{sec:setting}, $\beta=U^TPy$, and let $J$ be
+the open interval of the $t$ with $1+t\lambda_i>0$ for every $i$, on which
+$I+t\hH$ is positive definite on $z^\perp$ (between $-1/\lmax(\hH)$ and
+$-1/\lmin(\hH)$ when $\lmax(\hH)>0>\lmin(\hH)$). For $t\in J$ let
+\[ u_i(t)=\frac{\beta_i-tc_i}{1+t\lambda_i}, \qquad
+   \phi(t)=\sum_i(\lambda_iu_i+2c_i)\,u_i-s. \]
+Then $\phi'(t)=-2\sum_i(\lambda_iu_i+c_i)^2/(1+t\lambda_i)\leq0$, and if
+$\phi(t^*)=0$, the point $x^0+Uu(t^*)$ is a point of $\Wc^H$ nearest to $y$.
+\end{lem}
+\begin{proof}
+For $x=x^0+\hx$ with $\hx\perp z$,
+$\|x-y\|^2=\|\hx-Py\|^2+\|x^0-(I-P)y\|^2$, and the second term does not
+depend on $x$. For $t\in J$ the function $L(\hx)=\|\hx-Py\|^2+t(q(\hx)-s)$
+is convex on $z^\perp$, with Hessian $2(I+t\hH)$, and its minimizer solves
+$(I+t\hH)\hx=Py-t\hb$, i.e. $\hx=Uu(t)$, where $q(\hx)-s=\phi(t)$. If
+$\phi(t^*)=0$, every $\hx'$ with $q(\hx')=s$ has
+$\|\hx'-Py\|^2=L(\hx')\geq L(Uu(t^*))=\|Uu(t^*)-Py\|^2$. The derivative
+follows from $u_i'=-(\lambda_iu_i+c_i)/(1+t\lambda_i)$.
+\end{proof}
+
+At the ends of $J$, $\phi$ tends to $+\infty$ and $-\infty$ unless
+$\beta_i-tc_i$ vanishes there on the extreme eigenvectors, so in general it
+has exactly one root. QUALEX-MS computes it with one eigendecomposition of
+$\hH$ and a safeguarded Newton iteration per point
+(\texttt{wrapper\_surface()} in \texttt{lib/wrapper.cc}), and its
+Douglas--Rachford stage takes such surfaces as further sets: each start keeps
+one copy on the sphere and one on the surface, and the orthant or the
+2-clause projection acts on the average of their reflections, which is
+Douglas--Rachford between the product of the sphere and the surface and the
+diagonal of the third set (without the surface, the plain iteration). With
+$H=H_0$ (\texttt{sat01qms -W}), on the instances of the previous subsection,
+the orthant now finds the solution of 14471 and reaches 513 of $m=514$ on
+60491 and 905 of 912 on 1000001, against 364, 505 and 895 without the
+surface; with the 2-clause projection it solves the same seven instances as
+before. The surface without nonnegativity (\texttt{sat01qms -N}) finds
+nothing that the run without a Douglas--Rachford stage does not, and the
+iteration converges poorly between the two quadrics: on the factoring
+instances 1 to 19 of the 296 to 942 starts meet the stopping test
+($10^{-9}$) within 300 iterations, and on the Hamilton cycle instances all
+of them do, after 123 to 190 iterations on average (QUALEX-MS commits
+892a830 and 02a809e, \texttt{bench/runs/sat01/qms.tsv}). Douglas--Rachford is
+the wrong tool for that intersection, which is explicit:
+
+\begin{prop}
+\label{prop:cone}
+Let $\Sigma=\{\bar x+Qp:\ p\in\R^k,\ \|p\|=\rho\}$ with $Q^TQ=I$ and
+$Q^T\bar x=0$, let $H$ be symmetric, and write, for $x=\bar x+Qp$,
+\[ x^THx-1=p^TMp+2g^Tp+h, \qquad M=Q^THQ,\ \ g=Q^TH\bar x,\ \
+   h=\bar x^TH\bar x-1. \]
+Let $M=V{\rm diag}(\kappa_i)V^T$, $\gamma=V^Tg$, and let $\sigma$, not an
+eigenvalue of $M$, solve
+\begin{equation}
+\label{eq:conesigma}
+\sum_i\frac{\gamma_i^2}{\kappa_i-\sigma}=h+\sigma\rho^2.
+\end{equation}
+Let $v_i=\gamma_i/(\sigma-\kappa_i)$ and $I_\pm=\{i:\ \pm(\kappa_i-\sigma)>0\}$,
+and for unit vectors $\xi\in\R^{I_+}$ and $\eta\in\R^{I_-}$ let
+$w_i=\xi_i/\sqrt{\kappa_i-\sigma}$ on $I_+$ and
+$w_i=\eta_i/\sqrt{\sigma-\kappa_i}$ on $I_-$. Then the points of $\Sigma$ with
+$x^THx=1$ are the points $\bar x+QV(v+\nu w)$ for all such $\xi,\eta$ and all
+real roots $\nu$ of
+\[ \|w\|^2\nu^2+2\,v^Tw\,\nu+\|v\|^2-\rho^2=0, \]
+together with $\bar x+QVv$ if $\|v\|=\rho$. If $\|v\|<\rho$, each of these
+equations has exactly one positive root $\nu_+$, and
+$(\xi,\eta)\mapsto\bar x+QV(v+\nu_+w)$ maps the product of the unit spheres
+of $\R^{I_+}$ and $\R^{I_-}$ one-to-one onto $\Sigma\cap\{x^THx=1\}$.
+Equation (\ref{eq:conesigma}) has a root between any two consecutive
+distinct eigenvalues of $M$ on whose eigenspaces $g$ does not vanish.
+\end{prop}
+\begin{proof}
+On $\Sigma$, $\|p\|^2=\rho^2$, so for $u=V^Tp$, $K={\rm diag}(\kappa_i)$ and
+every $\sigma$,
+\[ x^THx-1=u^T(K-\sigma I)u+2\gamma^Tu+h+\sigma\rho^2
+   =(u-v)^T(K-\sigma I)(u-v)-v^T(K-\sigma I)v+h+\sigma\rho^2, \]
+since $(K-\sigma I)v=-\gamma$. As
+$v^T(K-\sigma I)v=\sum_i\gamma_i^2/(\kappa_i-\sigma)$, (\ref{eq:conesigma})
+makes the last two terms cancel, and on $\Sigma$
+\[ x^THx-1=\sum_{i\in I_+}(\kappa_i-\sigma)(u-v)_i^2
+   -\sum_{i\in I_-}(\sigma-\kappa_i)(u-v)_i^2. \]
+This vanishes at $u=v$; for $u\neq v$ the two sums are not both zero, since
+every index lies in $I_+\cup I_-$, so it vanishes iff they are equal to some
+$\nu^2>0$, i.e. iff $u-v=\nu w$ with
+$\xi_i=\sqrt{\kappa_i-\sigma}\,(u-v)_i/\nu$ and
+$\eta_i=\sqrt{\sigma-\kappa_i}\,(u-v)_i/\nu$ unit vectors. Conversely each
+such $w$ makes both sums equal to $1$, so $v+\nu w$ lies on the cone for
+every $\nu$, and it lies on $\Sigma$ iff $\|v+\nu w\|=\rho$. If $\|v\|<\rho$,
+the constant term of that quadratic is negative and its roots have opposite
+signs. Distinct $(\xi,\eta)$ give distinct rays from $v$, because the
+normalization fixes $w$ within its ray, and every point $u$ of the
+intersection lies on the ray from $v$ through it ($u\neq v$, as
+$\|v\|<\rho=\|u\|$), so the map is one-to-one and onto. Finally the left
+side of (\ref{eq:conesigma}) minus its right side is continuous between two
+consecutive distinct eigenvalues $\kappa_a<\kappa_b$, and tends to
+$-\infty$ at $\kappa_a$ and to $+\infty$ at $\kappa_b$ when $g$ has a
+component in both eigenspaces.
+\end{proof}
+
+The intersection thus has dimension $|I_+|+|I_-|-2=k-2$, and for
+$\Sigma=\Sigma_A$ (with $\bar x$ its centre, $Q$ an orthonormal basis of
+$\{x\in L_A:\ z^Tx=0\}$ and $\rho^2=1/m-\|\bar x\|^2$) and $H=H_0$ it costs
+one eigendecomposition of order $k$ and one scalar equation.
+\texttt{bench/cone.py} checks it (\texttt{bench/runs/sat01/cone-2026-10-10.txt}).
+On 14471, where $k=148$, (\ref{eq:conesigma}) has a root in 145 of the 147
+gaps of the spectrum of $M$. On the five instances checked (14471, 32399,
+60491, the dodecahedron and $GP(13,2)$), the points of
+Proposition~\ref{prop:cone} satisfy both equations to within
+$2\cdot10^{-13}$, and the solution found by exact cover search lies on the
+cone with its own $(\xi,\eta)$. But on all five every root puts the vertex
+$v$ outside the ball, at $2.8\rho$ to $7.4\rho$ for the nearest, so the
+generators that reach the sphere form a thin set: none of $10^5$ random ones
+did, while those near a solution's do. And leaving the solution along the
+intersection brings negative entries at once. Perturbing its $(\xi,\eta)$ by
+$10^{-3}$ puts a median 3 to 5\% of the $\ell_1$ mass of the point on
+negative entries on the factoring instances, and 16 to 19\% on the Hamilton
+cycle ones.
+
+So the two quadratic conditions cost an eigendecomposition and a root of
+(\ref{eq:conesigma}), and by Proposition~\ref{prop:threesets} the solutions
+are exactly the parameters $(\xi,\eta)$ whose point is nonnegative. All of
+the hardness is in that last condition: when every contradiction lies in an
+equation the surface removes no exact cover, and deciding whether the
+intersection has a nonnegative point is the exact cover problem
+(Corollary~\ref{cor:exactcover}).
+
 \section{Computations}
 \label{sec:comp}
 
@@ -2040,7 +2211,15 @@ produce the polytope of nonnegative points of the degenerate eigenspace,
 and what remains NP-hard is finding a vertex of largest norm, which is the
 step from a Lov\'asz optimum to a rank-one one. Contradictions outside the
 equations add improperness (Proposition~\ref{prop:improper}), but that is
-not what keeps the problem hard.
+not what keeps the problem hard. Nor do the quadratic conditions. The
+surface of the standard wrapper, which every solution lies on, cuts the
+sphere down to the solutions together with nonnegativity
+(Proposition~\ref{prop:threesets}), and its intersection with the sphere is
+explicit (Proposition~\ref{prop:cone}). So everything but nonnegativity
+costs linear algebra and one scalar equation. In QUALEX-MS the surface helps
+the orthant (Section~\ref{sec:surface}), but without nonnegativity it finds
+nothing, and the points of the intersection turn negative as soon as they
+leave a solution.
 
 Questions left open:
 \begin{enumerate}
