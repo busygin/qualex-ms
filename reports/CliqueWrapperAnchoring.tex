@@ -46,7 +46,7 @@ Clique Problem''}}
 \author{Research notes prepared for Stanislav Busygin\\
 with Claude (Anthropic)}
 
-\date{September 26, 2026; revised October 3, 2026}
+\date{September 26, 2026; revised October 9, 2026}
 
 \maketitle
 
@@ -83,7 +83,12 @@ case cannot be exploited. Busygin's SAT01, which recasts many NP problems as
 recognizing $\alpha<\vartheta=m$ in a weighted graph, generalizes this: an
 equation wrapper is Lov\'asz-optimal exactly when $\vartheta=m$, which holds
 exactly when the instance has a vector solution, and it is blind to the
-contradictions outside the equations. Computations with a maximal clique
+contradictions outside the equations. For a proper Lov\'asz-optimal wrapper
+the nonnegative points of its sphere of global minimizers are exactly the
+maximum clique indicators, the vertices of largest norm of a polytope; the
+hardness of SAT01 lies in finding them and not in a lack of properness,
+since for exact cover the equation wrapper is proper and the nonnegative
+points of its sphere are the exact covers. Computations with a maximal clique
 enumerator and with CSDP illustrate the results on the DIMACS graphs, on
 random graphs, on random quasigroups with holes, and on SAT01 instances of
 factoring and of the Hamilton cycle problem, where $\vartheta$ refutes the
@@ -126,8 +131,10 @@ $\mu=\lmax$; for general graphs the conditions look overdetermined.
 \item How do these statements look on actual graphs?
 (Section~\ref{sec:comp}.)
 \item What do they say about SAT01 \cite{Bu07}, where deciding
-$\alpha=\vartheta$ in a weighted graph captures many NP problems?
-(Sections~\ref{sec:sat01} and~\ref{sec:sat01comp}.)
+$\alpha=\vartheta$ in a weighted graph captures many NP problems, and where
+does its hardness lie once $\vartheta$ and a Lov\'asz-optimal wrapper are
+known? (Sections~\ref{sec:sat01}, \ref{sec:hardness}
+and~\ref{sec:sat01comp}.)
 \end{enumerate}
 
 The main findings, in the order of the text:
@@ -191,6 +198,19 @@ graphs that survive it. Up to 15 bits the Lov\'asz optimum of a satisfiable
 factoring instance is spanned by its solutions, a unique solution being the
 only optimum, while the two solutions of $241\cdot251$ sit in an optimum of
 rank 205 (Section~\ref{sec:sat01comp}).
+\item For a proper Lov\'asz-optimal wrapper the nonnegative points of the
+sphere of global minimizers are exactly the maximum clique indicators, the
+vertices of largest norm of the polytope of nonnegative points of the top
+eigenspace, and they exist iff $\omega=\vartheta$
+(Proposition~\ref{prop:proper}). This does not make SAT01 easy: the
+nonnegative points of the equation wrapper's sphere are the exact covers, so
+deciding whether such a sphere has one is NP-complete, although $H_A$ is
+proper when every contradiction lies in an equation and Lov\'asz-optimal on
+every satisfiable instance (Corollary~\ref{cor:exactcover}). With
+contradictions outside the equations a nonnegative non-clique point of the
+optimal face makes every Lov\'asz-optimal wrapper improper
+(Proposition~\ref{prop:improper}), and the Hamilton cycle instances have
+such points (Section~\ref{sec:hardness}).
 \end{itemize}
 
 \section{Setting}
@@ -1351,6 +1371,139 @@ $\vartheta<m$. Section~\ref{sec:sat01comp} shows that on
 factoring instances the two refute different primes, and that their
 combination refutes primes that neither refutes alone.
 
+\subsection{Where the hardness lies}
+\label{sec:hardness}
+
+Propositions~\ref{prop:qcp} and~\ref{prop:sat01} raise a question. A
+Lov\'asz-optimal wrapper is computable in polynomial time, to any precision,
+by semidefinite programming. If it is proper, \cite[Propositions~1
+and~2]{CW} make the nonnegative points of its sphere of global minimizers
+clique indicators, and a SAT01 instance with $\vartheta=m$ is then
+satisfiable iff that sphere has a nonnegative point. So either deciding
+whether such a sphere has a nonnegative point is hard, or the
+Lov\'asz-optimal wrappers of SAT01 instances are in general not proper. Both
+hold, but only the first is essential: it holds already where the
+Lov\'asz-optimal wrapper is proper and needs no semidefinite program.
+
+\begin{prop}
+\label{prop:proper}
+Let $H\in\Hc(G,w)$ be Lov\'asz-optimal, $T=\ker(\vt I-H)$, and
+\[ \Sigma_H=\{x\in T:\ z^Tx=1,\ x^Tx=1/\vt\}, \qquad
+   P_H=\{x\in T:\ z^Tx=1,\ x\geq0\}. \]
+\begin{enumerate}
+\item[(a)] $\Sigma_H$ is the set of global minimizers of (\ref{eq:v}), a
+sphere (possibly a single point) in the affine space
+$\{x\in T:\ z^Tx=1\}$, centred at its point of least norm.
+\item[(b)] If the defects of $H$ are nonnegative, $x^Tx\leq1/\vt$ on the
+polytope $P_H$, so the nonnegative points of $\Sigma_H$ are the points of
+$P_H$ of largest norm, and they are vertices of $P_H$.
+\item[(c)] If $H$ is proper, the nonnegative points of $\Sigma_H$ are exactly
+the indicators $x^Q$ of the cliques with $W(Q)=\vt$; in particular
+$\Sigma_H$ has a nonnegative point iff $\om=\vt$.
+\end{enumerate}
+\end{prop}
+\begin{proof}
+(a) By Theorem~\ref{thm:theta}, $v(H)=1/\vt$, and a point of $\Wc^H$ has
+$1=x^THx\leq\vt\,x^Tx$, with equality iff $x\in T$. Conversely a point of
+$T$ with $z^Tx=1$ and $x^Tx=1/\vt$ has $x^THx=\vt\,x^Tx=1$. Within the
+affine space $x^Tx$ is the squared distance from the origin, so the points
+of norm $1/\sqrt{\vt}$ form a sphere about its point of least norm.
+
+(b) $P_H$ lies in the bounded set $\{x\geq0:\ z^Tx=1\}$. For $x$ there,
+$x^THx\leq1$ by \cite[Proposition~1]{CW}, and on $T$, $x^THx=\vt\,x^Tx$.
+A strictly convex function attains its maximum over a polytope only at
+vertices.
+
+(c) Let $x\in\Sigma_H$ be nonnegative. Then $x^THx=1$, so its support is a
+clique $Q$ by \cite[Proposition~2]{CW}, and by the Cauchy--Schwarz
+inequality
+\[ 1=z^Tx=\sum_{i\in Q}z_ix_i\leq W(Q)^{1/2}(x^Tx)^{1/2}
+   =\bigl(W(Q)/\vt\bigr)^{1/2}\leq\bigl(\om/\vt\bigr)^{1/2}\leq1. \]
+Equality throughout gives $W(Q)=\om=\vt$ and $x$ proportional to $z_Q$,
+i.e. $x=x^Q$. Conversely, if $W(Q)=\vt$ then $x^Q$ is a global minimizer
+(Theorem~\ref{thm:global}), and it is nonnegative.
+\end{proof}
+
+So for a proper Lov\'asz-optimal wrapper, $\om=\vt$ is decided by
+maximizing the norm over the polytope $P_H$. Everything convex is computed
+in polynomial time: $\vt$, $H$ and $T$ by the semidefinite program, $P_H$ by
+linear algebra. What remains is to find a vertex of $P_H$ of largest norm,
+the maximization of a convex function over a polytope, which is NP-hard in
+general. In terms of Corollary~\ref{cor:hard} and Theorem~\ref{thm:vector}
+it is the step from a Lov\'asz optimum to a rank-one Lov\'asz optimum. That
+this step carries the hardness, and not a lack of properness, is shown by
+the instances whose contradictions all lie in equations:
+
+\begin{cor}
+\label{cor:exactcover}
+For every SAT01 instance, the nonnegative points of the sphere
+$\Sigma_A=\{x\in L_A:\ z^Tx=1,\ x^Tx=1/m\}$, which linear algebra computes
+from $A$, are exactly the indicators $x^S$ of the exact covers $S$ of $A$.
+Deciding whether $\Sigma_A$ has a nonnegative point is therefore the exact
+cover problem, which is NP-complete \cite{Ka72}. If every contradiction
+lies in an equation, $H_A$ is proper, and it is Lov\'asz-optimal with
+$\Sigma_{H_A}=\Sigma_A$ whenever $\vartheta=m$, in particular on every
+satisfiable instance.
+\end{cor}
+\begin{proof}
+The last part of the proof of Proposition~\ref{prop:sat01}(d) uses only
+$x\in L_A$, $z^Tx=1$, $x^Tx=1/m$ and $x\geq0$. By
+Proposition~\ref{prop:sat01}(a) the defect $mM_{ij}/(w_iw_j)$ of a
+contradiction is positive iff it shares an equation, and by (b) and (c)
+$H_A$ is Lov\'asz-optimal with $\ker(mI-H_A)=L_A$ when $\vartheta=m$.
+\end{proof}
+
+For QCP this is Proposition~\ref{prop:qcp} and the remark after it; the
+corollary carries it over to every exact cover problem. (Whether $\vartheta$
+equals $m$ exactly is a question of precision that the corollary does not
+need: on the satisfiable instances it does.) With contradictions outside the
+equations properness fails as well, and the optimal face can show it:
+
+\begin{prop}
+\label{prop:improper}
+Let $X$ be a Lov\'asz optimum with range $R$. If the sphere
+$\{x\in R:\ z^Tx=1,\ x^Tx=1/\vt\}$ has a nonnegative point whose support is
+not a clique of $G$, no Lov\'asz-optimal wrapping matrix is proper, and
+every Lov\'asz-optimal one with nonnegative defects has defect $0$ on every
+non-adjacent pair inside that support.
+\end{prop}
+\begin{proof}
+By (\ref{eq:compl}), $R\subseteq\ker(\vt I-H)$ for every Lov\'asz-optimal
+$H$, so such a point $x$ has $x^THx=\vt\,x^Tx=1$. With $z^Tx=1$,
+\[ x^THx=(z^Tx)^2-\sum\tau_{ij}z_iz_jx_ix_j
+        =1-\sum\tau_{ij}z_iz_jx_ix_j, \]
+the sums running over the ordered non-adjacent pairs $i\neq j$, so the last
+sum vanishes. If the defects are nonnegative, so are its terms, and they all
+vanish; a proper $H$ would then make the support of $x$ a clique.
+\end{proof}
+
+The Lov\'asz optima of Section~\ref{sec:sat01comp} supply such points,
+numerically. On propagated Hamilton cycle instances, alternating projections
+between the sphere of Proposition~\ref{prop:improper} and the nonnegative
+orthant reached points whose negative part was below $10^{-4}$ of their
+norm and that are not solutions: 18 such points on the cubic graph with 20
+vertices, of which at most 2 are solutions, and 4 on the dodecahedron, none
+of them a solution (\texttt{bench/jam.py}, Section~4 of
+\texttt{bench/runs/jam/jam-2026-10-03.txt}). So these instances have no
+proper Lov\'asz-optimal wrapper. Properness fails on the contradictions
+outside the equations, to which $H_A$ is blind
+(Proposition~\ref{prop:sat01}(a)), but by Corollary~\ref{cor:exactcover}
+this is not what keeps SAT01 hard.
+
+Searching for nonnegative points of the sphere is thus a heuristic for an
+NP-hard problem. QUALEX-MS's Douglas--Rachford stage (\texttt{QMS\_DR}) drives
+the corners of each degenerate sphere of stationary points towards the
+nonnegative orthant, and on $H_A$ it can use instead a greedy projection
+that also respects the contradictions outside the equations
+(\texttt{sat01qms -D}). On the propagated satisfiable instances where the
+greedy stage of QUALEX-MS fails, it found solutions of the factoring
+instances $14471$, $32399$ and $60491$, whose degenerate top clusters have
+dimension 148 to 235, and of the cubic graph with 30 vertices (dimension
+580), none of which QUALEX-MS solves without it. It reached 911 of $m=912$
+on $1000001=101\cdot9901$ (dimension 471) and found nothing on the cubic
+graphs with 40 and 50 vertices (dimensions 1178 and 1828)
+(\texttt{bench/sat01.py --qms}, \texttt{bench/runs/sat01/qms.tsv}).
+
 \section{Computations}
 \label{sec:comp}
 
@@ -1876,6 +2029,19 @@ has enriched with derived contradictions, with a margin that shrinks fast,
 and no non-Hamiltonian graph that survives propagation; propagation in turn
 refutes primes on whose unpropagated graphs $\vartheta=m$.
 
+The NP-completeness is therefore not hidden in the wrappers. For a proper
+Lov\'asz-optimal wrapper the maximum cliques are exactly the nonnegative
+points of the sphere of global minimizers (Proposition~\ref{prop:proper}),
+and exact cover has such a wrapper, $H_A$, on every satisfiable instance,
+without any semidefinite program. Deciding whether that sphere has a
+nonnegative point is the exact cover problem itself
+(Corollary~\ref{cor:exactcover}). The semidefinite program and linear algebra
+produce the polytope of nonnegative points of the degenerate eigenspace,
+and what remains NP-hard is finding a vertex of largest norm, which is the
+step from a Lov\'asz optimum to a rank-one one. Contradictions outside the
+equations add improperness (Proposition~\ref{prop:improper}), but that is
+not what keeps the problem hard.
+
 Questions left open:
 \begin{enumerate}
 \item Characterize the graphs whose maximum cliques can all be anchored at a
@@ -1895,7 +2061,8 @@ completions? On the small instances of Section~\ref{sec:qwh} it did only
 between the regimes of few and of very many completions, and none of them
 was hard for search. (An earlier version of these notes asked whether the
 hard case could be exploited by a search inside the degenerate eigenspace;
-Section~\ref{sec:qcp} answers that it cannot in general, unless P = NP.)
+Sections~\ref{sec:qcp} and~\ref{sec:hardness} answer that it cannot in
+general, unless P = NP.)
 \item Which primes keep a vector solution after SAT01 propagation (32713 and
 65521 did, while 32687 lost it by a margin of $7\cdot10^{-5}$), and does every
 prime from some size on keep one?
@@ -1981,6 +2148,12 @@ have none?
   M.T. Jacobson and P. Matthews,
   Generating uniformly distributed random latin squares,
   {\em Journal of Combinatorial Designs\/} 4 (1996) 405--437.
+
+\bibitem[Ka72]{Ka72}
+  R.M. Karp,
+  Reducibility among combinatorial problems,
+  in: R.E. Miller and J.W. Thatcher, eds., {\em Complexity of Computer
+  Computations\/}, Plenum Press, 1972, 85--103.
 
 \bibitem[Kn94]{K94}
   D.E. Knuth,
