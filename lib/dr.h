@@ -42,10 +42,14 @@ BlockProjection sphere_projection(const Sphere& s);
 // DRTargets says where a Douglas-Rachford stage drives the points of a sphere:
 // towards the set of projection (the nonnegative orthant if null) and, if
 // there are any, onto the further sets of surfaces as well, e.g. the surfaces
-// of other wrapping matrices, which every clique indicator lies on
+// of other wrapping matrices, which every clique indicator lies on.
+// surfaces_only leaves the set of projection out, the orthant too, so that the
+// points go onto the surfaces alone: a control for what that set costs in
+// time and buys in the cliques found.
 struct DRTargets {
   const Projection* projection = nullptr;
   std::vector<BlockProjection> surfaces;
+  bool surfaces_only = false;
 };
 
 // douglas_rachford() iterates, P_S being the projection onto the sphere s and
@@ -56,9 +60,11 @@ struct DRTargets {
 // last e of every start in e (n x nb).  done[t] tells whether start t got that
 // close.  All starts iterate as one block, so that the projections onto the
 // span of Q are two matrix products.  Returns the number of starts done.
+// steps, here and below, unless null, gets the iterations of all the starts
+// added to it.
 int douglas_rachford(const Sphere& s, const Projection& project_c,
                      int nb, double* v, double* e, std::vector<bool>& done,
-                     int iters, double tol);
+                     int iters, double tol, long* steps = nullptr);
 
 // douglas_rachford_product() adds the sets of surfaces to douglas_rachford():
 // it iterates between the product of the sphere and the surfaces, of which
@@ -74,7 +80,7 @@ int douglas_rachford_product(const Sphere& s,
                              const std::vector<BlockProjection>& surfaces,
                              const Projection& project_c, int nb, double* v,
                              double* e, std::vector<bool>& done, int iters,
-                             double tol);
+                             double tol, long* steps = nullptr);
 
 // douglas_rachford_concur() looks for a point common to the K sets of sets by
 // Douglas-Rachford in their product space ("divide and concur"): every start
@@ -86,6 +92,7 @@ int douglas_rachford_product(const Sphere& s,
 // tells whether start t stopped.  Returns the number of starts that did.
 int douglas_rachford_concur(const std::vector<BlockProjection>& sets,
                             int n, int nb, double* v, double* e,
-                            std::vector<bool>& done, int iters, double tol);
+                            std::vector<bool>& done, int iters, double tol,
+                            long* steps = nullptr);
 
 #endif  // DR_H

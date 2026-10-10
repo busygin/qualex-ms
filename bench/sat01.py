@@ -66,7 +66,8 @@ sat01qms -D) or, as the control, the orthant ("equation-dr-orthant"), and each o
 driving the points onto the surface of the standard wrapper as well ("-w", sat01qms -W),
 DR running between the product of the sphere and that surface and the diagonal of the
 2-clause set or the orthant, or ("-concur", QMS_DR_CONCUR) in the symmetric product space
-of all the sets, which is also run without the surface as the control; the DR lines
+of all the sets, which is also run without the surface as the control, and onto the
+surface alone, without the orthant ("-w-only", sat01qms -N); the DR lines
 (QMS_STATS) go to the configuration's qms.log, and runs/sat01/qms.tsv gets
   inst answer guesses config n m preselected left greedy weight solution verified prop qms
 the size propagation leaves (n = 0 when it decides the instance), the vertices QUALEX-MS's
@@ -108,6 +109,8 @@ CONFIGS = {
     "equation-dr-orthant-concur": ([], {"QMS_DR": "300", "QMS_DR_CONCUR": "1", "QMS_STATS": "1"}),
     "equation-dr-w-concur": (["-D", "-W"], {"QMS_DR": "300", "QMS_DR_CONCUR": "1", "QMS_STATS": "1"}),
     "equation-dr-orthant-w-concur": (["-W"], {"QMS_DR": "300", "QMS_DR_CONCUR": "1", "QMS_STATS": "1"}),
+    "equation-dr-w-only": (["-N"], {"QMS_DR": "300", "QMS_STATS": "1"}),
+    "equation-dr-w-only-concur": (["-N"], {"QMS_DR": "300", "QMS_DR_CONCUR": "1", "QMS_STATS": "1"}),
 }
 
 

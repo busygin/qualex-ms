@@ -22,7 +22,8 @@
 // around the radius of a clique one w_min heavier than the incumbent.
 // dr, unless null, says where the Douglas-Rachford stage (QMS_DR) drives the
 // points of its spheres: its projection replaces the one onto the nonnegative
-// orthant, and its surfaces are further sets the points have to lie on.
+// orthant, and its surfaces are further sets the points have to lie on (see
+// DRTargets).
 bool qualex_ms(MaxCliqueInfo& graph_info, double* a, double target = 0.0,
                const DRTargets* dr = nullptr);
 

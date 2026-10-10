@@ -18,8 +18,9 @@ void clip_negative(double* y, int n) {
 
 int douglas_rachford(const Sphere& s, const Projection& project_c,
                      int nb, double* v, double* e, vector<bool>& done,
-                     int iters, double tol) {
+                     int iters, double tol, long* steps) {
   int n = s.n, k = s.k;
+  long work = 0;
   vector<double> d((size_t)n*nb);  // v - center, then its projection on span Q
   vector<double> p((size_t)k*nb);  // the coordinates of that projection
   vector<double> y(n);             // 2e - v, then P_C of it; P_C(e) for the test
@@ -34,6 +35,7 @@ int douglas_rachford(const Sphere& s, const Projection& project_c,
     int live = 0;
     for(int t=0;t<nb;++t) {
       if(done[t]) continue;
+      ++work;
       double* dt = &d[(size_t)t*n];
       double* et = e+(size_t)t*n;
       double* vt = v+(size_t)t*n;
@@ -62,6 +64,7 @@ int douglas_rachford(const Sphere& s, const Projection& project_c,
     }
     if(!live) break;
   }
+  if(steps) *steps += work;
   int n_done = 0;
   for(int t=0;t<nb;++t) if(done[t]) ++n_done;
   return n_done;
@@ -102,8 +105,10 @@ BlockProjection sphere_projection(const Sphere& s) {
 
 int douglas_rachford_concur(const vector<BlockProjection>& sets,
                             int n, int nb, double* v, double* e,
-                            vector<bool>& done, int iters, double tol) {
+                            vector<bool>& done, int iters, double tol,
+                            long* steps) {
   int K = (int)sets.size();
+  long work = 0;
   size_t block = (size_t)n*nb;
   vector<double> p((size_t)K*block);  // 2e - v_k, then P_k of it
   done.assign(nb,false);
@@ -121,6 +126,7 @@ int douglas_rachford_concur(const vector<BlockProjection>& sets,
     int live = 0;
     for(int t=0;t<nb;++t) {
       if(done[t]) continue;
+      ++work;
       const double* et = e+(size_t)t*n;
       double all = 0.0, off = 0.0;
       for(int i=0;i<n;++i) all += et[i]*et[i];
@@ -143,6 +149,7 @@ int douglas_rachford_concur(const vector<BlockProjection>& sets,
     }
     if(!live) break;
   }
+  if(steps) *steps += work;
   int n_done = 0;
   for(int t=0;t<nb;++t) if(done[t]) ++n_done;
   return n_done;
@@ -150,9 +157,12 @@ int douglas_rachford_concur(const vector<BlockProjection>& sets,
 
 int douglas_rachford_product(const Sphere& s, const vector<BlockProjection>& surfaces,
                              const Projection& project_c, int nb, double* v,
-                             double* e, vector<bool>& done, int iters, double tol) {
-  if(surfaces.empty()) return douglas_rachford(s,project_c,nb,v,e,done,iters,tol);
+                             double* e, vector<bool>& done, int iters, double tol,
+                             long* steps) {
+  if(surfaces.empty())
+    return douglas_rachford(s,project_c,nb,v,e,done,iters,tol,steps);
   int n = s.n, K = 1+(int)surfaces.size();
+  long work = 0;
   size_t block = (size_t)n*nb;
   BlockProjection sphere = sphere_projection(s);
   vector<double> p((size_t)K*block);  // e_j = P_j(v_j), the sphere's first
@@ -165,6 +175,7 @@ int douglas_rachford_product(const Sphere& s, const vector<BlockProjection>& sur
     int live = 0;
     for(int t=0;t<nb;++t) {
       if(done[t]) continue;
+      ++work;
       size_t col = (size_t)t*n;
       double all = 0.0, off = 0.0;
       for(int i=0;i<n;++i) {
@@ -192,6 +203,7 @@ int douglas_rachford_product(const Sphere& s, const vector<BlockProjection>& sur
     }
     if(!live) break;
   }
+  if(steps) *steps += work;
   memcpy(e,p.data(),sizeof(double)*block);
   int n_done = 0;
   for(int t=0;t<nb;++t) if(done[t]) ++n_done;

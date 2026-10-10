@@ -13,6 +13,7 @@
 #include <math.h>
 #include <float.h>
 #include <algorithm>
+#include <chrono>
 #include <list>
 #include <vector>
 
@@ -520,18 +521,22 @@ bool try_eigendir_points (
 // concur takes the symmetric product space instead, douglas_rachford_concur(),
 // with one copy per set, project_c's among them, read at their average;
 // without surfaces it is the control that tells what the surfaces add there
-// from what that product space changes.
+// from what that product space changes.  surfaces_only leaves project_c out,
+// as the control for what it costs and buys: the sphere and the surfaces
+// alone, the diagonal of the whole space in place of that of its set.
 bool try_dr_points (
   MaxCliqueInfo& graph_info, QualexInfo& solver_info,
   double* x, double* y, int iters, int max_starts, double tol,
   const Projection& project_c, const vector<BlockProjection>& surfaces,
-  bool concur
+  bool concur, bool surfaces_only
 ) {
   int n = graph_info.g.n;
   double w_min = graph_info.w_min, W = graph_info.W;
   double s = 1.0 - solver_info.zAz/(W*W) - w_min/W;
   bool stats = getenv("QMS_STATS")!=nullptr;
   bool result = false;
+  Projection identity = [](double*, int) {};
+  const Projection& project = surfaces_only ? identity : project_c;
   vector<double> center(n);
   vector<EigenCluster>& deg = solver_info.degenerative_clusters;
   for(vector<EigenCluster>::reverse_iterator ri=deg.rbegin();ri!=deg.rend();++ri) {
@@ -561,7 +566,7 @@ bool try_dr_points (
     vector<BlockProjection> sets;  // for the symmetric product space
     if(concur) {
       sets.push_back(sphere_projection(sphere));
-      sets.push_back(columnwise(project_c));
+      if(!surfaces_only) sets.push_back(columnwise(project_c));
       sets.insert(sets.end(),surfaces.begin(),surfaces.end());
     }
     int copies = concur ? (int)sets.size() : 1+(int)surfaces.size();
@@ -572,6 +577,8 @@ bool try_dr_points (
     vector<double> v((size_t)copies*n*block), est((size_t)n*block);
     vector<bool> done;
     int converged = 0, improved = 0, hits = 0;  // hits: MIN cliques of weight W_mu
+    long steps = 0;
+    double dr_seconds = 0.0, min_seconds = 0.0;
     for(int b0=0;b0<n_starts;b0+=block) {
       int nb = n_starts-b0<block ? n_starts-b0 : block;
       for(int t=0;t<nb;++t) {  // start b0+t is the corner on eigenvector (b0+t)/2
@@ -580,12 +587,15 @@ bool try_dr_points (
         for(int k=0;k<copies;++k)
           for(int i=0;i<n;++i) v[(size_t)k*n*nb+(size_t)t*n+i] = center[i]+sign*qj[i];
       }
+      chrono::steady_clock::time_point t0 = chrono::steady_clock::now();
       if(concur)
         converged += douglas_rachford_concur(sets,n,nb,v.data(),est.data(),
-                                             done,iters,tol);
+                                             done,iters,tol,&steps);
       else
-        converged += douglas_rachford_product(sphere,surfaces,project_c,nb,
-                                              v.data(),est.data(),done,iters,tol);
+        converged += douglas_rachford_product(sphere,surfaces,project,nb,
+                                              v.data(),est.data(),done,iters,tol,
+                                              &steps);
+      chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
       for(int t=0;t<nb;++t) {
         const double* et = &est[(size_t)t*n];
         for(int i=0;i<n;++i) x[i] = et[i]*graph_info.sqrtw[i];
@@ -593,13 +603,18 @@ bool try_dr_points (
         if(refine_clique_MIN_w(graph_info,x,weight)) { result = true; ++improved; }
         if(weight>=w_mu*(1.0-1e-9)) ++hits;
       }
+      dr_seconds += chrono::duration<double>(t1-t0).count();
+      min_seconds += chrono::duration<double>(chrono::steady_clock::now()-t1).count();
     }
     if(stats) {
       fprintf(stderr, "DR mu=%.6g k=%d rho2=%.3g W_mu=%.6g starts=%d converged=%d "
-              "hits=%d improved=%d lb=%g", mu, kc, rho2, w_mu, n_starts, converged,
-              hits, improved, graph_info.lower_clique_bound);
-      if(concur) fprintf(stderr, " concur sets=%d", copies);
+              "hits=%d improved=%d lb=%g steps=%.1f dr_time=%.2fs min_time=%.2fs",
+              mu, kc, rho2, w_mu, n_starts, converged, hits, improved,
+              graph_info.lower_clique_bound, (double)steps/n_starts, dr_seconds,
+              min_seconds);
+      if(concur) fprintf(stderr, " concur sets=%d", (int)sets.size());
       else if(copies>1) fprintf(stderr, " surfaces=%d", copies-1);
+      if(surfaces_only) fprintf(stderr, " surfaces-only");
       fputc('\n',stderr);
     }
   }
@@ -899,7 +914,8 @@ bool qualex_ms(MaxCliqueInfo& graph_info, double* a, double target,
                    getenv("QMS_DR_STARTS")?atoi(getenv("QMS_DR_STARTS")):0,1e-9,
                    dr!=nullptr && dr->projection!=nullptr ? *dr->projection : orthant,
                    dr!=nullptr ? dr->surfaces : no_surfaces,
-                   getenv("QMS_DR_CONCUR")!=nullptr))
+                   getenv("QMS_DR_CONCUR")!=nullptr,
+                   dr!=nullptr && dr->surfaces_only))
     result = true;
 
   // Finally spend Meta-NBIW on the multipliers the scans ranked highest.

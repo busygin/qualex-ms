@@ -1,0 +1,144 @@
+f14471         equation                     already in qms.tsv
+f14471         standard                     already in qms.tsv
+f14471         equation-m                   already in qms.tsv
+f14471         standard-m                   already in qms.tsv
+f14471         equation-m-meta              already in qms.tsv
+f14471         standard-m-meta              already in qms.tsv
+f14471         equation-dr                  already in qms.tsv
+f14471         equation-dr-orthant          already in qms.tsv
+f14471         equation-dr-w                already in qms.tsv
+f14471         equation-dr-orthant-w        already in qms.tsv
+f14471         equation-dr-concur           already in qms.tsv
+f14471         equation-dr-orthant-concur   already in qms.tsv
+f14471         equation-dr-w-concur         already in qms.tsv
+f14471         equation-dr-orthant-w-concur already in qms.tsv
+f14471         equation-dr-w-only           n=511 m=367 left 511: Meta-NBIW 359, QUALEX-MS 359  (2.38s; solver: sat, 1 guesses)
+f14471         equation-dr-w-only-concur    n=511 m=367 left 511: Meta-NBIW 359, QUALEX-MS 359  (2.43s; solver: sat, 1 guesses)
+f32399         equation                     already in qms.tsv
+f32399         standard                     already in qms.tsv
+f32399         equation-m                   already in qms.tsv
+f32399         standard-m                   already in qms.tsv
+f32399         equation-m-meta              already in qms.tsv
+f32399         standard-m-meta              already in qms.tsv
+f32399         equation-dr                  already in qms.tsv
+f32399         equation-dr-orthant          already in qms.tsv
+f32399         equation-dr-w                already in qms.tsv
+f32399         equation-dr-orthant-w        already in qms.tsv
+f32399         equation-dr-concur           already in qms.tsv
+f32399         equation-dr-orthant-concur   already in qms.tsv
+f32399         equation-dr-w-concur         already in qms.tsv
+f32399         equation-dr-orthant-w-concur already in qms.tsv
+f32399         equation-dr-w-only           n=636 m=441 left 636: Meta-NBIW 433, QUALEX-MS 433  (4.04s; solver: sat, 2 guesses)
+f32399         equation-dr-w-only-concur    n=636 m=441 left 636: Meta-NBIW 433, QUALEX-MS 433  (4.09s; solver: sat, 2 guesses)
+f60491         equation                     already in qms.tsv
+f60491         standard                     already in qms.tsv
+f60491         equation-m                   already in qms.tsv
+f60491         standard-m                   already in qms.tsv
+f60491         equation-m-meta              already in qms.tsv
+f60491         standard-m-meta              already in qms.tsv
+f60491         equation-dr                  already in qms.tsv
+f60491         equation-dr-orthant          already in qms.tsv
+f60491         equation-dr-w                already in qms.tsv
+f60491         equation-dr-orthant-w        already in qms.tsv
+f60491         equation-dr-concur           already in qms.tsv
+f60491         equation-dr-orthant-concur   already in qms.tsv
+f60491         equation-dr-w-concur         already in qms.tsv
+f60491         equation-dr-orthant-w-concur already in qms.tsv
+f60491         equation-dr-w-only           n=740 m=514 left 740: Meta-NBIW 501, QUALEX-MS 501  (5.70s; solver: sat, 2 guesses)
+f60491         equation-dr-w-only-concur    n=740 m=514 left 740: Meta-NBIW 501, QUALEX-MS 501  (5.78s; solver: sat, 2 guesses)
+f1000001       equation                     already in qms.tsv
+f1000001       standard                     already in qms.tsv
+f1000001       equation-m                   already in qms.tsv
+f1000001       standard-m                   already in qms.tsv
+f1000001       equation-m-meta              already in qms.tsv
+f1000001       standard-m-meta              already in qms.tsv
+f1000001       equation-dr                  already in qms.tsv
+f1000001       equation-dr-orthant          already in qms.tsv
+f1000001       equation-dr-w                already in qms.tsv
+f1000001       equation-dr-orthant-w        already in qms.tsv
+f1000001       equation-dr-concur           already in qms.tsv
+f1000001       equation-dr-orthant-concur   already in qms.tsv
+f1000001       equation-dr-w-concur         already in qms.tsv
+f1000001       equation-dr-orthant-w-concur already in qms.tsv
+f1000001       equation-dr-w-only           n=1383 m=912 left 1383: Meta-NBIW 886, QUALEX-MS 895  (27.79s; solver: sat, 4 guesses)
+f1000001       equation-dr-w-only-concur    n=1383 m=912 left 1383: Meta-NBIW 886, QUALEX-MS 895  (28.45s; solver: sat, 4 guesses)
+dodecahedron   equation                     already in qms.tsv
+dodecahedron   standard                     already in qms.tsv
+dodecahedron   equation-m                   already in qms.tsv
+dodecahedron   standard-m                   already in qms.tsv
+dodecahedron   equation-m-meta              already in qms.tsv
+dodecahedron   standard-m-meta              already in qms.tsv
+dodecahedron   equation-dr                  already in qms.tsv
+dodecahedron   equation-dr-orthant          already in qms.tsv
+dodecahedron   equation-dr-w                already in qms.tsv
+dodecahedron   equation-dr-orthant-w        already in qms.tsv
+dodecahedron   equation-dr-concur           already in qms.tsv
+dodecahedron   equation-dr-orthant-concur   already in qms.tsv
+dodecahedron   equation-dr-w-concur         already in qms.tsv
+dodecahedron   equation-dr-orthant-w-concur already in qms.tsv
+dodecahedron   equation-dr-w-only           n=263 m=38 left 263: Meta-NBIW 36, QUALEX-MS 38  SOLUTION (verified yes)  (0.19s; solver: sat, 2 guesses)
+dodecahedron   equation-dr-w-only-concur    n=263 m=38 left 263: Meta-NBIW 36, QUALEX-MS 38  SOLUTION (verified yes)  (0.19s; solver: sat, 2 guesses)
+gp13_2         equation                     already in qms.tsv
+gp13_2         standard                     already in qms.tsv
+gp13_2         equation-m                   already in qms.tsv
+gp13_2         standard-m                   already in qms.tsv
+gp13_2         equation-m-meta              already in qms.tsv
+gp13_2         standard-m-meta              already in qms.tsv
+gp13_2         equation-dr                  already in qms.tsv
+gp13_2         equation-dr-orthant          already in qms.tsv
+gp13_2         equation-dr-w                already in qms.tsv
+gp13_2         equation-dr-orthant-w        already in qms.tsv
+gp13_2         equation-dr-concur           already in qms.tsv
+gp13_2         equation-dr-orthant-concur   already in qms.tsv
+gp13_2         equation-dr-w-concur         already in qms.tsv
+gp13_2         equation-dr-orthant-w-concur already in qms.tsv
+gp13_2         equation-dr-w-only           n=481 m=50 left 481: Meta-NBIW 46, QUALEX-MS 50  SOLUTION (verified yes)  (0.84s; solver: sat, 3 guesses)
+gp13_2         equation-dr-w-only-concur    n=481 m=50 left 481: Meta-NBIW 46, QUALEX-MS 50  SOLUTION (verified yes)  (0.81s; solver: sat, 3 guesses)
+cubic30_1      equation                     already in qms.tsv
+cubic30_1      standard                     already in qms.tsv
+cubic30_1      equation-m                   already in qms.tsv
+cubic30_1      standard-m                   already in qms.tsv
+cubic30_1      equation-m-meta              already in qms.tsv
+cubic30_1      standard-m-meta              already in qms.tsv
+cubic30_1      equation-dr                  already in qms.tsv
+cubic30_1      equation-dr-orthant          already in qms.tsv
+cubic30_1      equation-dr-w                already in qms.tsv
+cubic30_1      equation-dr-orthant-w        already in qms.tsv
+cubic30_1      equation-dr-concur           already in qms.tsv
+cubic30_1      equation-dr-orthant-concur   already in qms.tsv
+cubic30_1      equation-dr-w-concur         already in qms.tsv
+cubic30_1      equation-dr-orthant-w-concur already in qms.tsv
+cubic30_1      equation-dr-w-only           n=637 m=58 left 637: Meta-NBIW 56, QUALEX-MS 56  (8.04s; solver: sat, 2 guesses)
+cubic30_1      equation-dr-w-only-concur    n=637 m=58 left 637: Meta-NBIW 56, QUALEX-MS 56  (9.09s; solver: sat, 2 guesses)
+cubic40_1      equation                     already in qms.tsv
+cubic40_1      standard                     already in qms.tsv
+cubic40_1      equation-m                   already in qms.tsv
+cubic40_1      standard-m                   already in qms.tsv
+cubic40_1      equation-m-meta              already in qms.tsv
+cubic40_1      standard-m-meta              already in qms.tsv
+cubic40_1      equation-dr                  already in qms.tsv
+cubic40_1      equation-dr-orthant          already in qms.tsv
+cubic40_1      equation-dr-w                already in qms.tsv
+cubic40_1      equation-dr-orthant-w        already in qms.tsv
+cubic40_1      equation-dr-concur           already in qms.tsv
+cubic40_1      equation-dr-orthant-concur   already in qms.tsv
+cubic40_1      equation-dr-w-concur         already in qms.tsv
+cubic40_1      equation-dr-orthant-w-concur already in qms.tsv
+cubic40_1      equation-dr-w-only           n=1255 m=78 left 1255: Meta-NBIW 76, QUALEX-MS 78  SOLUTION (verified yes)  (34.66s; solver: sat, 9 guesses)
+cubic40_1      equation-dr-w-only-concur    n=1255 m=78 left 1255: Meta-NBIW 76, QUALEX-MS 78  SOLUTION (verified yes)  (38.33s; solver: sat, 9 guesses)
+cubic50_1      equation                     already in qms.tsv
+cubic50_1      standard                     already in qms.tsv
+cubic50_1      equation-m                   already in qms.tsv
+cubic50_1      standard-m                   already in qms.tsv
+cubic50_1      equation-m-meta              already in qms.tsv
+cubic50_1      standard-m-meta              already in qms.tsv
+cubic50_1      equation-dr                  already in qms.tsv
+cubic50_1      equation-dr-orthant          already in qms.tsv
+cubic50_1      equation-dr-w                already in qms.tsv
+cubic50_1      equation-dr-orthant-w        already in qms.tsv
+cubic50_1      equation-dr-concur           already in qms.tsv
+cubic50_1      equation-dr-orthant-concur   already in qms.tsv
+cubic50_1      equation-dr-w-concur         already in qms.tsv
+cubic50_1      equation-dr-orthant-w-concur already in qms.tsv
+cubic50_1      equation-dr-w-only           n=1925 m=98 left 1925: Meta-NBIW 96, QUALEX-MS 96  (128.49s; solver: sat, 10 guesses)
+cubic50_1      equation-dr-w-only-concur    n=1925 m=98 left 1925: Meta-NBIW 96, QUALEX-MS 96  (145.87s; solver: sat, 10 guesses)
