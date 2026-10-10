@@ -507,10 +507,25 @@ bool try_eigendir_points (
 // contradictions between variables of no common equation -- has nonnegative
 // points on the sphere that are not cliques, and its caller can pass a
 // projection that takes those contradictions into account instead.
+//
+// The caller can also pass surfaces, further sets every clique indicator lies
+// on, such as the surface {x^T H x = 1, z^T x = 1} of another wrapper H (see
+// wrapper_surface()).  The sphere, the orthant and the surface of a proper
+// wrapper meet exactly in the cliques anchored at mu, since a nonnegative
+// point of that surface is supported on a clique.  Douglas-Rachford then runs
+// between the product of the sphere and the surfaces and the diagonal of the
+// set of project_c, douglas_rachford_product(): each start keeps a copy per
+// factor, all at the corner first, project_c acts on their average, and the
+// point read is the sphere's, as without surfaces, which this reduces to.
+// concur takes the symmetric product space instead, douglas_rachford_concur(),
+// with one copy per set, project_c's among them, read at their average;
+// without surfaces it is the control that tells what the surfaces add there
+// from what that product space changes.
 bool try_dr_points (
   MaxCliqueInfo& graph_info, QualexInfo& solver_info,
   double* x, double* y, int iters, int max_starts, double tol,
-  const Projection& project_c
+  const Projection& project_c, const vector<BlockProjection>& surfaces,
+  bool concur
 ) {
   int n = graph_info.g.n;
   double w_min = graph_info.w_min, W = graph_info.W;
@@ -543,11 +558,18 @@ bool try_dr_points (
     for(int i=0;i<n;++i) center[i] += graph_info.shift[i];
     // the cluster's eigenvectors, n x kc by columns, span the sphere
     Sphere sphere = {n, kc, center.data(), solver_info.q+(size_t)first*n, sqrt(rho2)};
+    vector<BlockProjection> sets;  // for the symmetric product space
+    if(concur) {
+      sets.push_back(sphere_projection(sphere));
+      sets.push_back(columnwise(project_c));
+      sets.insert(sets.end(),surfaces.begin(),surfaces.end());
+    }
+    int copies = concur ? (int)sets.size() : 1+(int)surfaces.size();
 
     int n_starts = 2*kc;
     if(max_starts>0 && max_starts<n_starts) n_starts = max_starts;
     int block = n_starts<256 ? n_starts : 256;
-    vector<double> v((size_t)n*block), est((size_t)n*block);
+    vector<double> v((size_t)copies*n*block), est((size_t)n*block);
     vector<bool> done;
     int converged = 0, improved = 0, hits = 0;  // hits: MIN cliques of weight W_mu
     for(int b0=0;b0<n_starts;b0+=block) {
@@ -555,10 +577,15 @@ bool try_dr_points (
       for(int t=0;t<nb;++t) {  // start b0+t is the corner on eigenvector (b0+t)/2
         const double* qj = sphere.q+(size_t)((b0+t)/2)*n;
         double sign = (b0+t)%2==0 ? sphere.radius : -sphere.radius;
-        for(int i=0;i<n;++i) v[(size_t)t*n+i] = center[i]+sign*qj[i];
+        for(int k=0;k<copies;++k)
+          for(int i=0;i<n;++i) v[(size_t)k*n*nb+(size_t)t*n+i] = center[i]+sign*qj[i];
       }
-      converged += douglas_rachford(sphere,project_c,nb,v.data(),est.data(),
-                                    done,iters,tol);
+      if(concur)
+        converged += douglas_rachford_concur(sets,n,nb,v.data(),est.data(),
+                                             done,iters,tol);
+      else
+        converged += douglas_rachford_product(sphere,surfaces,project_c,nb,
+                                              v.data(),est.data(),done,iters,tol);
       for(int t=0;t<nb;++t) {
         const double* et = &est[(size_t)t*n];
         for(int i=0;i<n;++i) x[i] = et[i]*graph_info.sqrtw[i];
@@ -567,10 +594,14 @@ bool try_dr_points (
         if(weight>=w_mu*(1.0-1e-9)) ++hits;
       }
     }
-    if(stats)
+    if(stats) {
       fprintf(stderr, "DR mu=%.6g k=%d rho2=%.3g W_mu=%.6g starts=%d converged=%d "
-              "hits=%d improved=%d lb=%g\n", mu, kc, rho2, w_mu, n_starts, converged,
+              "hits=%d improved=%d lb=%g", mu, kc, rho2, w_mu, n_starts, converged,
               hits, improved, graph_info.lower_clique_bound);
+      if(concur) fprintf(stderr, " concur sets=%d", copies);
+      else if(copies>1) fprintf(stderr, " surfaces=%d", copies-1);
+      fputc('\n',stderr);
+    }
   }
   return result;
 }
@@ -778,7 +809,7 @@ void check_theorem8_point (
 }
 
 bool qualex_ms(MaxCliqueInfo& graph_info, double* a, double target,
-               const Projection* dr_projection) {
+               const DRTargets* dr) {
   QualexInfo solver_info;
   // experimental: read before init_projected_formulation() overwrites a
   double att_lo = 0.0, att_hi = 0.0;
@@ -858,13 +889,17 @@ bool qualex_ms(MaxCliqueInfo& graph_info, double* a, double target,
   // experimental: Douglas-Rachford on the degenerate clusters, QMS_DR the number
   // of iterations (unset or 0 switches it off), QMS_DR_STARTS at most that many
   // of the 2k corners of a cluster, toward the nonnegative orthant unless the
-  // caller passes another projection
+  // caller passes another projection, and onto the caller's surfaces as well;
+  // QMS_DR_CONCUR takes the symmetric product space of all the sets
   int dr_iters = getenv("QMS_DR")?atoi(getenv("QMS_DR")):0;
   Projection orthant(clip_negative);
+  vector<BlockProjection> no_surfaces;
   if(dr_iters>0 &&
      try_dr_points(graph_info,solver_info,x,y,dr_iters,
                    getenv("QMS_DR_STARTS")?atoi(getenv("QMS_DR_STARTS")):0,1e-9,
-                   dr_projection!=nullptr ? *dr_projection : orthant))
+                   dr!=nullptr && dr->projection!=nullptr ? *dr->projection : orthant,
+                   dr!=nullptr ? dr->surfaces : no_surfaces,
+                   getenv("QMS_DR_CONCUR")!=nullptr))
     result = true;
 
   // Finally spend Meta-NBIW on the multipliers the scans ranked highest.

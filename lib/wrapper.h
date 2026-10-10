@@ -11,6 +11,7 @@
 #ifndef WRAPPER_H
 #define WRAPPER_H
 
+#include "dr.h"
 #include "graph.h"
 
 // build_wrapper() fills a with A^(w), the standard clique wrapper less w_min
@@ -31,6 +32,16 @@ bool anchor_wrapper(Graph& g, MaxCliqueInfo& info, double* a, double theta,
 // project_wrapper() writes P a P into b, P projecting out z = sqrtw, and
 // returns |hatb|
 double project_wrapper(MaxCliqueInfo& info, double* a, double* b);
+
+// wrapper_surface() is the projection onto the surface of the wrapper a (H
+// less w_min on the diagonal, as build_wrapper() makes it),
+//   {x : x^T H x = 1, z^T x = 1},
+// in the variables of the trust region stage (x_i z_i are the Motzkin-Straus
+// ones), on which every clique indicator lies, whatever the free entries of H;
+// it is meant for the surfaces of DRTargets.  It diagonalizes P H P with the
+// backend, so it has to be made before qualex_ms(), whose eigenvectors the
+// backend keeps while it runs.
+BlockProjection wrapper_surface(MaxCliqueInfo& info, const double* a);
 
 // ice_step() takes one line-searched step of lambda_max minimization, mode
 // "lovasz" or "spread"

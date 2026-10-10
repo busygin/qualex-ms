@@ -10,8 +10,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 #include <list>
+#include <memory>
 #include <vector>
+#include <cblas.h>
 
 #include "linalg.h"
 #include "wrapper.h"
@@ -240,6 +243,141 @@ double project_wrapper(MaxCliqueInfo& info, double* a, double* b) {
   }
   delete[] delta;
   return sqrt(b2);
+}
+
+// wrapper_surface() projects onto W^H = {x : x^T H x = 1, z^T x = 1}.
+//
+// Write x = x0 + xhat, x0 = z/W, xhat orthogonal to z, as the trust region
+// stage does (see init_projected_matrices()).  The squared distance from y is
+// |xhat - P y|^2 plus a part that does not depend on x, and the surface reads
+//   xhat^T hatH xhat + 2 hatb^T xhat = s,
+// hatH = P H P, hatb = P H x0, s = 1 - x0^T H x0.  The nearest point solves
+//   (I + t hatH) xhat = P y - t hatb
+// for the multiplier t that puts it on the surface: the relaxed program again,
+// with its origin moved to y.  In the eigenvectors U of hatH, eigenvalues
+// lambda_i, c = U^T hatb and eta = U^T P y, the solution has the coordinates
+// u_i = (eta_i - t c_i)/(1 + t lambda_i), and
+//   phi(t) = sum_i (lambda_i u_i + 2 c_i) u_i - s
+// has phi'(t) = -2 sum_i (lambda_i u_i + c_i)^2/(1 + t lambda_i) < 0 while
+// I + t hatH is positive definite, on (-1/lambda_max, -1/lambda_min), where it
+// falls from +inf to -inf.  Its one root there is the nearest point, the
+// Lagrangian being convex.  A safeguarded Newton iteration finds it, starting
+// from the multiplier the column had the last time, since Douglas-Rachford
+// moves its points little from one step to the next.  phi stays finite at an
+// end of the interval only if eta has no part along the extreme eigenvectors
+// that the end's multiplier does not cancel; the root may then lie beyond
+// the end, the iteration stops at the end, and the point there is left
+// slightly off the surface.  That case has measure zero and is not treated.
+//
+// The decomposition is the one O(n^3) step; a block of nb points then costs
+// two products with U, 4 n^2 nb operations, and O(n) per Newton step.
+struct WrapperSurface {
+  int n;
+  double W, s;
+  double lo, hi;          // the interval of t, ends excluded (infinite if open)
+  vector<double> z;       // sqrt(w)
+  vector<double> lambda;  // the eigenvalues of hatH, ascending
+  vector<double> u;       // its eigenvectors, n x n by columns
+  vector<double> c;       // U^T hatb
+  vector<double> eta;     // U^T P y of a block, then the coordinates u_i
+  vector<double> warm;    // the multiplier of each column the last time
+};
+
+// surface_multiplier() finds the root of phi for the column eta, starting
+// from t, and leaves the coordinates of the nearest point in eta
+static double surface_multiplier(const WrapperSurface& ws, double* eta, double t) {
+  int n = ws.n;
+  const double* lam = ws.lambda.data();
+  const double* c = ws.c.data();
+  double a = ws.lo, b = ws.hi;  // phi > 0 above a and < 0 below b
+  if(!(t>a && t<b)) t = 0.0;
+  for(int it=0;;++it) {
+    double f = -ws.s, df = 0.0, scale = fabs(ws.s);
+    for(int i=0;i<n;++i) {
+      double den = 1.0+t*lam[i];
+      double ui = (eta[i]-t*c[i])/den;
+      double g = lam[i]*ui+c[i];
+      f += (g+c[i])*ui;
+      scale += fabs(lam[i]*ui*ui)+2.0*fabs(c[i]*ui);
+      df -= 2.0*g*g/den;
+    }
+    if(f>0.0) a = t; else b = t;
+    if(fabs(f)<=1e-13*scale || it==100 ||
+       (isfinite(a) && isfinite(b) && b-a<=4.0*DBL_EPSILON*fmax(fabs(a),fabs(b))))
+      break;
+    double next = df<0.0 ? t-f/df : NAN;
+    if(!(next>a && next<b)) {  // Newton left the bracket: halve it, or widen it
+      if(isfinite(a) && isfinite(b)) next = 0.5*(a+b);
+      else if(isfinite(a)) next = a+fmax(1.0,fabs(a));
+      else next = b-fmax(1.0,fabs(b));
+    }
+    t = next;
+  }
+  for(int i=0;i<n;++i) eta[i] = (eta[i]-t*c[i])/(1.0+t*lam[i]);
+  return t;
+}
+
+BlockProjection wrapper_surface(MaxCliqueInfo& info, const double* a) {
+  int n = info.g.n;
+  shared_ptr<WrapperSurface> ws = make_shared<WrapperSurface>();
+  ws->n = n;
+  ws->W = info.W;
+  ws->z.assign(info.sqrtw,info.sqrtw+n);
+  // delta = H z and D = z^T H z, H = a + w_min I
+  vector<double> delta(n);
+  double D = 0.0;
+  for(int j=0;j<n;++j) {
+    double s = info.w_min*info.sqrtw[j];
+    for(int i=0;i<n;++i) s += a[(size_t)j*n+i]*info.sqrtw[i];
+    delta[j] = s;
+    D += info.sqrtw[j]*s;
+  }
+  vector<double> h((size_t)n*n);  // hatH, as init_projected_matrices() makes it
+  for(int j=0;j<n;++j)
+    for(int i=0;i<n;++i)
+      h[(size_t)j*n+i] = a[(size_t)j*n+i]+(i==j ? info.w_min : 0.0) +
+        info.shift[i]*info.shift[j]*D - info.shift[i]*delta[j] - info.shift[j]*delta[i];
+  ws->s = 1.0-D/(info.W*info.W);
+  ws->lambda.resize(n);
+  symmetric_eigen(n,h.data(),ws->lambda.data());
+  ws->u.resize((size_t)n*n);
+  extract_eigenvectors(n,n,0,ws->u.data());
+  vector<double> hatb(n);
+  for(int i=0;i<n;++i) hatb[i] = (delta[i]-info.shift[i]*D)/info.W;
+  ws->c.resize(n);
+  cblas_dgemv(CblasColMajor,CblasTrans,n,n,1.0,ws->u.data(),n,hatb.data(),1,
+              0.0,ws->c.data(),1);
+  ws->lo = ws->lambda[n-1]>0.0 ? -1.0/ws->lambda[n-1] : -HUGE_VAL;
+  ws->hi = ws->lambda[0]<0.0 ? -1.0/ws->lambda[0] : HUGE_VAL;
+  if(getenv("QMS_STATS")!=NULL)
+    fprintf(stderr, "SURFACE n=%d lambda=%.6g..%.6g |hatb|=%.6g s=%.6g\n",
+            n, ws->lambda[0], ws->lambda[n-1], cblas_dnrm2(n,hatb.data(),1), ws->s);
+  return [ws](double* y, int n, int nb) {
+    WrapperSurface& s = *ws;
+    const double* z = s.z.data();
+    for(int t=0;t<nb;++t) {  // P y, in place
+      double* yt = y+(size_t)t*n;
+      double zy = 0.0;
+      for(int i=0;i<n;++i) zy += z[i]*yt[i];
+      zy /= s.W;
+      for(int i=0;i<n;++i) yt[i] -= zy*z[i];
+    }
+    s.eta.resize((size_t)n*nb);
+    if((int)s.warm.size()<nb) s.warm.resize(nb,0.0);
+    cblas_dgemm(CblasColMajor,CblasTrans,CblasNoTrans,n,nb,n,
+                1.0,s.u.data(),n,y,n,0.0,s.eta.data(),n);
+    for(int t=0;t<nb;++t)
+      s.warm[t] = surface_multiplier(s,&s.eta[(size_t)t*n],s.warm[t]);
+    cblas_dgemm(CblasColMajor,CblasNoTrans,CblasNoTrans,n,nb,n,
+                1.0,s.u.data(),n,s.eta.data(),n,0.0,y,n);
+    for(int t=0;t<nb;++t) {  // x0 + xhat, the drift along z taken out of xhat
+      double* yt = y+(size_t)t*n;
+      double zx = 0.0;
+      for(int i=0;i<n;++i) zx += z[i]*yt[i];
+      zx /= s.W;
+      for(int i=0;i<n;++i) yt[i] += (1.0/s.W-zx)*z[i];
+    }
+  };
 }
 
 // ice_step() takes one step of lambda_max minimization on an anchored wrapper,

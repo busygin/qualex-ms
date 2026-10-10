@@ -20,9 +20,10 @@
 // that weight with the method of version 1.2 (see qualex.cc), positive
 // multipliers only and Meta-NBIW only if QMS_META_N asks for it, instead of
 // around the radius of a clique one w_min heavier than the incumbent.
-// dr_projection, unless null, replaces the projection onto the nonnegative
-// orthant in the Douglas-Rachford stage (QMS_DR).
+// dr, unless null, says where the Douglas-Rachford stage (QMS_DR) drives the
+// points of its spheres: its projection replaces the one onto the nonnegative
+// orthant, and its surfaces are further sets the points have to lie on.
 bool qualex_ms(MaxCliqueInfo& graph_info, double* a, double target = 0.0,
-               const Projection* dr_projection = nullptr);
+               const DRTargets* dr = nullptr);
 
 #endif  // QUALEX_H

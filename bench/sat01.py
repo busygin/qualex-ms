@@ -62,8 +62,12 @@ clique one w_min heavier than the incumbent, as QUALEX-MS has them, or at the ra
 a clique of weight m with the method of QUALEX-MS 1.2 ("-m"), and that with the Meta-NBIW
 stage on the two best multipliers ("-m-meta", QMS_META_N=2); and on H_A with QUALEX-MS's
 Douglas-Rachford stage (QMS_DR=300) using the greedy 2-clause projection ("equation-dr",
-sat01qms -D) or, as the control, the orthant ("equation-dr-orthant"), whose DR lines
-(QMS_STATS) go to the configuration's qms.log; runs/sat01/qms.tsv gets
+sat01qms -D) or, as the control, the orthant ("equation-dr-orthant"), and each of those
+driving the points onto the surface of the standard wrapper as well ("-w", sat01qms -W),
+DR running between the product of the sphere and that surface and the diagonal of the
+2-clause set or the orthant, or ("-concur", QMS_DR_CONCUR) in the symmetric product space
+of all the sets, which is also run without the surface as the control; the DR lines
+(QMS_STATS) go to the configuration's qms.log, and runs/sat01/qms.tsv gets
   inst answer guesses config n m preselected left greedy weight solution verified prop qms
 the size propagation leaves (n = 0 when it decides the instance), the vertices QUALEX-MS's
 preprocessing preselects and leaves, the weight of the clique Meta-NBIW and then
@@ -98,6 +102,12 @@ CONFIGS = {
     "standard-m-meta": (["-s", "-m"], {"QMS_META_N": "2"}),
     "equation-dr": (["-D"], {"QMS_DR": "300", "QMS_STATS": "1"}),
     "equation-dr-orthant": ([], {"QMS_DR": "300", "QMS_STATS": "1"}),
+    "equation-dr-w": (["-D", "-W"], {"QMS_DR": "300", "QMS_STATS": "1"}),
+    "equation-dr-orthant-w": (["-W"], {"QMS_DR": "300", "QMS_STATS": "1"}),
+    "equation-dr-concur": (["-D"], {"QMS_DR": "300", "QMS_DR_CONCUR": "1", "QMS_STATS": "1"}),
+    "equation-dr-orthant-concur": ([], {"QMS_DR": "300", "QMS_DR_CONCUR": "1", "QMS_STATS": "1"}),
+    "equation-dr-w-concur": (["-D", "-W"], {"QMS_DR": "300", "QMS_DR_CONCUR": "1", "QMS_STATS": "1"}),
+    "equation-dr-orthant-w-concur": (["-W"], {"QMS_DR": "300", "QMS_DR_CONCUR": "1", "QMS_STATS": "1"}),
 }
 
 
@@ -397,17 +407,17 @@ def main():
             ans, guesses = answer(work, inst, args.timeout)
             for config in CONFIGS:
                 if (inst, config) in done and not args.force:
-                    print("%-14s %-15s already in qms.tsv" % (inst, config))
+                    print("%-14s %-28s already in qms.tsv" % (inst, config))
                     continue
                 r = qms(work, inst, config, args.threads)
                 if "decided" in r:
                     row = [inst, ans, guesses, config, 0] + ["-"] * 7 + [r["propagation"].rstrip("s"), "-"]
-                    print("%-14s %-15s decided by propagation (%s)" % (inst, config, r["decided"]), flush=True)
+                    print("%-14s %-28s decided by propagation (%s)" % (inst, config, r["decided"]), flush=True)
                 else:
                     row = [inst, ans, guesses, config] + [r[k] for k in (
                         "n", "m", "preselected", "left", "greedy", "weight", "solution", "verified")] + [
                         r["propagation"].rstrip("s"), r["qms"].rstrip("s")]
-                    print("%-14s %-15s n=%s m=%s left %s: Meta-NBIW %s, QUALEX-MS %s%s  (%ss; solver: %s, %s guesses)"
+                    print("%-14s %-28s n=%s m=%s left %s: Meta-NBIW %s, QUALEX-MS %s%s  (%ss; solver: %s, %s guesses)"
                           % (inst, config, r["n"], r["m"], r["left"], r["greedy"], r["weight"],
                              "  SOLUTION (verified %s)" % r["verified"] if r["solution"] == "1" else "",
                              r["qms"].rstrip("s"), ans, guesses), flush=True)

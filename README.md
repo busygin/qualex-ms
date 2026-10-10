@@ -171,6 +171,10 @@ QMS_DR=<iters>       experimental: drive the corners of each degenerate
                      before MIN (see try_dr_points in lib/qualex.cc and
                      lib/dr.cc).  Off by default
 QMS_DR_STARTS=<k>    at most k of a cluster's corners for QMS_DR
+QMS_DR_CONCUR        run QMS_DR in the symmetric product space of the sphere,
+                     the set of the projection and the caller's surfaces
+                     (DRTargets of lib/dr.h) instead of between the sphere
+                     with the surfaces and the set of the projection
 QMS_TARGET=<w>       experimental: the weight of the clique sought, when it is
                      known; the stationary points are then taken at the radius
                      Proposition 7 assigns to a clique of weight w, with the
