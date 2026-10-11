@@ -1648,6 +1648,21 @@ $-\infty$ at $\kappa_a$ and to $+\infty$ at $\kappa_b$ when $g$ has a
 component in both eigenspaces.
 \end{proof}
 
+Proposition~\ref{prop:cone} is Levin's pencil method for the intersection of
+two quadrics \cite{Le76}, carried to dimension $k$. Every member
+$x^THx-1-\sigma(\|p\|^2-\rho^2)$ of the pencil spanned by the two quadrics
+cuts $\Sigma$ in the same set. (\ref{eq:conesigma}) picks a singular member,
+a cone, and each line of the cone through its vertex meets $\Sigma$ in the
+roots of one quadratic. For quadrics in projective 3-space, Dupont, Lazard,
+Lazard and Petitjean made the method exact and near-optimal in the number of
+radicals \cite{DLLP08}. In the generic case they parametrize a member of
+inertia $(2,2)$, whose two families of lines give a bilinear
+parametrization, rather than a cone, whose vertex needs a root of the
+pencil's determinantal equation, and they classify the singular
+intersections. Lazard, Pe\~naranda and Petitjean implemented it as QI
+\cite{LPP06}. In floating point and in dimension $k$ neither refinement
+matters, and the cone is the simplest member to parametrize.
+
 The intersection thus has dimension $|I_+|+|I_-|-2=k-2$, and for
 $\Sigma=\Sigma_A$ (with $\bar x$ its centre, $Q$ an orthonormal basis of
 $\{x\in L_A:\ z^Tx=0\}$ and $\rho^2=1/m-\|\bar x\|^2$) and $H=H_0$ it costs
@@ -2307,6 +2322,14 @@ have none?
   The strong perfect graph theorem,
   {\em Annals of Mathematics\/} 164 (2006) 51--229.
 
+\bibitem[DLLP08]{DLLP08}
+  L. Dupont, D. Lazard, S. Lazard and S. Petitjean,
+  Near-optimal parameterization of the intersection of quadrics:
+  I. The generic algorithm; II. A classification of pencils;
+  III. Parameterizing singular intersections,
+  {\em Journal of Symbolic Computation\/} 43 (2008) 168--191, 192--215 and
+  216--232.
+
 \bibitem[Ga57]{G57}
   D. Gale,
   A theorem on flows in networks,
@@ -2339,10 +2362,22 @@ have none?
   The sandwich theorem,
   {\em Electronic Journal of Combinatorics\/} 1 (1994) \#A1.
 
+\bibitem[Le76]{Le76}
+  J. Levin,
+  A parametric algorithm for drawing pictures of solid objects composed of
+  quadric surfaces,
+  {\em Communications of the ACM\/} 19 (1976) 555--563.
+
 \bibitem[Lo79]{L79}
   L. Lov\'asz,
   On the Shannon capacity of a graph,
   {\em IEEE Transactions on Information Theory\/} 25 (1979) 1--7.
+
+\bibitem[LPP06]{LPP06}
+  S. Lazard, L.M. Pe\~naranda and S. Petitjean,
+  Intersecting quadrics: an efficient and exact implementation,
+  {\em Computational Geometry: Theory and Applications\/} 35 (2006) 74--99
+  (QI, \texttt{https://gamble.loria.fr/qi/}).
 
 \bibitem[MS83]{MS83}
   J.J. Mor\'e and D.C. Sorensen,
