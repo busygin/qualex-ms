@@ -1,0 +1,3 @@
+f1000001 seed 1: 3200 iterations, 175.0s, f=3.25e-13; eigenvalues above 1e-2/4/6/8 of the largest: 30/298/401/426
+f1000001 seed 2: 3200 iterations, 219.8s, f=2.77e-13; eigenvalues above 1e-2/4/6/8 of the largest: 31/299/401/426
+f1000001 seed 3: 3200 iterations, 308.2s, f=3.06e-13; eigenvalues above 1e-2/4/6/8 of the largest: 31/299/401/426

@@ -1,0 +1,9 @@
+f1000001: n=1383 m=912, dim L_A=472, 124173 contradictions, r=472, 1 known solutions (setup 0.3s)
+     200 iterations,    8.9s: f=5.92e-09, top eigenvalues 0.378 0.0447 0.0321 0.0307; above 1e-2/4/6/8 of the largest: 31/304/411/449; best MIN weight 866 of 912; a solution outside: 4.7e-01/1.2e-01/5.7e-02/3.1e-02
+     400 iterations,   17.7s: f=6.40e-10, top eigenvalues 0.378 0.0448 0.0317 0.0311; above 1e-2/4/6/8 of the largest: 31/302/406/435; best MIN weight 864 of 912; a solution outside: 4.7e-01/1.2e-01/4.7e-02/2.9e-02
+     800 iterations,   35.6s: f=5.34e-11, top eigenvalues 0.378 0.0448 0.0315 0.0314; above 1e-2/4/6/8 of the largest: 32/300/404/430; best MIN weight 866 of 912; a solution outside: 4.5e-01/1.1e-01/4.4e-02/2.1e-02
+    1600 iterations,   71.4s: f=4.03e-12, top eigenvalues 0.378 0.0448 0.0315 0.0314; above 1e-2/4/6/8 of the largest: 32/299/403/427; best MIN weight 876 of 912; a solution outside: 4.5e-01/1.1e-01/4.4e-02/2.1e-02
+    3200 iterations,  143.3s: f=3.51e-13, top eigenvalues 0.378 0.0448 0.0315 0.0314; above 1e-2/4/6/8 of the largest: 31/299/402/425; best MIN weight 867 of 912; a solution outside: 4.6e-01/1.1e-01/4.5e-02/2.0e-02
+    6400 iterations,  286.2s: f=3.94e-14, top eigenvalues 0.378 0.0448 0.0315 0.0314; above 1e-2/4/6/8 of the largest: 31/299/402/425; best MIN weight 867 of 912; a solution outside: 4.6e-01/1.1e-01/4.5e-02/1.9e-02
+   12800 iterations,  568.1s: f=4.60e-15, top eigenvalues 0.378 0.0449 0.0315 0.0314; above 1e-2/4/6/8 of the largest: 31/299/402/425; best MIN weight 867 of 912; a solution outside: 4.6e-01/1.1e-01/4.5e-02/1.9e-02
+   25600 iterations, 1135.2s: f=6.39e-16, top eigenvalues 0.378 0.0449 0.0315 0.0314; above 1e-2/4/6/8 of the largest: 31/299/402/425; best MIN weight 867 of 912; a solution outside: 4.6e-01/1.1e-01/4.5e-02/1.9e-02

@@ -1,0 +1,32 @@
+cubic16_1: Gram of 1010 candidates (423 independent + 587 extra), 0.0 GB, 0s
+dpstrf 0s: numerical rank 423; residual at pivot 1, 423, 423 (relative to the largest diagonal): 1.00e+00 1.41e-02 nan
+exact rank of the 423 chosen rows: 423 (needs 423)
+written
+cubic16_1: d=29, 423 independent contradiction constraints (of 1010), Schur 424 x 424 (0.0 GB)
+  it   0     0.0s: t -9.655172e-01 y0 3.448276e-02 <Z,W> 1.0e+00 pinf 2.9e-02 dinf 0.0e+00  steps 0.00 0.00
+  it   1     0.0s: t -4.725664e-02 y0 2.996126e-02 <Z,W> 7.8e-02 pinf 2.3e-03 dinf 1.3e-18  steps 0.92 1.00
+  it   2     0.0s: t -2.137870e-03 y0 5.638412e-03 <Z,W> 8.1e-03 pinf 3.0e-04 dinf 8.4e-17  steps 0.87 0.95
+  it   3     0.0s: t -1.085491e-04 y0 2.839060e-04 <Z,W> 4.1e-04 pinf 1.4e-05 dinf 5.3e-17  steps 0.95 0.95
+  it   4     0.0s: t -5.427638e-06 y0 1.419557e-05 <Z,W> 2.0e-05 pinf 6.8e-07 dinf 5.6e-17  steps 0.95 0.95
+  it   5     0.0s: t -2.713819e-07 y0 7.097786e-07 <Z,W> 1.0e-06 pinf 3.4e-08 dinf 1.9e-17  steps 0.95 0.95
+  it   6     0.1s: t -1.356911e-08 y0 3.548893e-08 <Z,W> 5.1e-08 pinf 1.7e-09 dinf 5.4e-17  steps 0.95 0.95
+  it   7     0.1s: t -6.784559e-10 y0 1.774447e-09 <Z,W> 2.6e-09 pinf 9.5e-11 dinf 1.9e-17  steps 0.95 0.95
+  it   8     0.1s: t -3.392185e-11 y0 8.872236e-11 <Z,W> 1.3e-10 pinf 2.9e-11 dinf 1.9e-17  steps 0.95 0.95
+  it   9     0.1s: t -1.694488e-12 y0 4.436596e-12 <Z,W> 6.4e-12 pinf 1.2e-12 dinf 5.4e-17  steps 0.95 0.95
+t = -1.694e-12, y0 = 4.437e-12 (0 when no optimum is positive definite)
+Z: eigenvalues/largest above 1e-4/6/8/10: 12/12/12/12
+W: eigenvalues/largest above 1e-4/6/8/10: 17/17/17/22
+largest gap in Z after 12: 4.25e-02 -> 1.95e-12; W around 17: 5.88e-02 5.88e-02 1.04e-11 1.01e-11
+a solution: share outside the face 2.1e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 1.9e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 1.5e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 1.8e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 1.6e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 1.8e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 2.2e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 2.0e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 4.4e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 1.5e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 2.3e-13; c^T W c / |c|^2 = 4.4e-12
+a solution: share outside the face 4.3e-13; c^T W c / |c|^2 = 4.4e-12
+the optimum on all 1010 contradictions (G' imposed, the rest implied): max |X_ij| 5.7e-13

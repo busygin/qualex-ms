@@ -1,0 +1,50 @@
+cubic20_1: Gram matrix of 9025 candidates (8258 independent + 767 further pairs), 0.7 GB, 1s
+  pivoted Cholesky 3s: numerical rank 8258; residual at pivot 8258 1.47e-02 of the largest diagonal
+  exact rank of the 8258 chosen pairs: 8258 (needs 8258); written
+cubic20_1: d=160, 8258 independent contradiction constraints (selected, of 9025), Schur 8259 x 8259 (0.5 GB)
+  it   0     0.0s: t -9.937500e-01 y0 6.250000e-03 <Z,W> 1.0e+00 pinf 1.0e-02 dinf 0.0e+00  steps 0.00 0.00
+  it   1     1.9s: t -5.440892e-02 y0 5.818063e-03 <Z,W> 6.0e-02 pinf 6.1e-04 dinf 3.6e-19  steps 0.94 1.00
+  it   2     3.7s: t -4.065943e-03 y0 3.372883e-03 <Z,W> 7.5e-03 pinf 7.9e-05 dinf 1.3e-17  steps 0.87 1.00
+  it   3     5.6s: t -6.935527e-04 y0 1.060487e-03 <Z,W> 1.8e-03 pinf 2.0e-05 dinf 8.5e-18  steps 0.75 0.87
+  it   4     7.4s: t -9.692081e-05 y0 3.408507e-04 <Z,W> 4.4e-04 pinf 3.5e-06 dinf 2.8e-17  steps 0.82 0.81
+  it   5     9.3s: t -5.646942e-06 y0 1.125675e-04 <Z,W> 1.2e-04 pinf 1.1e-06 dinf 2.9e-17  steps 0.69 0.83
+  it   6    11.1s: t -6.129043e-06 y0 1.312177e-05 <Z,W> 1.9e-05 pinf 2.3e-13 dinf 3.3e-17  steps 1.00 0.84
+  it   7    13.0s: t -3.254735e-07 y0 7.677387e-07 <Z,W> 1.1e-06 pinf 3.4e-13 dinf 2.5e-17  steps 0.95 0.94
+  it   8    14.8s: t -1.799415e-08 y0 4.532203e-08 <Z,W> 6.3e-08 pinf 7.5e-12 dinf 2.5e-17  steps 0.94 0.94
+  it   9    16.6s: t -1.049522e-09 y0 3.868471e-09 <Z,W> 4.9e-09 pinf 1.2e-10 dinf 1.7e-17  steps 0.94 0.92
+  it   9: 8256-th leading minor of the array is not positive definite, keeping the last iterate
+t = -1.050e-09, y0 = 3.868e-09 (0 when no optimum is positive definite)
+Z: eigenvalues/largest above 1e-4/6/8/10: 152/152/152/160
+W: eigenvalues/largest above 1e-4/6/8/10: 8/39/151/160
+largest gap in Z after 152: 3.49e-05 -> 1.06e-09; W around 8: 1.23e-01 1.10e-01 7.76e-07 6.59e-07
+a solution: share outside the face 2.3e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.7e-08; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 2.2e-09; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 2.1e-08; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.1e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 2.9e-06; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 2.5e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.5e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 2.2e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 7.9e-06; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.9e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.3e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.0e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.9e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.5e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 2.5e-08; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.1e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 2.3e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.1e-08; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.5e-08; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.9e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.0e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.5e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 2.5e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.3e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.5e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 7.9e-06; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 2.2e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 1.9e-05; c^T W c / |c|^2 = 3.9e-09
+a solution: share outside the face 2.9e-06; c^T W c / |c|^2 = 3.9e-09
+the optimum on all 9025 contradictions: max |X_ij| 6.7e-11

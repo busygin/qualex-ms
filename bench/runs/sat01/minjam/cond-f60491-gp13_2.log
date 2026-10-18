@@ -1,0 +1,6 @@
+f60491: Gram matrix of the 16650 eliminated pairs in packed storage, 1.1 GB, 2s
+  Cholesky 4s, info 0
+  squared pivots / largest diagonal entry: smallest 4.0e-09 8.8e-09 3.0e-08 9.1e-07 1.4e-06 1.7e-06; below 1e-8/1e-6/1e-4: 2/4/31; median 1.26e-01
+gp13_2: Gram matrix of the 37171 eliminated pairs in packed storage, 5.5 GB, 12s
+  Cholesky 33s, info 0
+  squared pivots / largest diagonal entry: smallest 1.3e-02 3.4e-02 3.8e-02 5.8e-02 6.5e-02 7.5e-02; below 1e-8/1e-6/1e-4: 0/0/0; median 8.91e-01

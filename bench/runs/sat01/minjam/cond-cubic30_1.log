@@ -1,0 +1,3 @@
+cubic30_1: Gram of 82069 rows in RFP (26.9 GB), 65s
+dpftrf 458s, info 0
+squared Cholesky pivots / largest diagonal: smallest 5.7e-03 1.1e-02 1.4e-02 1.5e-02 1.6e-02 1.6e-02; below 1e-8/1e-6/1e-4: 0/0/0; median 8.89e-01

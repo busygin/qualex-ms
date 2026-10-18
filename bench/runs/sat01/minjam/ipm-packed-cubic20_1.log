@@ -1,0 +1,50 @@
+cubic20_1: d=160, 8258 independent contradiction constraints (selected, of 9025), Schur 8259 x 8259 (0.3 GB packed)
+  it   0     0.0s: t -9.937500e-01 y0 6.250000e-03 <Z,W> 1.0e+00 pinf 1.0e-02 dinf 0.0e+00  steps 0.00 0.00
+  it   1     1.5s: t -5.440892e-02 y0 5.818063e-03 <Z,W> 6.0e-02 pinf 6.1e-04 dinf 3.8e-19  steps 0.94 1.00
+  it   2     3.0s: t -4.065943e-03 y0 3.372883e-03 <Z,W> 7.5e-03 pinf 7.9e-05 dinf 4.7e-18  steps 0.87 1.00
+  it   3     4.5s: t -6.935527e-04 y0 1.060487e-03 <Z,W> 1.8e-03 pinf 2.0e-05 dinf 2.5e-17  steps 0.75 0.87
+  it   4     6.0s: t -9.692081e-05 y0 3.408507e-04 <Z,W> 4.4e-04 pinf 3.5e-06 dinf 2.8e-17  steps 0.82 0.81
+  it   5     7.4s: t -5.646942e-06 y0 1.125675e-04 <Z,W> 1.2e-04 pinf 1.1e-06 dinf 2.9e-17  steps 0.69 0.83
+  it   6     8.9s: t -6.129043e-06 y0 1.312177e-05 <Z,W> 1.9e-05 pinf 2.2e-13 dinf 3.3e-17  steps 1.00 0.84
+  it   7    10.4s: t -3.254735e-07 y0 7.677387e-07 <Z,W> 1.1e-06 pinf 3.2e-13 dinf 4.1e-17  steps 0.95 0.94
+  it   8    11.9s: t -1.799417e-08 y0 4.532203e-08 <Z,W> 6.3e-08 pinf 8.8e-12 dinf 1.7e-17  steps 0.94 0.94
+  it   9    13.4s: t -1.049752e-09 y0 3.868743e-09 <Z,W> 4.9e-09 pinf 1.2e-10 dinf 1.6e-17  steps 0.94 0.92
+  it  10    14.8s: t -1.746057e-10 y0 6.090243e-10 <Z,W> 7.8e-10 pinf 3.5e-10 dinf 1.6e-17  steps 0.77 0.87
+  it  11    16.3s: t -3.222878e-11 y0 1.294744e-10 <Z,W> 1.6e-10 pinf 8.6e-11 dinf 1.6e-17  steps 0.72 0.89
+  it  12    17.7s: t -4.794845e-12 y0 2.306914e-11 <Z,W> 3.0e-11 pinf 3.4e-11 dinf 2.4e-17  steps 0.71 0.88
+  it  13    19.2s: t 5.984943e-12 y0 5.833296e-12 <Z,W> 7.2e-12 pinf 7.7e-11 dinf 1.6e-17  steps 0.70 0.86
+t = 5.985e-12, y0 = 5.833e-12 (0 when no optimum is positive definite)
+Z: eigenvalues/largest above 1e-4/6/8/10: 152/152/152/152
+W: eigenvalues/largest above 1e-4/6/8/10: 8/8/8/95
+largest gap in Z after 152: 3.39e-05 -> 2.17e-12; W around 8: 1.22e-01 1.08e-01 1.05e-09 9.91e-10
+a solution: share outside the face 5.8e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 1.8e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 2.4e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 1.5e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 1.0e-06; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 1.7e-06; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 4.3e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 6.2e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 1.5e-06; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 8.1e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 8.9e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 6.1e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 7.0e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 1.1e-06; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 9.3e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 7.8e-08; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 1.0e-06; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 6.7e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 2.5e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 5.2e-08; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 1.1e-06; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 7.2e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 9.6e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 5.5e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 5.0e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 6.5e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 9.5e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 1.5e-06; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 8.6e-07; c^T W c / |c|^2 = 5.8e-12
+a solution: share outside the face 1.9e-06; c^T W c / |c|^2 = 5.8e-12
+the optimum on all 9025 contradictions: max |X_ij| 3.9e-10

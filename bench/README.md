@@ -193,3 +193,35 @@ library's combinatorial core (`lib/`, which needs no BLAS) into the ignored
 `runs/jam/bin`. Rows go to
 `runs/jam/jam.tsv`; `runs/jam/run-2026-10-03.sh` reruns the survey of that
 date, and `runs/jam/jam-2026-10-03.txt` has the results.
+
+## Smallest jams
+
+`minjam.py` computes the smallest subspace R* that holds every Lovasz optimum of a
+satisfiable SAT01 instance (the report's Section 6.8, "The smallest jam"), with a
+certificate of its minimality. When theta = m, H_A is Lovasz-optimal, so the optima
+are the trace-one positive semidefinite Y of a linear space V of symmetric d x d
+matrices, d = dim L_A, and a positive semidefinite W orthogonal to V whose rank
+complements that of a Y proves R* = B range(Y) minimal. On an instance after full
+preprocessing (`sat01.py` builds `runs/sat01/work/<inst>/full`):
+
+    bench/minjam.py structure f60491     # dim V and the independent constraints G', exactly
+    bench/minjam.py select f60491        # a well conditioned G' of the same rank
+    bench/minjam.py ipm f60491           # the interior point method, Schur matrix |G'| + 1
+    bench/minjam.py save f60491          # R*, the optimum and W into <inst>.jam.npz
+
+`structure` writes the contradiction constraints in a sparse rational basis of
+{u: Au in R1} and has `srank.cc`, which it builds into the ignored `runs/sat01/bin`,
+find their rank modulo 2^61-1 by sparse elimination. The factoring instances need
+`select`, since the set the elimination returns can be nearly dependent in floating
+point; `cond` checks whether that set is well conditioned as it is (on the Hamilton
+cycle instances it is). `ipm --packed` keeps the Schur matrix in rectangular full
+packed storage, half the memory (27 GB and about 8 minutes per iteration on
+`cubic30_1`), `dense` solves small instances over a dense basis of V instead, and
+`save --dim` overrides the cut at the largest gap, printing the spectra of Y and W
+paired by eigenvector around it. `dr` runs Douglas-Rachford from the corners of the
+spheres of L_A and of R*, with the greedy 2-clause projection of `clause.cc` or the
+orthant, and `bm` the factored search Y = C C^T / |C|^2 (`decode`, `starts`,
+`combine`, `floor`). Intermediate files go to the ignored `runs/sat01/work/minjam/`,
+where the basis of L_A is also kept, once per instance, because its rotation depends
+on the BLAS thread count; `runs/sat01/minjam/` has the logs behind the report's
+Section 6.8 and Table 9.

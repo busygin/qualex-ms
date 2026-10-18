@@ -1,0 +1,4 @@
+cubic20_1 clause on L_A (dimension 160, solutions outside up to 1.3e-15): 318 starts, 144 stopped, mean 253.9 steps, 6.9s; best MIN 38 of 38, hits 190
+cubic20_1 clause on R* (dimension 152, solutions outside up to 1.9e-06): 302 starts, 0 stopped, mean 300.0 steps, 7.7s; best MIN 38 of 38, hits 138
+cubic20_1 orthant on L_A (dimension 160, solutions outside up to 1.3e-15): 318 starts, 0 stopped, mean 300.0 steps, 0.5s; best MIN 38 of 38, hits 6
+cubic20_1 orthant on R* (dimension 152, solutions outside up to 1.9e-06): 302 starts, 0 stopped, mean 300.0 steps, 0.4s; best MIN 38 of 38, hits 5

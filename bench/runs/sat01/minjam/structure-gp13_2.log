@@ -1,0 +1,2 @@
+gp13_2: n=481 m=50 rank A=49, dim L_A=433; rows of N: 5.1 nonzeros on average, at most 297 (0.0s)
+  37848 contradictions, 37171 independent (98%); dim V = 56790 of 93961 (60%); srank 1.4s

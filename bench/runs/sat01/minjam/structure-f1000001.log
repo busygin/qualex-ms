@@ -1,0 +1,26 @@
+124173 rows, 222784 columns (d=472), 75712965 nonzeros, built in 3.7s
+  39660 pivots, live nonzeros 19385301, column bucket 274, 35s
+rank 45983 of 124173 rows; d(d+1)/2 = 111628, null space dimension 65645; 56.2s
+	Command being timed: "./srank f1000001.basis.bin f1000001.pairs.bin f1000001.indep.bin"
+	User time (seconds): 54.03
+	System time (seconds): 2.59
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:56.64
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 7143908
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 1811052
+	Voluntary context switches: 1
+	Involuntary context switches: 552
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 0
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

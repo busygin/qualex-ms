@@ -1,0 +1,12 @@
+f60491 delta=1e-05 seed 0: 6400 iterations, 111.9s, f=4.204e-10 (|r| 2.05e-05, |r|/delta 2.05)
+  W/|r|: largest 0.319, smallest -0.000937; above 1e-2/1e-4/1e-6 of the largest: 39/142/151; most negative relative -2.9e-03
+  W's largest gap in its top part after 151: 1.48e-06 -> -3.28e-06
+  Y - delta I: eigenvalues/delta above 10/2/1.1: 117/136/144; the 8 smallest/delta: 1 1 1 1 1 1 1 1
+  a solution: c^T W c / |W| = -1.0e-18, share in W's top-151 eigenspace 6.9e-01
+  a solution: c^T W c / |W| = -6.6e-18, share in W's top-151 eigenspace 6.8e-01
+f60491 delta=1e-06 seed 0: 6400 iterations, 108.9s, f=4.764e-12 (|r| 2.18e-06, |r|/delta 2.18)
+  W/|r|: largest 0.333, smallest -0.00634; above 1e-2/1e-4/1e-6 of the largest: 44/138/139; most negative relative -1.9e-02
+  W's largest gap in its top part after 139: 3.27e-05 -> -3.78e-06
+  Y - delta I: eigenvalues/delta above 10/2/1.1: 147/159/167; the 8 smallest/delta: 1 1 1 1 1 1 1 1
+  a solution: c^T W c / |W| = -4.9e-18, share in W's top-139 eigenspace 7.0e-01
+  a solution: c^T W c / |W| = -4.4e-18, share in W's top-139 eigenspace 7.0e-01

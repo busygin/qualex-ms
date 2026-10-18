@@ -1,0 +1,29 @@
+f1000001: Gram of 51983 candidates (45983 independent + 6000 extra), 21.6 GB, 41s
+dpstrf 218s: numerical rank 45983; residual at pivot 1, 45983, 45983 (relative to the largest diagonal): 1.00e+00 4.31e-06 nan
+exact rank of the 45983 chosen rows: 45983 (needs 45983)
+written
+f1000001: d=472, 45983 independent contradiction constraints (of 124173), Schur 45984 x 45984 (16.9 GB)
+  it   0     0.0s: t -9.978814e-01 y0 2.118644e-03 <Z,W> 1.0e+00 pinf 6.7e-03 dinf 0.0e+00  steps 0.00 0.00
+  it   1   105.5s: t -7.378576e-02 y0 1.685887e-03 <Z,W> 7.6e-02 pinf 5.1e-04 dinf 1.2e-17  steps 0.92 1.00
+  it   2   212.0s: t -8.667718e-03 y0 1.051797e-03 <Z,W> 9.7e-03 pinf 6.3e-05 dinf 9.3e-18  steps 0.88 0.88
+  it   3   318.5s: t -8.434830e-04 y0 5.511885e-04 <Z,W> 1.4e-03 pinf 8.4e-06 dinf 1.4e-17  steps 0.87 0.89
+  it   4   425.3s: t -1.198155e-04 y0 2.549862e-04 <Z,W> 3.8e-04 pinf 1.7e-06 dinf 2.6e-17  steps 0.80 0.76
+  it   5   563.2s: t -4.141701e-05 y0 9.661274e-05 <Z,W> 1.4e-04 pinf 5.3e-07 dinf 4.9e-17  steps 0.69 0.77
+  it   6   710.9s: t -4.484975e-06 y0 3.069850e-05 <Z,W> 3.5e-05 pinf 1.2e-07 dinf 7.5e-17  steps 0.77 0.82
+  it   7   876.2s: t -1.377588e-06 y0 9.000108e-06 <Z,W> 1.0e-05 pinf 3.4e-09 dinf 9.9e-17  steps 0.97 0.75
+  it   8  1031.7s: t -1.907640e-07 y0 1.154745e-06 <Z,W> 1.3e-06 pinf 5.0e-10 dinf 1.4e-16  steps 0.86 0.88
+  it   9  1187.6s: t -3.356544e-08 y0 2.102552e-07 <Z,W> 2.4e-07 pinf 1.0e-10 dinf 1.3e-16  steps 0.82 0.84
+  it  10  1345.1s: t -7.354439e-09 y0 4.390526e-08 <Z,W> 5.1e-08 pinf 9.4e-11 dinf 1.2e-16  steps 0.78 0.82
+  it  11  1503.4s: t -1.304940e-09 y0 7.499909e-09 <Z,W> 8.8e-09 pinf 1.1e-10 dinf 1.3e-16  steps 0.81 0.85
+  it  12  1660.7s: t -3.183891e-10 y0 9.700181e-10 <Z,W> 1.3e-09 pinf 8.8e-11 dinf 1.4e-16  steps 0.74 0.88
+  it  13  1817.3s: t -9.913770e-11 y0 1.836598e-10 <Z,W> 2.5e-10 pinf 2.1e-10 dinf 1.6e-16  steps 0.72 0.88
+  it  14  1978.6s: t -8.725201e-11 y0 7.860791e-11 <Z,W> 8.7e-11 pinf 4.0e-10 dinf 1.4e-16  steps 0.73 0.78
+  it  15  2144.9s: t -8.163726e-11 y0 4.486189e-11 <Z,W> 4.1e-11 pinf 3.5e-10 dinf 1.2e-16  steps 0.52 0.77
+  it  16  2298.6s: t -1.116063e-10 y0 2.935733e-11 <Z,W> 1.7e-11 pinf 3.8e-10 dinf 1.4e-16  steps 0.64 0.85
+  it  17  2457.1s: t -1.136906e-10 y0 2.393378e-11 <Z,W> 8.2e-12 pinf 5.2e-10 dinf 1.3e-16  steps 0.60 0.71
+t = -1.137e-10, y0 = 2.393e-11 (0 when no optimum is positive definite)
+Z: eigenvalues/largest above 1e-4/6/8/10: 336/444/445/446
+W: eigenvalues/largest above 1e-4/6/8/10: 27/27/90/436
+largest gap in Z after 445: 3.41e-07 -> 5.86e-11; W around 27: 3.14e-03 4.39e-04 5.12e-08 2.55e-08
+a solution: share outside the face 3.5e-05; c^T W c / |c|^2 = 2.4e-11
+the optimum on all 124173 contradictions (G' imposed, the rest implied): max |X_ij| 3.2e-09

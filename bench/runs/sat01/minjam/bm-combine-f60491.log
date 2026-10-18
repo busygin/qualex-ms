@@ -1,0 +1,11 @@
+f60491 seed 0: 6400 iterations, 81.5s, f=4.11e-13; eigenvalues above 1e-2/4/6/8 of the largest: 36/138/165/184
+f60491 seed 1: 6400 iterations, 69.4s, f=4.73e-13; eigenvalues above 1e-2/4/6/8 of the largest: 36/138/164/184
+f60491 seed 2: 6400 iterations, 68.8s, f=4.93e-13; eigenvalues above 1e-2/4/6/8 of the largest: 36/136/165/186
+f60491 seed 3: 6400 iterations, 69.3s, f=6.38e-13; eigenvalues above 1e-2/4/6/8 of the largest: 35/137/163/182
+f60491 seed 4: 6400 iterations, 69.0s, f=4.97e-13; eigenvalues above 1e-2/4/6/8 of the largest: 35/138/164/183
+C0           |A(Y)| 6.4e-07; eigenvalues above 1e-4/6/8/10: 138/165/184/212; smallest 1.1e-16; a solution outside: 9e-02/5e-02/3e-02/2e-02; a solution outside: 3e-02/2e-02/1e-02/5e-03
+C1           |A(Y)| 6.9e-07; eigenvalues above 1e-4/6/8/10: 138/164/184/209; smallest 2.1e-16; a solution outside: 6e-02/4e-02/3e-02/1e-02; a solution outside: 3e-02/2e-02/7e-03/4e-03
+C2           |A(Y)| 7.0e-07; eigenvalues above 1e-4/6/8/10: 136/165/186/213; smallest 3.9e-17; a solution outside: 9e-02/6e-02/4e-02/2e-02; a solution outside: 4e-02/2e-02/6e-03/3e-03
+C3           |A(Y)| 8.0e-07; eigenvalues above 1e-4/6/8/10: 137/163/182/208; smallest 4.6e-17; a solution outside: 8e-02/5e-02/4e-02/2e-02; a solution outside: 3e-02/1e-02/8e-03/5e-03
+C4           |A(Y)| 7.1e-07; eigenvalues above 1e-4/6/8/10: 138/164/183/210; smallest 3.8e-17; a solution outside: 7e-02/5e-02/4e-02/2e-02; a solution outside: 2e-02/1e-02/8e-03/3e-03
+mean of 5    |A(Y)| 6.9e-07; eigenvalues above 1e-4/6/8/10: 147/206/236/236; smallest 1.6e-08; a solution outside: 6e-02/7e-03/3e-08/3e-08; a solution outside: 2e-02/1e-03/3e-08/3e-08

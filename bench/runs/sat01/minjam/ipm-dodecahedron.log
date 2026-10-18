@@ -1,0 +1,84 @@
+dodecahedron: Gram of 12673 candidates (12340 independent + 333 extra), 1.3 GB, 3s
+dpstrf 8s: numerical rank 12340; residual at pivot 1, 12340, 12340 (relative to the largest diagonal): 1.00e+00 2.80e-02 nan
+exact rank of the 12340 chosen rows: 12340 (needs 12340)
+written
+dodecahedron: d=227, 12340 independent contradiction constraints (of 12673), Schur 12341 x 12341 (1.2 GB)
+  it   0     0.0s: t -9.955947e-01 y0 4.405286e-03 <Z,W> 1.0e+00 pinf 7.9e-03 dinf 0.0e+00  steps 0.00 0.00
+  it   1     6.0s: t -5.109275e-02 y0 4.241912e-03 <Z,W> 5.5e-02 pinf 4.4e-04 dinf 1.4e-19  steps 0.94 1.00
+  it   2    11.5s: t -3.335169e-03 y0 3.002279e-03 <Z,W> 6.3e-03 pinf 5.1e-05 dinf 2.1e-18  steps 0.88 1.00
+  it   3    17.1s: t -3.537793e-04 y0 1.000374e-03 <Z,W> 1.4e-03 pinf 1.2e-05 dinf 3.4e-17  steps 0.78 0.85
+  it   4    23.0s: t -3.930143e-05 y0 2.916271e-04 <Z,W> 3.3e-04 pinf 2.3e-06 dinf 1.2e-17  steps 0.80 0.79
+  it   5    29.1s: t -1.497139e-05 y0 6.889542e-05 <Z,W> 8.4e-05 pinf 6.2e-14 dinf 4.1e-17  steps 1.00 0.79
+  it   6    37.5s: t -1.016039e-06 y0 5.826661e-06 <Z,W> 6.8e-06 pinf 1.6e-13 dinf 4.0e-17  steps 0.93 0.92
+  it   7    45.2s: t -7.629121e-08 y0 4.244137e-07 <Z,W> 5.0e-07 pinf 1.4e-12 dinf 4.7e-17  steps 0.92 0.93
+  it   8    53.4s: t -6.076155e-09 y0 5.377078e-08 <Z,W> 6.0e-08 pinf 1.6e-11 dinf 5.4e-17  steps 0.90 0.88
+  it   9    61.6s: t -4.715630e-10 y0 7.643372e-09 <Z,W> 8.1e-09 pinf 1.5e-10 dinf 4.7e-17  steps 0.88 0.87
+  it  10    70.1s: t -9.690713e-11 y0 1.172907e-09 <Z,W> 1.3e-09 pinf 1.5e-10 dinf 4.7e-17  steps 0.76 0.85
+  it  11    78.5s: t -1.134795e-11 y0 1.229533e-10 <Z,W> 1.3e-10 pinf 3.1e-11 dinf 4.8e-17  steps 0.85 0.90
+  it  12    86.9s: t -1.920673e-12 y0 1.180056e-11 <Z,W> 1.4e-11 pinf 1.2e-11 dinf 5.5e-17  steps 0.76 0.91
+  it  13    95.0s: t -2.645993e-12 y0 3.915490e-12 <Z,W> 4.4e-12 pinf 1.6e-11 dinf 3.2e-17  steps 0.72 0.69
+t = -2.646e-12, y0 = 3.915e-12 (0 when no optimum is positive definite)
+Z: eigenvalues/largest above 1e-4/6/8/10: 213/213/213/213
+W: eigenvalues/largest above 1e-4/6/8/10: 14/14/14/130
+largest gap in Z after 213: 3.50e-05 -> 8.37e-13; W around 14: 6.07e-02 5.41e-02 5.82e-10 5.80e-10
+a solution: share outside the face 1.1e-06; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.5e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.0e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 9.2e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.7e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 9.4e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.0e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 6.9e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 6.6e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 1.0e-06; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.5e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.0e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 6.3e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 9.3e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.5e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.1e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 6.5e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.0e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 6.7e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.1e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.4e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 9.3e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 5.7e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 9.2e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.2e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.6e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.2e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 5.9e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.7e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.8e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 5.5e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 6.7e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.4e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.6e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.2e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.9e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 9.4e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 1.0e-06; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.6e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.7e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 6.2e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.6e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.9e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.6e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 9.3e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 5.4e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.7e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.4e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.6e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 6.4e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.7e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 6.4e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 6.6e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 5.9e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.1e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.8e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 9.1e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.1e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 7.4e-07; c^T W c / |c|^2 = 3.9e-12
+a solution: share outside the face 8.4e-07; c^T W c / |c|^2 = 3.9e-12
+the optimum on all 12673 contradictions (G' imposed, the rest implied): max |X_ij| 1.1e-10

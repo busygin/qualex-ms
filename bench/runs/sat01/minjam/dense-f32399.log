@@ -1,0 +1,14 @@
+f32399: d=198, 34709 contradictions, 19701 unknowns; Gram 91.8s
+eigh 354.0s; null space dimension 6605 at 1e-10; eigenvalues/largest around the cut: 4.6e-16 4.7e-16 4.7e-16 | 1.0e-05 2.5e-05 3.4e-05
+f32399: d=198, dim V=6605, 6605 constraints
+  it   0  0.0s: primal 5.050505e-03 dual -1.015547e+00  <X,Z> 1.0e+00  pinf 1.1e-15 dinf 0.0e+00
+  it   5  62.5s: primal 6.443933e-05 dual -1.103529e-04  <X,Z> 1.7e-04  pinf 1.8e-15 dinf 1.1e-16
+  it  10  130.0s: primal 3.157705e-07 dual -1.023411e-06  <X,Z> 1.3e-06  pinf 2.1e-13 dinf 5.6e-16
+  it  15  198.5s: primal 2.896802e-12 dual -8.418193e-13  <X,Z> 3.9e-12  pinf 1.9e-12 dinf 6.1e-16
+t = -8.418e-13 (0 when no optimum is positive definite)
+Z = Y - tI, eigenvalues/largest: above 1e-4/6/8/10: 2/2/2/25
+W, eigenvalues/largest: above 1e-4/6/8/10: 192/196/196/196
+largest gap in Z's spectrum after 2: 1.24e-01 -> 3.37e-09; W's eigenvalues 196..197: 5.23e-06 1.54e-06 3.60e-12 1.13e-12
+Z spectrum around the gap: 8.76e-01 1.24e-01 3.37e-09 9.81e-10 8.49e-10 7.00e-10
+a solution: share outside the face 2.4e-08; c^T W c / |c|^2 = 3.2e-12
+a solution: share outside the face 0.0e+00; c^T W c / |c|^2 = 3.1e-12

@@ -1,0 +1,49 @@
+gp13_2: Gram of 37848 candidates (37171 independent + 677 extra), 11.5 GB, 22s
+dpstrf 137s: numerical rank 37171; residual at pivot 1, 37171, 37171 (relative to the largest diagonal): 1.00e+00 1.44e-02 nan
+exact rank of the 37171 chosen rows: 37171 (needs 37171)
+written
+gp13_2: d=433, 37171 independent contradiction constraints (of 37848), Schur 37172 x 37172 (11.1 GB)
+  it   0     0.0s: t -9.976905e-01 y0 2.309469e-03 <Z,W> 1.0e+00 pinf 5.0e-03 dinf 0.0e+00  steps 0.00 0.00
+  it   1   132.3s: t -5.106574e-02 y0 2.253450e-03 <Z,W> 5.3e-02 pinf 2.7e-04 dinf 5.3e-20  steps 0.95 1.00
+  it   2   208.1s: t -3.245931e-03 y0 1.774431e-03 <Z,W> 5.0e-03 pinf 2.5e-05 dinf 6.1e-18  steps 0.90 1.00
+  it   3   307.3s: t -3.532758e-04 y0 7.397326e-04 <Z,W> 1.1e-03 pinf 6.0e-06 dinf 3.0e-18  steps 0.76 0.91
+  it   4   426.5s: t -4.923537e-05 y0 2.609613e-04 <Z,W> 3.1e-04 pinf 1.2e-06 dinf 5.2e-18  steps 0.80 0.76
+  it   5   502.7s: t -1.100089e-05 y0 7.244765e-05 <Z,W> 8.4e-05 pinf 2.7e-07 dinf 2.3e-17  steps 0.78 0.79
+  it   6   606.0s: t -1.418538e-06 y0 9.201193e-06 <Z,W> 1.1e-05 pinf 8.0e-09 dinf 2.9e-17  steps 0.97 0.87
+  it   7   740.4s: t -1.245508e-07 y0 8.251993e-07 <Z,W> 9.5e-07 pinf 8.9e-10 dinf 4.1e-17  steps 0.89 0.91
+  it   8   878.6s: t -1.947538e-08 y0 1.102637e-07 <Z,W> 1.3e-07 pinf 1.8e-10 dinf 3.3e-17  steps 0.80 0.88
+  it   9   976.4s: t -4.425404e-09 y0 3.217698e-08 <Z,W> 3.7e-08 pinf 6.0e-11 dinf 2.2e-17  steps 0.75 0.75
+  it  10  1050.3s: t -7.196536e-10 y0 1.170066e-08 <Z,W> 1.2e-08 pinf 1.1e-10 dinf 2.2e-17  steps 0.85 0.71
+  it  11  1123.5s: t -1.847322e-10 y0 3.325973e-09 <Z,W> 3.5e-09 pinf 3.6e-10 dinf 4.2e-17  steps 0.80 0.76
+  it  11: 37166-th leading minor of the array is not positive definite, keeping the last iterate
+t = -1.847e-10, y0 = 3.326e-09 (0 when no optimum is positive definite)
+Z: eigenvalues/largest above 1e-4/6/8/10: 409/411/411/433
+W: eigenvalues/largest above 1e-4/6/8/10: 24/86/423/433
+largest gap in Z after 411: 1.53e-07 -> 1.90e-10; W around 22: 2.86e-02 2.76e-02 3.09e-04 2.51e-04
+a solution: share outside the face 3.2e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.7e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.8e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 4.3e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 4.2e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.1e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 2.4e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.2e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.3e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.6e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.8e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.2e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 4.3e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 4.2e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.2e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 2.4e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.6e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.1e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.3e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.2e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.7e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.3e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.6e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.2e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.2e-05; c^T W c / |c|^2 = 3.3e-09
+a solution: share outside the face 3.8e-05; c^T W c / |c|^2 = 3.3e-09
+the optimum on all 37848 contradictions (G' imposed, the rest implied): max |X_ij| 1.3e-10

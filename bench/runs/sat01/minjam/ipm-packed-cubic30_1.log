@@ -1,0 +1,2 @@
+cubic30_1: d=581, 82069 independent contradiction constraints (of 83128), Schur 82070 x 82070 (26.9 GB packed)
+  it   0     0.0s: t -9.982788e-01 y0 1.721170e-03 <Z,W> 1.0e+00 pinf 4.1e-03 dinf 0.0e+00  steps 0.00 0.00

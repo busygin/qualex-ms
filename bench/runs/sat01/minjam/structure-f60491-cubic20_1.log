@@ -1,0 +1,4 @@
+cubic20_1: n=195 m=38 rank A=36, dim L_A=160; rows of N: 6.2 nonzeros on average, at most 111 (0.0s)
+  9025 contradictions, 8258 independent (92%); dim V = 4622 of 12880 (36%); srank 2.0s
+f60491: n=740 m=514 rank A=505, dim L_A=236; rows of N: 20.7 nonzeros on average, at most 143 (0.2s)
+  44477 contradictions, 16650 independent (37%); dim V = 11316 of 27966 (40%); srank 10.1s

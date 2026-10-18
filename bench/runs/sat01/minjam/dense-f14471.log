@@ -1,0 +1,13 @@
+f14471: d=149, 23319 contradictions, 11175 unknowns; Gram matrix 16.5s
+eigh 48.0s; null space dimension 2849 at 1e-10; eigenvalues/largest around the cut: 3.6e-16 3.7e-16 3.7e-16 | 1.9e-07 2.8e-06 3.8e-06
+f14471: dim V=2849, 2849 constraints
+  it   0  0.0s: primal 6.711409e-03 dual -1.009624e+00  <X,Z> 1.0e+00  pinf 6.1e-16 dinf 0.0e+00
+  it   5  8.8s: primal 1.002930e-04 dual -5.564732e-04  <X,Z> 6.6e-04  pinf 1.7e-14 dinf 3.9e-16
+  it  10  17.4s: primal 2.969252e-09 dual -4.283011e-09  <X,Z> 7.3e-09  pinf 1.9e-14 dinf 6.7e-16
+  it  13  22.7s: primal 2.331317e-12 dual -1.331865e-12  <X,Z> 3.8e-12  pinf 1.4e-12 dinf 6.4e-16
+t = -1.332e-12, y0 = 2.331e-12 (0 when no optimum is positive definite)
+Z: eigenvalues/largest above 1e-4/6/8/10: 1/1/1/2
+W: eigenvalues/largest above 1e-4/6/8/10: 148/148/148/148
+largest gap in Z after 1: 1.00e+00 -> 2.56e-10; W around 148: 7.02e-05 3.03e-05 9.86e-13
+a solution: share outside the face 1.8e-10; c^T W c / |c|^2 = 2.4e-12
+the optimum on all 23319 contradictions: max |X_ij| 1.5e-15

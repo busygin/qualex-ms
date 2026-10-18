@@ -1,0 +1,23 @@
+1010 rows, 841 columns (d=29), 19779 nonzeros, built in 0.0s
+rank 423 of 1010 rows; d(d+1)/2 = 435, null space dimension 12; 0.0s
+  cubic16_1: 0.02 s, 8016 kB
+9025 rows, 25600 columns (d=160), 433073 nonzeros, built in 0.0s
+rank 8258 of 9025 rows; d(d+1)/2 = 12880, null space dimension 4622; 0.3s
+  cubic20_1: 0.26 s, 69632 kB
+33335 rows, 128881 columns (d=359), 740680 nonzeros, built in 0.1s
+rank 32720 of 33335 rows; d(d+1)/2 = 64620, null space dimension 31900; 0.7s
+  cubic24_1: 0.77 s, 241080 kB
+12673 rows, 51529 columns (d=227), 379428 nonzeros, built in 0.0s
+rank 12340 of 12673 rows; d(d+1)/2 = 25878, null space dimension 13538; 0.2s
+  dodecahedron: 0.21 s, 76024 kB
+37848 rows, 187489 columns (d=433), 1517064 nonzeros, built in 0.1s
+rank 37171 of 37848 rows; d(d+1)/2 = 93961, null space dimension 56790; 1.5s
+  gp13_2: 1.56 s, 562660 kB
+83128 rows, 337561 columns (d=581), 2233668 nonzeros, built in 0.1s
+rank 82069 of 83128 rows; d(d+1)/2 = 169071, null space dimension 87002; 3.8s
+  cubic30_1: 3.91 s, 1323736 kB
+207199 rows, 1390041 columns (d=1179), 8384745 nonzeros, built in 0.4s
+rank 205450 of 207199 rows; d(d+1)/2 = 695610, null space dimension 490160; 43.4s
+  cubic40_1: 44.15 s, 7757776 kB
+415740 rows, 3345241 columns (d=1829), 65848409 nonzeros, built in 4.5s
+  cubic50_1: 119.64 s, 43841972 kB

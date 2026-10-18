@@ -1,0 +1,6 @@
+f1000001 delta=1e-05 seed 0: 3200 iterations, 225.8s, f=5.310e-10 (|r| 2.30e-05, |r|/delta 2.3)
+  W/|r|: largest 0.278, smallest -0.00187; above 1e-2/1e-4/1e-6 of the largest: 48/257/266; most negative relative -6.7e-03
+  W's largest gap in its top part after 266: 2.84e-06 -> -2.81e-06
+f1000001 delta=1e-06 seed 0: 3200 iterations, 216.2s, f=5.504e-12 (|r| 2.35e-06, |r|/delta 2.35)
+  W/|r|: largest 0.272, smallest -0.00851; above 1e-2/1e-4/1e-6 of the largest: 53/247/251; most negative relative -3.1e-02
+  W's largest gap in its top part after 251: 3.77e-06 -> -6.62e-06
