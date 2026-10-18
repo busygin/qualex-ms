@@ -46,7 +46,7 @@ Clique Problem''}}
 \author{Research notes prepared for Stanislav Busygin\\
 with Claude (Anthropic)}
 
-\date{September 26, 2026; revised October 10, 2026}
+\date{September 26, 2026; revised October 18, 2026}
 
 \maketitle
 
@@ -92,7 +92,13 @@ points of its sphere are the exact covers. Every solution also lies on the
 surface of the standard wrapper, which meets that sphere and the orthant
 exactly in the solutions; the intersection of the sphere with a wrapper
 surface is its intersection with a cone, explicit in two unit vectors, so
-that of these conditions only nonnegativity is hard. Computations with a maximal clique
+that of these conditions only nonnegativity is hard. Shrinking the
+degenerate eigenspace does not help either: since $H_A$ is Lov\'asz-optimal,
+the Lov\'asz optima form a spectrahedron over its top eigenspace, exact
+sparse elimination and a small interior point method give the smallest
+subspace that holds them all, with a certificate of minimality, and on all
+but the smallest instances that subspace keeps 91 to 95\% of the
+eigenspace. Computations with a maximal clique
 enumerator and with CSDP illustrate the results on the DIMACS graphs, on
 random graphs, on random quasigroups with holes, and on SAT01 instances of
 factoring and of the Hamilton cycle problem, where $\vartheta$ refutes the
@@ -135,10 +141,11 @@ $\mu=\lmax$; for general graphs the conditions look overdetermined.
 \item How do these statements look on actual graphs?
 (Section~\ref{sec:comp}.)
 \item What do they say about SAT01 \cite{Bu07}, where deciding
-$\alpha=\vartheta$ in a weighted graph captures many NP problems, and where
+$\alpha=\vartheta$ in a weighted graph captures many NP problems, where
 does its hardness lie once $\vartheta$ and a Lov\'asz-optimal wrapper are
-known? (Sections~\ref{sec:sat01}, \ref{sec:hardness}, \ref{sec:surface}
-and~\ref{sec:sat01comp}.)
+known, and how much does shrinking that wrapper's degenerate eigenspace
+help? (Sections~\ref{sec:sat01}, \ref{sec:hardness}, \ref{sec:surface},
+\ref{sec:minjam} and~\ref{sec:sat01comp}.)
 \end{enumerate}
 
 The main findings, in the order of the text:
@@ -200,8 +207,9 @@ with a margin falling from $0.064$ to $7\cdot10^{-5}$, none of them without
 the contradictions that propagation derives, and none of the non-Hamiltonian
 graphs that survive it. Up to 15 bits the Lov\'asz optimum of a satisfiable
 factoring instance is spanned by its solutions, a unique solution being the
-only optimum, while the two solutions of $241\cdot251$ sit in an optimum of
-rank 205 (Section~\ref{sec:sat01comp}).
+only optimum, while the two solutions of $241\cdot251$ sit in an optimal
+face of dimension 214 (Sections~\ref{sec:minjam}
+and~\ref{sec:sat01comp}).
 \item For a proper Lov\'asz-optimal wrapper the nonnegative points of the
 sphere of global minimizers are exactly the maximum clique indicators, the
 vertices of largest norm of the polytope of nonnegative points of the top
@@ -224,6 +232,18 @@ QUALEX-MS's Douglas--Rachford stage, the surface solves one more factoring
 instance with the orthant and adds nothing to the projection that respects
 the contradictions outside the equations; without nonnegativity it finds
 nothing at all (Section~\ref{sec:surface}).
+\item When $\vartheta=m$ the Lov\'asz optima are the trace-one positive
+semidefinite matrices of a linear space $V$ over the top eigenspace $L_A$
+of $H_A$. A certificate that the subspace $R^*$ spanned by them all is the
+smallest is the first-order part of a perturbation of $H_A$ in its free
+entries (Proposition~\ref{prop:face}). Exact sparse elimination gives $V$,
+and an interior point method in its independent constraints gives $R^*$
+with such a certificate, also on $1000001=101\cdot9901$, which is beyond
+CSDP. $R^*$ is the span of the solutions on 14471, $179\cdot181$ and the
+cubic graph with 16 vertices, but keeps 91 to 95\% of $L_A$ on
+$241\cdot251$, on $1000001$ and on the other Hamilton cycle instances, and
+the smaller sphere does not help the Douglas--Rachford search
+(Section~\ref{sec:minjam}).
 \end{itemize}
 
 \section{Setting}
@@ -1690,6 +1710,144 @@ equation the surface removes no exact cover, and deciding whether the
 intersection has a nonnegative point is the exact cover problem
 (Corollary~\ref{cor:exactcover}).
 
+\subsection{The smallest jam}
+\label{sec:minjam}
+
+By (\ref{eq:compl}) the range of every Lov\'asz optimum lies in the top
+eigenspace of every Lov\'asz-optimal wrapping matrix. No such matrix,
+therefore, has a top eigenspace smaller than the subspace $R^*$ spanned by
+the ranges of all Lov\'asz optima, and $R^*$ contains every solution. It is
+the range of an optimum of maximal rank, to which the central path of
+(\ref{eq:thetaprimal})--(\ref{eq:thetadual}) converges \cite{HKR02}, so an
+interior point method such as CSDP approaches it. When $\vartheta=m$, $H_A$
+already has the optimal eigenvalue, and the problem shrinks.
+
+\begin{prop}
+\label{prop:face}
+Let $\vartheta=m$, let the columns of $B$ be an orthonormal basis of $L_A$,
+$d=\dim L_A$, $\mathcal S^d$ the symmetric $d\times d$ matrices, $b_i$ the
+rows of $B$, $S_{ij}=(b_ib_j^T+b_jb_i^T)/2$, and
+\begin{gather*}
+V=\{Y\in\mathcal S^d:\ \langle S_{ij},Y\rangle=0 \mbox{ for every
+  contradiction } \{i,j\}\},\\
+F=\{Y\in V:\ Y\succeq0,\ \tr Y=1\}.
+\end{gather*}
+\begin{enumerate}
+\item[(a)] The Lov\'asz optima are exactly the matrices $BYB^T$ with $Y\in F$.
+\item[(b)] If $Y^*\in F$ has maximal rank, $R^*=B\,{\rm range}(Y^*)$, and it
+contains the indicator $x^S$ of every solution $S$.
+\item[(c)] If $W\succeq0$ is orthogonal to $V$, then $WY=0$ for every
+$Y\in F$. If moreover $\rank Y+\rank W=d$ for some $Y\in F$, then
+$R^*=B\,{\rm range}(Y)=B\ker W$.
+\item[(d)] The matrices orthogonal to $V$ are the $W=B^TSB$ with $S$
+symmetric and supported on the contradictions, and then $H_A-tS\in\Hc(G,w)$
+and $B^T(H_A-tS)B=mI-tW$ for every $t$.
+\end{enumerate}
+\end{prop}
+\begin{proof}
+(a) $H_A$ is Lov\'asz-optimal by Proposition~\ref{prop:sat01}(c), so by
+(\ref{eq:compl}) every optimum $X$ has its range in $L_A$: $X=BYB^T$ with
+$Y=B^TXB\succeq0$ and $\tr Y=\tr X=1$, and
+$X_{ij}=b_i^TYb_j=\langle S_{ij},Y\rangle$ vanishes on the contradictions.
+Conversely such an $X$ is feasible in (\ref{eq:thetadual}), and as
+$H_A-zz^T$ vanishes on the diagonal and off the contradictions,
+$\langle zz^T,X\rangle=\langle H_A,X\rangle=m\tr X=m$.
+
+(b) $F$ is convex, and the range of $(Y_1+Y_2)/2$ is the sum of the ranges
+of $Y_1,Y_2\in F$, so a point of maximal rank has a range that contains the
+range of every other. By Lemma~\ref{lem:cliquevec}, $z_Sz_S^T/m$ is an
+optimum, and $z_S=m\,x^S$.
+
+(c) $\langle W,Y'\rangle=0$ and $W,Y'\succeq0$ give $WY'=0$, so every
+$Y'\in F$ has its range in $\ker W$, and $R^*\subseteq B\ker W$. As $Y\in F$
+has rank $d-\rank W=\dim\ker W$, $B\,{\rm range}(Y)\subseteq R^*$ is all of
+$B\ker W$.
+
+(d) $V^\perp$ is spanned by the $S_{ij}=B^T(e_ie_j^T+e_je_i^T)B/2$ of the
+contradictions, which are non-edges of $G$, where the entries of a wrapping
+matrix are free; and $B^T(mI-H_A)B=0$ by Proposition~\ref{prop:sat01}(b).
+\end{proof}
+
+So $R^*$ is the most that minimizing the jam of $H_A$ can reach. A
+certificate $W$ of (c) is a step of facial reduction \cite{BW81} for $F$,
+and by (d) it is the first-order part of a perturbation of $H_A$ in its
+free entries, which keeps the top eigenvalue $m$ on $B\ker W$ and lowers it
+on $B\,{\rm range}(W)$, up to the coupling of $L_A$ with $L_A^\perp$, which
+is of order $t^2$. Where CSDP resolves the optimal wrappers, on the
+Hamilton cycle instances of Table~\ref{tab:sat01sat}, one of them has $R^*$
+as its top eigenspace.
+
+$F$ lies in $\mathcal S^d$ rather than in the symmetric $n\times n$
+matrices, has no objective, and is cut by one equation per contradiction,
+most of them redundant. $V$ can be computed exactly. With a basis $N$ of
+$\{u:\ Au\in\R\one\}$ in place of $B$ the constraints read $n_i^TYn_j=0$,
+the $n_i$ being the rows of $N$, since the factor $D^{1/2}$ drops out.
+Gaussian elimination of $A$ with a Markowitz pivot rule gives a rational $N$
+whose rows have 4 to 32 nonzeros on average, and sparse elimination of the
+constraint rows modulo the prime $2^{61}-1$, again with a Markowitz rule,
+gives their rank, hence $\dim V$, together with a set $\Gamma'$ of
+contradictions whose constraints are independent and imply all the others.
+(Independence modulo a prime implies independence over the rationals, and
+the rank modulo a prime is smaller only if the prime divides all the
+nonzero maximal minors.) Then $R^*$ and a certificate come from the pair
+\begin{align*}
+&\max\ t\quad\mbox{s.t.}\quad Y-tI\succeq0,\ \ \langle S_{ij},Y\rangle=0
+  \mbox{ for } \{i,j\}\in\Gamma',\ \ \tr Y=1,\\
+&\min\ y_0\quad\mbox{s.t.}\quad W=\sum_{\{i,j\}\in\Gamma'}y_{ij}S_{ij}
+  +y_0I\succeq0,\ \ \tr W=1.
+\end{align*}
+Both are strictly feasible ($W=I/d$ in the second). Unless some Lov\'asz
+optimum is positive definite on $L_A$ their common value is $0$, the optimal
+$Y$ form $F$, the optimal $W$ are the certificates of (c) with trace $1$, and
+a primal-dual interior point method converges to a pair of maximal ranks.
+Its Schur matrix has order $|\Gamma'|+1$, against one row per contradiction
+for (\ref{eq:thetadual}), and as the $S_{ij}$ have rank two its entries are
+products of entries of $BZB^T$ and $BW^{-1}B^T$ ($Z=Y-tI$), as in CSDP. We
+used the HKM direction \cite{HRVW96} with Mehrotra's predictor-corrector
+\cite{Me92}.
+
+Table~\ref{tab:minjam} in Section~\ref{sec:sat01comp} gives the results. On
+every instance where the method finished, $\rank Y+\rank W=d$, so $R^*$ is
+proved minimal to the accuracy of the solver. On 14471 and $179\cdot181$,
+$R^*$ is the span of the solutions, and $F$ is a point or the segment
+between the two solutions; on the cubic graph with 16 vertices $V$ itself
+is spanned by the 12 solutions and $F$ is their simplex. There the
+semidefinite program solves the instance. Everywhere else $R^*$ keeps 91 to
+95\% of $L_A$: 214 of its 236 dimensions on $241\cdot251$, 445 of 472 on
+$1000001$, and all but 8 to 24 on the Hamilton cycle instances.
+
+Those are the instances on which the search of Section~\ref{sec:hardness}
+needs help, and the smaller sphere $\{x\in R^*:\ z^Tx=1,\ x^Tx=1/m\}$, which
+holds every solution, gives it little. Douglas--Rachford with the 2-clause
+projection from the $2(\dim R^*-1)$ corners of that sphere (the iteration of
+Section~\ref{sec:hardness} in numpy, \texttt{bench/minjam.py dr}: 300
+iterations, MIN at the end) found a solution of $241\cdot251$ from 28 of 426
+corners, against 18 of 470 on $\Sigma_A$, and none of $1000001$ either way
+(911 of 912 at best). On the Hamilton cycle instances the count moved both
+ways: from 190 to 138 on the cubic graph with 20 vertices, 91 to 76 on the
+dodecahedron, 28 to 34 on the cubic graph with 24 vertices and 1 to 0 on
+$GP(13,2)$. With the orthant at most 6 corners succeeded on either sphere.
+(The corners depend on the orthonormal basis chosen in each sphere, and with
+another basis these counts moved by up to 15.)
+
+A first-order method is no shortcut to $R^*$. The factorization
+$Y=CC^T/\|C\|^2$ of \cite{BM03} (\texttt{bench/minjam.py bm}), minimizing
+$\sum_{\{i,j\}}\langle S_{ij},Y\rangle^2$ over $C\in\R^{d\times d}$ by
+L-BFGS at $O(n^2d)$ per step, reaches $F$ quickly: MIN on the top
+eigenvectors of $Y$ finds the solution of 14471 after 7 seconds and a
+solution of $179\cdot181$ after 48, against CSDP's 306 and 659, and it
+reaches the face of $1000001$. But it converges to the relative boundary of
+$F$, where $Y$ loses rank (on $241\cdot251$ its limit misses the solutions
+by 3\%), and only to about $10^{-7}$, which hides the directions of $R^*$
+whose eigenvalues are near $10^{-6}$. Averages of several limits have full
+rank, and neither the residual nor a variant with $Y\succeq\delta I$ yields
+a certificate.
+
+So the smallest jam is computable, exactly and with a certificate, also
+where CSDP is not, but it is small only where the instance is easy anyway.
+Minimizing the jam leaves the step from the optimal face to a rank-one
+point (Section~\ref{sec:hardness}) where it was.
+
 \section{Computations}
 \label{sec:comp}
 
@@ -2159,7 +2317,8 @@ the Lov\'asz optimum carries. The four 14-bit products of two primes have a
 unique solution and a Lov\'asz optimum of rank one: the solution is their
 only vector solution, and solving the semidefinite program factors them.
 The optimum of $179\cdot181$ is still spanned by its two solutions, but those
-of $241\cdot251$ lie in an optimum of rank 205. On the cubic graphs the
+of $241\cdot251$ lie in an optimal face of dimension 214, of which CSDP's
+optimum has 205 eigenvalues above $10^{-5}$ (Table~\ref{tab:minjam}). On the cubic graphs the
 optimum spans exactly the 12 solutions of the smallest one (6 cycles, each in
 two directions) and far more than the solutions elsewhere: 152 dimensions
 against 30, 335 against 36, 213 against 60 on the dodecahedron and 409
@@ -2167,11 +2326,99 @@ against 26 on $GP(13,2)$, as on the QWH instances in the middle of the
 transition (Section~\ref{sec:qwh}). The optimal wrapper's top multiplicity
 equals the rank on all the graphs and exceeds it on three factoring
 instances (2 against 1, 18 against 2, 211 against 205), where
-complementarity is not strict at the solver's accuracy. $H_A$, which is
+complementarity is not strict at the solver's accuracy; the exact faces
+below settle the last two. $H_A$, which is
 Lov\'asz-optimal on all of them by Proposition~\ref{prop:sat01}(c), is far
 more degenerate on factoring, with $\dim L_A$ between 145 and 236 against
 ranks between 1 and 205, but exceeds the optimum by only 8 to 24 dimensions
 on the Hamilton cycle instances.
+
+\begin{table}[ht]
+\begin{center}
+\small
+\setlength\tabcolsep{2.5pt}
+\begin{tabular}{|l|r|r|r|r|r|r|r|r|r|r|}
+\hline
+instance & $n$ & contr. & $\dim L_A$ & $\dim V$ & $|\Gamma'|$ & $\dim R^*$ & $\rank W$ & time & rank $X^*$ & CSDP \\
+\hline
+$14471=29\cdot499$      & 511  & 23319  & 149  & 2849   & 8326   & 1   & 148 & 1.5 min & 1  & 5 min \\
+$32399=179\cdot181$     & 636  & 34709  & 198  & 6605   & 13096  & 2   & 196 & 11 min & 2   & 11 min \\
+$60491=241\cdot251$     & 740  & 44477  & 236  & 11316  & 16650  & 214 & 22  & 3 min  & 205 & 21 min \\
+$1000001=101\cdot9901$  & 1383 & 124173 & 472  & 65645  & 45983  & 445 & 27  & 46 min &     & --- \\
+\hline
+cubic, 16 vertices      & 57   & 1010   & 29   & 12     & 423    & 12  & 17  & 1 s    & 12  & 1 s \\
+cubic, 20 vertices      & 195  & 9025   & 160  & 4622   & 8258   & 152 & 8   & 24 s   & 152 & 25 s \\
+dodecahedron            & 263  & 12673  & 227  & 13538  & 12340  & 213 & 14  & 2 min  & 213 & 54 s \\
+cubic, 24 vertices      & 403  & 33335  & 359  & 31900  & 32720  & 335 & 24  & 18 min & 335 & 8 min \\
+$GP(13,2)$              & 481  & 37848  & 433  & 56790  & 37171  & 409 & 24  & 21 min & 409 & 12 min \\
+cubic, 30 vertices      & 637  & 83128  & 581  & 87002  & 82069  & \multicolumn{5}{c|}{not completed} \\
+cubic, 40 vertices      & 1255 & 207199 & 1179 & 490160 & 205450 & \multicolumn{5}{c|}{beyond the memory} \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:minjam} The smallest jams $R^*$ of
+Section~\ref{sec:minjam}, after full propagation: variables,
+contradictions, $\dim L_A$, $\dim V$ and the number $|\Gamma'|$ of
+independent contradiction constraints (from a dense eigendecomposition for
+the first two instances, by exact elimination modulo $2^{61}-1$ for the
+others), $\dim R^*$ and the rank of the certificate $W$, which add up to
+$\dim L_A$, the time of the computation (on a machine shared with other
+runs, except for 14471, $241\cdot251$ and the cubic graph with 20
+vertices), and for comparison the rank of CSDP's optimum
+(Table~\ref{tab:sat01sat}) and CSDP's time.}
+\end{table}
+
+Table~\ref{tab:minjam} gives the smallest jams of Section~\ref{sec:minjam}.
+Only 36 to 38\% of the contradiction constraints of the factoring instances
+are independent, against 91 to 99\% on the Hamilton cycle instances with 20
+vertices or more, so the reduction pays on the former: $241\cdot251$ took 3
+minutes against CSDP's 21, and $1000001$, whose 124173 contradictions are
+beyond CSDP on the machine used, took 46. Of these, the elimination took 56
+seconds, the choice of $\Gamma'$ 4 minutes, and the rest went to 17 interior
+point iterations with a Schur matrix of order 45984 (17 GB). On the
+Hamilton cycle instances CSDP was up to twice as fast. For 14471 and
+$179\cdot181$ the same pair was solved over a basis of $V$ from a dense
+eigendecomposition (\texttt{minjam.py dense}). The eigenvalues of $Y$ fall by factors between $10^2$
+($GP(13,2)$) and $10^{10}$ (16 vertices) at the edge of $R^*$, the
+solutions lie in $R^*$ to between $4\cdot10^{-13}$ and $2\cdot10^{-4}$
+($GP(13,2)$ again), and $BYB^T$ vanishes on every contradiction, imposed or
+implied, to $3\cdot10^{-9}$. On $GP(13,2)$ a failing factorization ended
+the method early, and two directions at the edge, where $Y$ has
+$2\cdot10^{-6}$ and $W$ $4\cdot10^{-3}$ of their largest eigenvalues, were
+assigned to $W$ by pairing the eigenvectors of the two.
+
+The ranks agree with CSDP's on all the graphs, and $R^*$ settles the two
+factoring instances on which CSDP left complementarity in doubt. On
+$179\cdot181$ the reduced problem is strictly complementary at dimension 2,
+so the multiplicity 18 of Table~\ref{tab:sat01sat} counts a continuum of
+near-optimal eigenvalues of CSDP's wrapper. On $241\cdot251$, $R^*$ has
+dimension 214, and its last directions carry eigenvalues near $10^{-6}$ of
+the largest at a point of maximal rank; CSDP's rank 205 and multiplicity
+211 both cut through that edge.
+
+The set $\Gamma'$ that the elimination returns is independent but can be
+nearly dependent in floating point. On $241\cdot251$ an unpivoted Cholesky
+factorization of its Gram matrix meets squared pivots down to
+$4\cdot10^{-9}$ of the largest diagonal entry (\texttt{minjam.py cond}),
+and the interior point method broke down at
+$\langle Z,W\rangle\approx10^{-6}$, when its Schur matrix lost positive
+definiteness. A pivoted Cholesky factorization of the Gram matrix of
+$\Gamma'$ and up to 6000 further pairs (\texttt{minjam.py select}), with
+entries $(\Pi_{ik}\Pi_{jl}+\Pi_{il}\Pi_{jk})/2$ where $\Pi=BB^T$, picks a
+set of the same exact rank whose last squared pivot is $2\cdot10^{-5}$ of
+the largest diagonal entry on $241\cdot251$ and $4\cdot10^{-6}$ on
+$1000001$. On the Hamilton cycle instances the set from the elimination is
+well conditioned as it is: no squared pivot falls below $10^{-2}$ on
+$GP(13,2)$ or below $6\cdot10^{-3}$ on the cubic graph with 30 vertices. The
+cubic graphs with 30 and 40 vertices keep 82069 and 205450 independent
+constraints. The first fits in rectangular
+full packed storage \cite{GWDL10}, in 27 GB at about 8 minutes per
+iteration, but its run was not completed; the second does not fit. The
+computations are \texttt{bench/minjam.py} of the QUALEX-MS repository, with
+the exact elimination in \texttt{bench/srank.cc}; the logs of the runs are
+in \texttt{bench/runs/sat01/minjam/}, and each subspace $R^*$, with the
+optimum $BYB^T$ and the certificate $BWB^T$, is in \texttt{<inst>.jam.npz}
+beside its instance in the ignored work directories.
 
 \section{Conclusions and open questions}
 
@@ -2236,6 +2483,17 @@ the orthant (Section~\ref{sec:surface}), but without nonnegativity it finds
 nothing, and the points of the intersection turn negative as soon as they
 leave a solution.
 
+Nor does shrinking the degenerate eigenspace. The top eigenspace of every
+Lov\'asz-optimal wrapper contains the subspace $R^*$ spanned by all
+Lov\'asz optima, and when $\vartheta=m$ the optimality of $H_A$ turns the
+computation of $R^*$ into a spectrahedron over $L_A$ without an objective
+(Proposition~\ref{prop:face}). Exact sparse elimination and a small interior
+point method give $R^*$ with a certificate of minimality, also on an
+instance beyond CSDP. $R^*$ is the span of the solutions only on instances
+that are easy anyway; on the others it keeps 91 to 95\% of $L_A$, and the
+Douglas--Rachford search gains nothing consistent from the smaller sphere
+(Section~\ref{sec:minjam}).
+
 Questions left open:
 \begin{enumerate}
 \item Characterize the graphs whose maximum cliques can all be anchored at a
@@ -2270,6 +2528,12 @@ instances of Section~\ref{sec:sat01comp}, and does iterating it refute
 of dimension in the hundreds. Do they have an explicit description through the
 symmetries of the encoding, and which cubic graphs besides the Petersen graph
 have none?
+\item On every instance of Table~\ref{tab:minjam} the reduced problem of
+Section~\ref{sec:minjam} is strictly complementary, $\rank Y+\rank W=\dim
+L_A$. Is it always? And is $R^*$ always the top eigenspace of some
+Lov\'asz-optimal wrapper, or can the second-order coupling in
+Proposition~\ref{prop:face}(d) force every optimal wrapper's jam to be
+larger?
 \end{enumerate}
 
 \begin{thebibliography}{AGKS00}
@@ -2278,6 +2542,12 @@ have none?
   A.I. Barvinok,
   Problems of distance geometry and convex properties of quadratic maps,
   {\em Discrete \& Computational Geometry\/} 13 (1995) 189--202.
+
+\bibitem[BM03]{BM03}
+  S. Burer and R.D.C. Monteiro,
+  A nonlinear programming algorithm for solving semidefinite programs via
+  low-rank factorization,
+  {\em Mathematical Programming\/} 95 (2003) 329--357.
 
 \bibitem[Bo99]{Bo99}
   B. Borchers,
@@ -2306,6 +2576,12 @@ have none?
   S. Busygin,
   The SAT01 framework for NP problems,
   note, 2003--2007 (\texttt{sat01theta.tex} in the SAT01 repository).
+
+\bibitem[BW81]{BW81}
+  J.M. Borwein and H. Wolkowicz,
+  Facial reduction for a cone-convex programming problem,
+  {\em Journal of the Australian Mathematical Society, Series A\/} 30 (1981)
+  369--380.
 
 \bibitem[CW]{CW}
   S. Busygin,
@@ -2340,11 +2616,27 @@ have none?
   {\em Geometric Algorithms and Combinatorial Optimization\/},
   Springer, 1988.
 
+\bibitem[GWDL10]{GWDL10}
+  F.G. Gustavson, J. Wa\'sniewski, J.J. Dongarra and J. Langou,
+  Rectangular full packed format for Cholesky's algorithm: factorization,
+  solution, and inversion,
+  {\em ACM Transactions on Mathematical Software\/} 37(2) (2010), Article~18.
+
+\bibitem[HKR02]{HKR02}
+  M. Halick\'a, E. de Klerk and C. Roos,
+  On the convergence of the central path in semidefinite optimization,
+  {\em SIAM Journal on Optimization\/} 12 (2002) 1090--1099.
+
 \bibitem[Ho70]{Ho70}
   A.J. Hoffman,
   On eigenvalues and colorings of graphs,
   in: B. Harris, ed., {\em Graph Theory and its Applications\/},
   Academic Press, 1970, 79--91.
+
+\bibitem[HRVW96]{HRVW96}
+  C. Helmberg, F. Rendl, R.J. Vanderbei and H. Wolkowicz,
+  An interior-point method for semidefinite programming,
+  {\em SIAM Journal on Optimization\/} 6 (1996) 342--361.
 
 \bibitem[JM96]{JM96}
   M.T. Jacobson and P. Matthews,
@@ -2378,6 +2670,11 @@ have none?
   Intersecting quadrics: an efficient and exact implementation,
   {\em Computational Geometry: Theory and Applications\/} 35 (2006) 74--99
   (QI, \texttt{https://gamble.loria.fr/qi/}).
+
+\bibitem[Me92]{Me92}
+  S. Mehrotra,
+  On the implementation of a primal-dual interior point method,
+  {\em SIAM Journal on Optimization\/} 2 (1992) 575--601.
 
 \bibitem[MS83]{MS83}
   J.J. Mor\'e and D.C. Sorensen,
